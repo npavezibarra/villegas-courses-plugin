@@ -1,0 +1,236 @@
+div#main-menu {
+    max-width: 1280px;
+    margin: auto;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 20px 0px;
+}
+
+@media screen and (max-width: 1480px) {
+    div#main-menu {
+        max-width: 80%;
+    }
+}
+
+#main-menu ul {
+    display: flex;
+    gap: 30px;
+    margin:0px;
+    list-style-type: none; /* Removes the bullet points */
+    padding-left: 0;
+    padding-top: 10px;
+}
+
+#logo-website > h1 {
+    margin: 0px;
+    font-family: "Inter", sans-serif;
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+a {
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+    color: black;
+    text-decoration: none;
+    font-size:1.2 em;
+}
+
+#body-content {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end; /* Alinear el contenido hacia la parte inferior */
+    height: 250px; /* Puedes ajustar esta altura según tus necesidades */
+    padding: 20px;
+    color: white; /* Para asegurarte que el texto sea legible sobre la imagen */
+    position: relative;
+    max-width: 1280px;
+    margin: auto;
+    border-radius: 8px;
+}
+
+div#about-course {
+    max-width: 1280px;
+    margin: auto;
+    margin-top: 40px;
+}
+
+div#course-content {
+    background: #eeeeee;
+    width: 35%;
+    height: auto;
+    border-radius: 8px;
+    padding: 30px;
+    display: inline-block;
+}
+
+/* ELIMINAR HEADER DE COURSE PAGE */
+
+.single-sfwd-courses div#header {
+    display: none;
+}
+
+#page>hr {
+    display: none;
+}
+
+.single-sfwd-courses html {
+    margin-top: 0 !important; /* Elimina el margin-top solo en las páginas de cursos */
+}
+
+#datos-generales-curso h1, h4 {
+    color:rgb(255, 255, 255);
+    max-width: 1280px;
+    margin: auto;
+}
+
+#course-content ul {
+    display: flex;
+    flex-direction: column !important;
+}
+
+#course-content > h4 {
+    color: black;
+}
+
+#course-content > hr {
+    margin-bottom: 40px;
+}
+
+#description-course > h4 {
+    color: black;
+}
+
+div#about-course {
+    display: flex;
+    gap: 20px;
+    max-width: 1000px;
+    align-items: flex-start; 
+}
+
+div#description-course {
+    max-width: 60%;
+    padding-top: 30px;
+    height: auto;
+}
+
+div#datos-generales-curso {
+    width: 1000px;
+    margin: auto auto 0px;
+}
+
+
+div#buy-button-stats {
+    max-width: 700px;
+    height: 70px;
+    margin: auto;
+    margin-top: 30px;
+    border-radius: 8px;
+}
+
+#course-content ul>li>a {
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+    color: black;
+    text-decoration: none;
+    font-size:0.9em;
+}
+
+#course-content ul>li>h4 {
+    color: black;
+}
+
+/* TOOLTIP */
+
+#final-test-button.tooltip {
+    position: relative;
+    display: inline-block;
+  }
+  
+  #final-test-button .tooltiptext {
+    visibility: hidden;
+    width: 220px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 150%;
+    left: 50%;
+    margin-left: -110px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  
+  #final-test-button .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+  }
+  
+  #final-test-button:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+  }
+
+  button#final-evaluation-button {
+    padding: 13px 20px !important;
+}
+
+#menu-replica>nav>ul>li {
+    padding-top: 10px !important;
+}
+
+
+p#primer-test-legend {
+    font-size: 10px;
+    margin: 0px;
+}
+
+div#primer-test-score {
+    flex-direction: column;
+    border-radius: 6px;
+}
+
+
+span.tooltiptext {
+    font-size: 12px;
+}
+
+
+#final-test-button > p {
+    margin: 0px !important;
+    font-size: 10px;
+}
+
+div#primer-test-score > a {
+    flex-direction: column;
+    border-radius: 6px;
+}
+
+div#autor-box {
+    max-width: 700px;
+    margin: auto;
+    margin-bottom: 50px;
+    margin-top: 50px !important;
+    background-color: #EEEEEB !important;
+}
+
+.user-photo-circle {
+    width: 30px; /* Circle size */
+    height: 30px;
+    border-radius: 50%; /* Makes it a circle */
+    background-color: red; /* Circle color */
+    margin-right: 10px; /* Spacing between circle and text */
+    /* Optionally, adjust margin-top for vertical spacing */
+}
+

@@ -1,0 +1,117 @@
+.single-sfwd-quiz .learndash-wrapper .wpProQuiz_graded_points, .learndash-wrapper .wpProQuiz_points {
+    align-items: center;
+    background-color: #f9f9f9 !important;
+    border: 0px !important;
+    border-radius: 0;
+    color: #728188;
+    justify-content: center;
+    margin: 1em 0;
+    padding: 1em;
+}
+
+.single-sfwd-quiz .ld-quiz-status {
+    display: none !important;
+}
+
+.single-sfwd-quiz h4.wpProQuiz_header {
+    text-align: center !important;
+}
+
+.single-sfwd-quiz .wp-block-post-author-name {
+    display: none !important;
+}
+
+.single-sfwd-quiz p.has-small-font-size.has-contrast-2-color.has-text-color {
+    display: none !important;
+}
+
+.single-sfwd-quiz p.has-contrast-2-color.has-text-color {
+    display: none !important;
+}
+
+.single-sfwd-quiz .wpProQuiz_results p {
+    text-align: center !important;
+}
+
+
+.single-sfwd-quiz main > div > div > h1 {
+    text-align: center !important;
+}
+
+.single-sfwd-quiz main > div > div > div > div > div > div {
+    margin: auto !important;
+}
+
+/*  MENSAJE INICIO QUIZ */
+
+.single-sfwd-quiz .custom-quiz-message {
+    padding: 20px;
+    background-color: #f9f9f9;
+    margin-bottom: 20px;
+    font-size: 16px;
+    line-height: 1.5;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.single-sfwd-quiz .custom-quiz-message p {
+    margin: 0;
+}
+
+/* MENSAJE AGREGAR AL RANKING */
+.single-sfwd-quiz .learndash-wrapper .wpProQuiz_content .wpProQuiz_addToplist {
+    background-color: #00a2e81a;
+    border: 1px solid #00a2e8;
+    margin-top: 10px;
+    padding: 10px;
+    text-align: center;
+}
+
+.single-sfwd-quiz input.wpProQuiz_button2 {
+    margin: auto !important;
+}
+
+a#back-to-course-link {
+    font-size: 12px;
+    color: #01a2e8;
+}
+
+input.wpProQuiz_button.wpProQuiz_QuestionButton {
+    border-radius: 6px !important;
+    padding: 5px 14px !important;
+}
+
+input.wpProQuiz_button {
+    border-radius: 6px !important;
+    padding: 9px 20px !important;
+}
+
+.wpProQuiz_sending {
+    text-align: center;
+}
+
+.wpProQuiz_question_text {
+    text-align: center;
+    font-size: 22px;
+}
+
+.wpProQuiz_text {
+    background: white;
+    padding: 30px;
+}
+
+div#quiz-start-message {
+    background: white;
+}
+
+input.wpProQuiz_button2 {
+    border-radius: 6px !important;
+    padding: 9px 20px !important;
+}
+
+.single-sfwd-quiz .entry-content.alignfull.wp-block-post-content.has-global-padding.is-layout-constrained.wp-block-post-content-is-layout-constrained {
+    background: white;
+    padding: 30px;
+    max-width: 670px;
+    margin: auto;
+}
