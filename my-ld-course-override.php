@@ -99,6 +99,8 @@ function enqueue_quiz_resources() {
  * Require the course outline functionality from an external file.
  */
 require_once plugin_dir_path(__FILE__) . 'course-outline.php';
+require_once plugin_dir_path(__FILE__) . 'admin/admin-register.php';
+
 
 /**
  * Hook into 'wp_footer' to dynamically add the new div before entry content.
