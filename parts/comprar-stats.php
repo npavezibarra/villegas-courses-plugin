@@ -59,6 +59,17 @@ function mostrar_comprar_stats() {
         }
     }
 
+    // Retrieve the initial quiz ID and its URL
+    $first_quiz_id = get_post_meta($course_id, '_first_quiz_id', true);
+    if (!empty($first_quiz_id)) {
+        $quiz_post = get_post($first_quiz_id);
+        if ($quiz_post) {
+            $first_quiz_url = home_url('/quizzes/' . $quiz_post->post_name . '/');
+        }
+    } else {
+        $first_quiz_url = '#';
+    }
+
     // Calculate course progress based on completed lessons
     $total_lessons = count(learndash_get_course_steps($course_id));
     $completed_lessons = learndash_course_get_completed_steps_legacy($user_id, $course_id);
@@ -66,63 +77,71 @@ function mostrar_comprar_stats() {
     // Calculate percentage completion
     $percentage_complete = ($total_lessons > 0) ? min(100, ($completed_lessons / $total_lessons) * 100) : 0;
 
-        // Display the appropriate buttons based on login and enrollment status
-        if (!is_user_logged_in()) {
-            // User not logged in
-            ?>
-            <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
-                <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
-                    <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
-                        <div style="width: <?php echo esc_attr($percentage_complete); ?>%; background-color: #4c8bf5; height: 100%; border-radius: 5px;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
-                        <span>0%</span>
-                        <span>100%</span>
-                    </div>
+    // Display the appropriate buttons based on login and enrollment status
+    if (!is_user_logged_in()) {
+        // User not logged in
+        ?>
+        <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
+            <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
+                <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
+                    <div style="width: <?php echo esc_attr($percentage_complete); ?>%; background-color: #4c8bf5; height: 100%; border-radius: 5px;"></div>
                 </div>
-                <div class="buy-button" style="flex: 1; width: 50%; text-align: right;">
-                    <button style="width: 80%; background-color: #4c8bf5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 14px; cursor: pointer;"
-                            onclick="window.location.href='<?php echo wp_login_url(get_permalink($course_id)); ?>'">
-                        Iniciar Sesión para Comprar el Curso
-                    </button>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
+                    <span>0%</span>
+                    <span>100%</span>
                 </div>
             </div>
-            <?php
-        } elseif (!$is_enrolled) {
-            // User logged in but not enrolled (must purchase the course)
-            ?>
-            <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
-                <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
-                    <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
-                        <div style="width: 0%; background-color: #ccc; height: 100%; border-radius: 5px;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
-                        <span>0%</span>
-                        <span>100%</span>
-                    </div>
+            <div class="buy-button" style="flex: 1; width: 50%; text-align: right;">
+                <button style="width: 80%; background-color: #4c8bf5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 14px; cursor: pointer;"
+                        onclick="window.location.href='<?php echo wp_login_url(get_permalink($course_id)); ?>'">
+                    Iniciar Sesión para Comprar el Curso
+                </button>
+            </div>
+        </div>
+        <?php
+    } elseif (!$is_enrolled) {
+        // User logged in but not enrolled (must purchase the course)
+        ?>
+        <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
+            <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
+                <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
+                    <div style="width: 0%; background-color: #ccc; height: 100%; border-radius: 5px;"></div>
                 </div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
+                    <span>0%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+            <div class="action-buttons" style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+                <!-- Examen Inicial Button -->
+                <a href="<?php echo esc_url($first_quiz_url); ?>" class="button exam-inicial-btn" style="background-color: #2196f3; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
+                    Examen Inicial
+                </a>
+
+                <!-- Comprar Curso Button -->
                 <div class="buy-button" style="flex: 1; width: 50%; text-align: right;">
                     <button style="width: 80%; background-color: #4c8bf5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 14px; cursor: pointer;"
-                            onclick="window.location.href='<?php echo get_permalink($product_id); ?>'">
+                            onclick="window.location.href='<?php echo esc_url(get_permalink($product_id)); ?>'">
                         Comprar Curso
                     </button>
                 </div>
             </div>
-            <?php
-        } else {
-            // User is logged in and enrolled in the course
-            ?>
-            <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
-                <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
-                    <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
-                        <div style="width: <?php echo esc_attr($percentage_complete); ?>%; background-color: #4c8bf5; height: 100%; border-radius: 5px;"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
-                        <span><?php echo esc_html(round($percentage_complete)); ?>%</span>
-                        <span>100%</span>
-                    </div>
+        </div>
+        <?php
+    } else {
+        // User is logged in and enrolled in the course
+        ?>
+        <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
+            <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
+                <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
+                    <div style="width: <?php echo esc_attr($percentage_complete); ?>%; background-color: #4c8bf5; height: 100%; border-radius: 5px;"></div>
                 </div>
-                <div class="test-buttons" style="flex: 1; text-align: right; display: flex; gap: 20px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
+                    <span><?php echo esc_html(round($percentage_complete)); ?>%</span>
+                    <span>100%</span>
+                </div>
+            </div>
+            <div class="test-buttons" style="flex: 1; text-align: right; display: flex; gap: 20px;">
                 <!-- Quiz Percentage Display -->
                 <div id="primer-test-score" style="display: flex; width: 50%; justify-content: center; align-items: center;">
                     <?php
