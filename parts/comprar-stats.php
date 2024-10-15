@@ -91,9 +91,18 @@ function mostrar_comprar_stats() {
                     <span>100%</span>
                 </div>
             </div>
+            <?php
+                $register_page_id = get_option('villegas_lm_register_page_id'); // Correct key
+
+                if (!empty($register_page_id)) {
+                    $register_page_url = get_permalink($register_page_id); // Retrieve the permalink
+                } else {
+                    $register_page_url = '#';
+                }
+                ?>
             <div class="buy-button" style="flex: 1; width: 50%; text-align: right;">
                 <button style="width: 80%; background-color: #4c8bf5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 14px; cursor: pointer;"
-                        onclick="window.location.href='<?php echo wp_login_url(get_permalink($course_id)); ?>'">
+                        onclick="window.location.href='<?php echo esc_url($register_page_url . '?redirect_to=' . urlencode(get_permalink())); ?>'">
                     Iniciar Sesión para Comprar el Curso
                 </button>
             </div>

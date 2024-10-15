@@ -16,6 +16,9 @@ function registro_o_login_shortcode( $atts ) {
         'quiz_id' => 0, // Valor por defecto es 0, lo que significa que no hay ID de quiz
     ), $atts );
 
+    // Verificar si hay un redirect_to en la URL
+    $redirect_to = isset($_GET['redirect_to']) ? esc_url( $_GET['redirect_to'] ) : get_permalink();
+
     // Formulario de registro (se mostrará por defecto)
     $formulario = '<div class="registro-o-login">';
 
@@ -24,7 +27,7 @@ function registro_o_login_shortcode( $atts ) {
     $formulario .= '<p>o si ya eres miembro <a href="#" id="toggle-login" style="color:#d9534f;">haz login</a></p>';
     $formulario .= '<form name="registerform" id="registerform" action="' . esc_url( admin_url('admin-ajax.php') ) . '" method="post" novalidate="novalidate">';
     $formulario .= '<input type="hidden" name="action" value="register_user">';
-    $formulario .= '<input type="hidden" name="quiz_id" value="' . esc_attr( $atts['quiz_id'] ) . '">'; 
+    $formulario .= '<input type="hidden" name="quiz_id" value="' . esc_attr( $atts['quiz_id'] ) . '">';
 
     // Nombre y Apellido
     $formulario .= '<p>';
@@ -41,14 +44,16 @@ function registro_o_login_shortcode( $atts ) {
     $formulario .= '<label for="user_email">Email<br />';
     $formulario .= '<input type="email" name="user_email" id="user_email" class="input" value="" size="25" required /></label>';
     $formulario .= '</p>';
-    
+
+    // Hidden field for redirect_to for registration
+    $formulario .= '<input type="hidden" name="redirect_to" value="' . esc_url( $redirect_to ) . '" />';
+
     // Clave
     $formulario .= '<p>';
     $formulario .= '<label for="user_pass">Clave<br />';
     $formulario .= '<input type="password" name="user_pass" id="user_pass" class="input" value="" size="25" required /></label>';
     $formulario .= '</p>';
     
-    $formulario .= '<input type="hidden" name="redirect_to" value="' . esc_url( get_permalink() ) . '" />';
     $formulario .= '<p class="submit">';
     $formulario .= '<input type="submit" name="wp-submit" id="wp-submit" class="button button-primary button-large" value="Registrarme" />';
     $formulario .= '</p>';
@@ -60,10 +65,10 @@ function registro_o_login_shortcode( $atts ) {
     $formulario .= '<h3>Iniciar sesión</h3>';
     $formulario .= '<p>¿No tienes cuenta? <a href="#" id="toggle-register" style="color:#d9534f;">Regístrate aquí</a></p>';
 
-    // Add the login form
+    // Add the login form with redirect_to
     $formulario .= wp_login_form( array(
         'echo' => false, 
-        'redirect' => get_permalink(), 
+        'redirect' => $redirect_to, // Use dynamic redirect
         'label_username' => 'Nombre de usuario o correo electrónico', 
         'label_password' => 'Clave',
         'label_remember' => 'Recordarme',
@@ -79,7 +84,6 @@ function registro_o_login_shortcode( $atts ) {
     return $formulario;
 }
 add_shortcode( 'registro_o_login', 'registro_o_login_shortcode' );
-
 
 
 // Función para procesar el registro del usuario

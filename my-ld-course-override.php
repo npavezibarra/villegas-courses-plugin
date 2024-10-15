@@ -108,4 +108,40 @@ require_once plugin_dir_path(__FILE__) . 'admin/admin-register.php';
 add_action('wp_footer', 'insert_div_before_entry_content');
 
 
+
+
+
+
+add_action('template_redirect', 'villegas_lm_handle_redirection');
+
+function villegas_lm_handle_redirection() {
+    // Get the page ID from the saved option
+    $register_page_id = get_option('villegas_lm_register_page_id');
+    
+    // Check if we are on the register page
+    if (is_page($register_page_id)) {
+        echo '<p>Debug: On the register page. Page ID: ' . $register_page_id . '</p>';
+
+        // Check if the user is logged in
+        if (is_user_logged_in()) {
+            echo '<p>Debug: User is logged in.</p>';
+
+            // Check if the redirect_to parameter is present
+            if (isset($_GET['redirect_to'])) {
+                $redirect_url = esc_url($_GET['redirect_to']);
+                echo '<p>Debug: Redirect URL: ' . $redirect_url . '</p>';
+
+                // Redirect the user
+                wp_safe_redirect($redirect_url);
+                exit();
+            } else {
+                echo '<p>Debug: No redirect_to parameter found.</p>';
+            }
+        } else {
+            echo '<p>Debug: User is not logged in.</p>';
+        }
+    }
+}
+
+
 ?>
