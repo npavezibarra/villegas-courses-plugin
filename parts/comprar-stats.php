@@ -78,126 +78,149 @@ function mostrar_comprar_stats() {
     $percentage_complete = ($total_lessons > 0) ? min(100, ($completed_lessons / $total_lessons) * 100) : 0;
 
     // Display the appropriate buttons based on login and enrollment status
-    if (!is_user_logged_in()) {
-        // User not logged in
-        ?>
-        <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
-            <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
-                <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
-                    <div style="width: <?php echo esc_attr($percentage_complete); ?>%; background-color: #4c8bf5; height: 100%; border-radius: 5px;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
-                    <span>0%</span>
-                    <span>100%</span>
-                </div>
+// Display the appropriate buttons based on login and enrollment status
+if (!is_user_logged_in()) {
+    // User not logged in
+    ?>
+    <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
+        <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
+            <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
+                <div style="width: <?php echo esc_attr($percentage_complete); ?>%; background-color: #4c8bf5; height: 100%; border-radius: 5px;"></div>
             </div>
-            <?php
-                $register_page_id = get_option('villegas_lm_register_page_id'); // Correct key
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
+                <span>0%</span>
+                <span>100%</span>
+            </div>
+        </div>
+        <?php
+            $register_page_id = get_option('villegas_lm_register_page_id'); // Correct key
 
-                if (!empty($register_page_id)) {
-                    $register_page_url = get_permalink($register_page_id); // Retrieve the permalink
-                } else {
-                    $register_page_url = '#';
-                }
-                ?>
+            if (!empty($register_page_id)) {
+                $register_page_url = get_permalink($register_page_id); // Retrieve the permalink
+            } else {
+                $register_page_url = '#';
+            }
+            ?>
+        <div class="buy-button" style="flex: 1; width: 50%; text-align: right;">
+            <button style="width: 100%; background-color: #4c8bf5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 14px; cursor: pointer;"
+                    onclick="window.location.href='<?php echo esc_url($register_page_url . '?redirect_to=' . urlencode(get_permalink())); ?>'">
+                Iniciar Sesión para Comprar el Curso
+            </button>
+        </div>
+    </div>
+    <?php
+} elseif (!$is_enrolled) {
+    // User logged in but not enrolled (must purchase the course)
+    ?>
+    <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
+        <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
+            <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
+                <div style="width: 0%; background-color: #ccc; height: 100%; border-radius: 5px;"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
+                <span>0%</span>
+                <span>100%</span>
+            </div>
+        </div>
+        <div class="action-buttons" style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
+            <!-- Examen Inicial Button -->
+            <button onclick="window.location.href='<?php echo esc_url($first_quiz_url); ?>'" class="button exam-inicial-btn" style="background-color: #2196f3; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
+                Examen Inicial
+            </button>
+
+            <!-- Comprar Curso Button -->
             <div class="buy-button" style="flex: 1; width: 50%; text-align: right;">
                 <button style="width: 80%; background-color: #4c8bf5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 14px; cursor: pointer;"
-                        onclick="window.location.href='<?php echo esc_url($register_page_url . '?redirect_to=' . urlencode(get_permalink())); ?>'">
-                    Iniciar Sesión para Comprar el Curso
+                        onclick="window.location.href='<?php echo esc_url(get_permalink($product_id)); ?>'">
+                    Comprar Curso
                 </button>
             </div>
         </div>
-        <?php
-    } elseif (!$is_enrolled) {
-        // User logged in but not enrolled (must purchase the course)
-        ?>
-        <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
-            <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
-                <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
-                    <div style="width: 0%; background-color: #ccc; height: 100%; border-radius: 5px;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
-                    <span>0%</span>
-                    <span>100%</span>
-                </div>
+    </div>
+    <?php
+} else {
+    // User is logged in and enrolled in the course
+    ?>
+    <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
+        <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
+            <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
+                <div style="width: <?php echo esc_attr($percentage_complete); ?>%; background-color: #4c8bf5; height: 100%; border-radius: 5px;"></div>
             </div>
-            <div class="action-buttons" style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
-                <!-- Examen Inicial Button -->
-                <a href="<?php echo esc_url($first_quiz_url); ?>" class="button exam-inicial-btn" style="background-color: #2196f3; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none;">
-                    Examen Inicial
-                </a>
-
-                <!-- Comprar Curso Button -->
-                <div class="buy-button" style="flex: 1; width: 50%; text-align: right;">
-                    <button style="width: 80%; background-color: #4c8bf5; color: white; border: none; padding: 10px 20px; border-radius: 5px; font-size: 14px; cursor: pointer;"
-                            onclick="window.location.href='<?php echo esc_url(get_permalink($product_id)); ?>'">
-                        Comprar Curso
-                    </button>
-                </div>
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
+                <span><?php echo esc_html(round($percentage_complete)); ?>%</span>
+                <span>100%</span>
             </div>
         </div>
-        <?php
-    } else {
-        // User is logged in and enrolled in the course
-        ?>
-        <div class="progress-widget" style="display: flex; align-items: center; background-color: #eeeeee; padding: 20px 20px; border-radius: 10px; width: 100%;">
-            <div class="progress-bar" style="flex: 1; width: 50%; margin-right: 20px;">
-                <div style="background-color: #e0e0e0; height: 10px; border-radius: 5px; position: relative;">
-                    <div style="width: <?php echo esc_attr($percentage_complete); ?>%; background-color: #4c8bf5; height: 100%; border-radius: 5px;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #333;">
-                    <span><?php echo esc_html(round($percentage_complete)); ?>%</span>
-                    <span>100%</span>
-                </div>
+        <div class="test-buttons" style="flex: 1; text-align: right; display: flex; gap: 20px;">
+            <!-- Quiz Percentage Display -->
+            <div id="primer-test-score" style="display: flex; width: 50%; justify-content: center; align-items: center;">
+                <?php
+                // Check quiz attempts and display result
+                list($has_completed_quiz, $percentage_correct) = get_latest_quiz_percentage($user_id, $first_quiz_id);
+                if ($has_completed_quiz) {
+                    echo "<strong>$percentage_correct%</strong>"; // Show percentage
+                    echo '<p id="primer-test-legend">Primer Test</p>';
+                } else {
+                    echo '<button onclick="window.location.href=\'' . esc_url($first_quiz_url) . '\'" style="width: auto; color: white; border: none; width: 100%; height: auto; background: #2196f3; padding: 10px 0px; border-radius: 5px; font-size: 14px; text-align: center;">Examen Inicial</button>';
+                }
+                ?>
             </div>
-            <div class="test-buttons" style="flex: 1; text-align: right; display: flex; gap: 20px;">
-                <!-- Quiz Percentage Display -->
-                <div id="primer-test-score" style="display: flex; width: 50%; justify-content: center; align-items: center;">
-                    <?php
-                    // Check quiz attempts and display result
-                    list($has_completed_quiz, $percentage_correct) = get_latest_quiz_percentage($user_id, $first_quiz_id);
-                    if ($has_completed_quiz) {
-                        echo "<strong>$percentage_correct%</strong>"; // Show percentage
-                        echo '<p id="primer-test-legend">Primer Test</p>';
-                    } else {
-                        echo '<a href="' . esc_url($first_quiz_url) . '" style="width: auto; color: white; border: none; width: 100%; height: auto; background: #2196f3; padding: 10px 0px; border-radius: 5px; font-size: 14px; text-align: center; text-decoration: none;">
-                                Examen Inicial
-                            </a>';
-                    }
-                    ?>
-                </div>
-                <!-- Button with Tooltip for "Evaluación Final" -->
-                <div id="final-test-button" class="tooltip" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
-                    <?php
-                    // Check quiz attempts for the final exam
-                    list($has_completed_final_quiz, $final_percentage_correct) = get_latest_quiz_percentage($user_id, $final_quiz_id);
+            <!-- Button with Tooltip for "Evaluación Final" -->
+            <div id="final-test-button" class="tooltip" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <?php
 
-                    // Get the total number of lessons and completed lessons
-                    $total_lessons = count(learndash_get_course_steps($course_id));
-                    $completed_lessons = learndash_course_get_completed_steps_legacy($user_id, $course_id);
+                // Fetch all quizzes linked to the course dynamically
+                $quiz_query = new WP_Query(array(
+                    'post_type' => 'sfwd-quiz',
+                    'meta_key' => 'course_id',
+                    'meta_value' => $course_id,
+                    'posts_per_page' => -1,
+                ));
 
-                    // Check if all lessons are completed
-                    if ($completed_lessons === $total_lessons) {
-                        // All lessons completed, show clickable button linking to the final quiz
-                        echo '<a href="' . esc_url(get_permalink($final_quiz_id)) . '" style="width: 100%; background-color: #4c8bf5; color: white; border: none; padding: 10px 0px; border-radius: 5px; font-size: 14px; text-align: center; text-decoration: none;">
-                                Examen Final
-                              </a>';
-                    } elseif ($has_completed_final_quiz) {
-                        // Show the percentage if the final quiz has been completed
-                        echo "<strong>$final_percentage_correct%</strong><p>Examen Final</p>"; 
-                    } else {
-                        // Not completed, show disabled button
-                        echo '<button id="final-evaluation-button" style="width: 100%; background-color: #ccc; color: #333; border: none; padding: 10px 0px; border-radius: 5px; font-size: 14px; cursor: not-allowed; display: flex; align-items: center; justify-content: center;">
-                                Examen Final
-                              </button>';
+                // Initialize final quiz URL
+                $final_quiz_url = '';
+
+                if ($quiz_query->have_posts()) {
+                    while ($quiz_query->have_posts()) {
+                        $quiz_query->the_post();
+                        // Search for the quiz named 'Examen Final' (adjust if necessary)
+                        if (stripos(get_the_title(), 'Examen Final') !== false) {
+                            $final_quiz_url = get_permalink(); // Get the permalink of the final quiz
+                            break; // Break once we find the desired quiz
+                        }
                     }
-                    ?>
-                    <span class="tooltiptext">Completa todas las lecciones de este curso para tomar el Examen Final</span>
-                </div>
+                }
+
+                wp_reset_postdata(); // Always reset the post data after querying
+
+                // Check quiz attempts for the final exam
+                list($has_completed_final_quiz, $final_percentage_correct) = get_latest_quiz_percentage($user_id, $final_quiz_id);
+
+                // Get the total number of lessons and completed lessons
+                $total_lessons = count(learndash_get_course_steps($course_id));
+                $completed_lessons = learndash_course_get_completed_steps_legacy($user_id, $course_id);
+
+                // Check if all lessons are completed
+                if ($completed_lessons === $total_lessons && !empty($final_quiz_url)) {
+                    // All lessons completed, show clickable button linking to the final quiz
+                    echo '<button onclick="window.location.href=\'' . esc_url($final_quiz_url) . '\'" style="width: 100%; background-color: #4c8bf5; color: white; border: none; padding: 10px 0px; border-radius: 5px; font-size: 14px;">Examen Final</button>';
+                } elseif ($has_completed_final_quiz) {
+                    // Show the percentage if the final quiz has been completed
+                    echo "<strong>$final_percentage_correct%</strong><p>Examen Final</p>";
+                } else {
+                    // Not completed, show disabled button
+                    echo '<button id="final-evaluation-button" style="width: 100%; background-color: #ccc; color: #333; border: none; padding: 10px 0px; border-radius: 5px; font-size: 14px; cursor: not-allowed; display: flex; align-items: center; justify-content: center;">
+                            Examen Final
+                        </button>';
+                }
+                ?>
+                <span class="tooltiptext">Completa todas las lecciones de este curso para tomar el Examen Final</span>
             </div>
         </div>
-        <?php
-    }
+    </div>
+    <?php
+}
+
 }
 
 if (headers_sent($file, $line)) {

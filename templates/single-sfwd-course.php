@@ -1,6 +1,10 @@
 <?php
 get_header(); ?>
-
+<style>
+    html {
+    margin-top: 0px !important;
+}
+</style>
 
 <div id="main-menu">
     <div id="logo-website">
@@ -22,6 +26,27 @@ get_header(); ?>
     </nav>
     
 </div>
+<div id="mensaje-logeado">
+    <?php 
+    if (is_user_logged_in()) {
+        // Obtener el nombre del usuario actual
+        $current_user = wp_get_current_user();
+        $first_name = $current_user->user_firstname;
+        echo 'Hola ' . esc_html($first_name) . " "; // Mostrar saludo
+        
+        // Mostrar enlace de cerrar sesión solo si el usuario ha iniciado sesión
+        echo '<a class="logout-cuenta" href="' . esc_url(wp_logout_url(get_permalink())) . '">Cerrar sesión</a>';
+    } else {
+        // Obtener la página de Registro y Login "Ingresa Roma"
+        $register_page_check = get_page_by_path('ingresa-roma');
+        $register_page_url = $register_page_check ? get_permalink($register_page_check) : wp_login_url();
+
+        echo 'No estás logeado <a class="logout-cuenta" href="' . esc_url($register_page_url) . '">log in</a>'; // Redirigir a la nueva página Ingresa Roma
+    }
+    ?>
+</div>
+
+
 
 <div id="body-content" 
     style="background-image: url(<?php 
@@ -156,12 +181,13 @@ get_header(); ?>
     <div style="flex: 0 0 auto; margin-right: 20px;">
         <div class="user-photo-circle" style="width: 70px; height: 70px; border-radius: 50%; display: flex; justify-content: center; align-items: center; background-color: red;">
             <?php 
-            // Get user ID and photo URL
-            $user_id = get_current_user_id();
-            $user_photo_url = get_user_meta($user_id, 'profile_picture', true); // Adjust this key to match your implementation
+            // Get the author ID
+            $author_id = get_post_field('post_author', get_the_ID());
+            // Get the author's photo URL
+            $user_photo_url = get_user_meta($author_id, 'profile_picture', true); // Asegúrate de que esta clave sea correcta
 
             if ($user_photo_url) {
-                // If user has a profile photo, display it
+                // If the author has a profile photo, display it
                 echo '<img src="' . esc_url($user_photo_url) . '" alt="Profile Photo" style="width: 100%; height: 100%; border-radius: 50%;">';
             } else {
                 // Otherwise, display the initial
@@ -174,7 +200,6 @@ get_header(); ?>
     <div style="flex: 1;">
         <h2 style="margin: 0; font-size: 24px;">
             <?php 
-            $author_id = get_post_field('post_author', get_the_ID());
             $first_name = get_the_author_meta('first_name', $author_id);
             $last_name = get_the_author_meta('last_name', $author_id);
             echo esc_html($first_name . ' ' . $last_name); // Mostrar el nombre del autor
@@ -183,6 +208,7 @@ get_header(); ?>
         <p style="margin: 5px 0;"><?php echo esc_html(get_the_author_meta('description', $author_id)); ?></p>
     </div>
 </div>
+
 
 
 
