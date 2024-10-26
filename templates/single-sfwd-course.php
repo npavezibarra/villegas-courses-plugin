@@ -32,8 +32,11 @@ get_header(); ?>
         // Obtener el nombre del usuario actual
         $current_user = wp_get_current_user();
         $first_name = $current_user->user_firstname;
-        echo 'Hola ' . esc_html($first_name) . " "; // Mostrar saludo
-        
+        $display_name = $current_user->display_name; // Obtener el display name
+
+        // Mostrar saludo con First Name o Display Name
+        echo 'Hola ' . esc_html(!empty($first_name) ? $first_name : $display_name) . " "; // Priorizar First Name
+
         // Mostrar enlace de cerrar sesión solo si el usuario ha iniciado sesión
         echo '<a class="logout-cuenta" href="' . esc_url(wp_logout_url(get_permalink())) . '">Cerrar sesión</a>';
     } else {
@@ -45,6 +48,7 @@ get_header(); ?>
     }
     ?>
 </div>
+
 
 
 
@@ -198,7 +202,7 @@ get_header(); ?>
         </div>
     </div>
     <div style="flex: 1;">
-        <h2 style="margin: 0; font-size: 24px;">
+        <h2 style="margin: 0; font-size: 24px; text-align: left;">
             <?php 
             $first_name = get_the_author_meta('first_name', $author_id);
             $last_name = get_the_author_meta('last_name', $author_id);
@@ -208,9 +212,3 @@ get_header(); ?>
         <p style="margin: 5px 0;"><?php echo esc_html(get_the_author_meta('description', $author_id)); ?></p>
     </div>
 </div>
-
-
-
-
-
-
