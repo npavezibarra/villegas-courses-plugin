@@ -107,6 +107,12 @@ function enqueue_quiz_resources() {
 require_once plugin_dir_path(__FILE__) . 'course-outline.php';
 require_once plugin_dir_path(__FILE__) . 'login-register/create-page.php';
 require_once plugin_dir_path(__FILE__) . 'login-register/registration-login.php';
+// Incluye el archivo de confirmación de correo electrónico
+require_once plugin_dir_path(__FILE__) . 'login-register/email-confirmation.php';
+// Incluye el archivo de capacidades de usuario
+require_once plugin_dir_path(__FILE__) . 'login-register/user-capabilities.php';
+
+
 
 
 /**

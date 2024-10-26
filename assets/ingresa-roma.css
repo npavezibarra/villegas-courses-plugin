@@ -1,5 +1,5 @@
-/* Estilo común para ambos formularios */
-#form-container {
+/* Estilo común para ambos formularios en la página Ingresa Roma */
+#ingresa-roma #form-container {
     max-width: 400px;
     margin: 20px auto; /* Margen superior e inferior */
     padding: 20px; /* Padding del contenedor */
@@ -8,7 +8,7 @@
 }
 
 /* Títulos */
-h2 {
+#ingresa-roma h2 {
     font-family: 'Arial', sans-serif; /* O la fuente que uses */
     font-size: 24px;
     text-align: center;
@@ -16,34 +16,21 @@ h2 {
 }
 
 /* Estilo para los inputs */
-input[type="text"],
-input[type="email"],
-input[type="password"],
-#registration-form input[type="submit"],
-#login-form input[type="submit"] {
-    width: 100%; /* Ancho completo */
+#ingresa-roma input[type="text"],
+#ingresa-roma input[type="email"],
+#ingresa-roma input[type="password"],
+#ingresa-roma #registration-form input[type="submit"],
+#ingresa-roma #login-form input[type="submit"] {
+    width: calc(100%); /* Ancho completo */
     padding: 10px; /* Espaciado interno */
     margin: 10px 0; /* Espaciado inferior entre campos */
     border: 1px solid #ccc; /* Color de borde */
     border-radius: 5px; /* Bordes redondeados */
     font-size: 16px; /* Tamaño de la fuente */
-}
-
-/* Estilo para los inputs */
-input[type="text"],
-input[type="email"],
-input[type="password"] {
-    width: calc(100%); /* Ancho completo menos el padding */
-    padding: 10px; /* Espaciado interno */
-    margin: 10px 0; /* Espaciado inferior entre campos */
-    border: 1px solid #ccc; /* Color de borde */
-    border-radius: 5px; /* Bordes redondeados */
-    font-size: 16px; /* Tamaño de la fuente */
-    box-sizing: border-box; /* Incluye padding y borde en el ancho total */
 }
 
 /* Estilo común para los botones */
-input[type="submit"] {
+#ingresa-roma input[type="submit"] {
     width: 100%;
     padding: 10px;
     background-color: #000; /* Color de fondo negro */
@@ -56,36 +43,30 @@ input[type="submit"] {
 }
 
 /* Efecto hover para el botón */
-input[type="submit"]:hover {
+#ingresa-roma input[type="submit"]:hover {
     background-color: #444; /* Un gris más oscuro al pasar el mouse */
 }
 
-
 /* Estilo para párrafos en el formulario de inicio de sesión */
-#login-form p {
+#ingresa-roma #login-form p {
     text-align: center !important; /* Centrar el texto del párrafo */
     margin: auto;
 }
 
 /* Enlaces */
-a {
+#ingresa-roma a {
     color: #000; /* Color del enlace */
     text-decoration: none; /* Sin subrayado */
 }
 
-a:hover {
+#ingresa-roma a:hover {
     text-decoration: underline; /* Subrayar en hover */
 }
 
-p#form-subtitle {
+#ingresa-roma p#form-subtitle,
+#ingresa-roma p#form-subtitle-register,
+#ingresa-roma p#forgot-pass {
     text-align: center;
-}
-
-p#form-subtitle-register {
-    text-align: center;
-}
-
-p#forgot-pass {
-    text-align: center;
+    margin: auto;
     font-size: 12px;
 }
