@@ -18,21 +18,20 @@
 /* Estilo para los inputs */
 #ingresa-roma input[type="text"],
 #ingresa-roma input[type="email"],
-#ingresa-roma input[type="password"],
-#ingresa-roma #registration-form input[type="submit"],
-#ingresa-roma #login-form input[type="submit"] {
-    width: calc(100%); /* Ancho completo */
+#ingresa-roma input[type="password"] {
+    width: 100%; /* Ancho completo */
     padding: 10px; /* Espaciado interno */
     margin: 10px 0; /* Espaciado inferior entre campos */
     border: 1px solid #ccc; /* Color de borde */
     border-radius: 5px; /* Bordes redondeados */
     font-size: 16px; /* Tamaño de la fuente */
+    box-sizing: border-box; /* Incluye padding y borde en el ancho total */
 }
 
 /* Estilo común para los botones */
 #ingresa-roma input[type="submit"] {
-    width: 100%;
-    padding: 10px;
+    width: 100%; /* Ancho completo */
+    padding: 10px; /* Espaciado interno */
     background-color: #000; /* Color de fondo negro */
     color: #fff; /* Texto blanco */
     border: none; /* Sin bordes */
@@ -40,6 +39,7 @@
     font-size: 16px; /* Tamaño de la fuente */
     cursor: pointer; /* Cambia el cursor al pasar por encima */
     transition: background-color 0.3s ease; /* Suavizar el cambio de color */
+    margin: 10px 0; /* Espaciado superior e inferior */
 }
 
 /* Efecto hover para el botón */
@@ -63,6 +63,7 @@
     text-decoration: underline; /* Subrayar en hover */
 }
 
+/* Estilos para subtítulos y párrafos */
 #ingresa-roma p#form-subtitle,
 #ingresa-roma p#form-subtitle-register,
 #ingresa-roma p#forgot-pass {

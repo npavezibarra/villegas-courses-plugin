@@ -18,12 +18,32 @@ function handle_email_confirmation() {
             // Eliminar el código de confirmación después de usarlo
             delete_user_meta($user_id, 'confirmation_code');
 
-            // Mensaje de éxito (podrías redirigir a una página específica en vez de esto)
+            // Mensaje de éxito
+            echo '<div style="text-align: center; padding: 80px 0;">';
             echo '<h2>Tu cuenta ha sido confirmada. ¡Bienvenido!</h2>';
-            // Aquí podrías redirigir a la página principal o a la página de inicio de sesión
+            echo '<p>Por favor, haz clic en el botón para ir al curso.</p>';
+            echo '<a href="' . esc_url(home_url('/la-republica-romana')) . '" style="display: inline-block; padding: 10px 20px; background-color: #000; color: #fff; border-radius: 5px; text-decoration: none;">Ir al curso</a>';
+            echo '<p>O serás redirigido en <span id="countdown">5</span> segundos.</p>';
+            echo '</div>';
+
+            // JavaScript para redireccionar después de 5 segundos
+            echo '<script>
+                let countdown = 5;
+                const countdownElement = document.getElementById("countdown");
+                const interval = setInterval(() => {
+                    countdown--;
+                    countdownElement.textContent = countdown;
+                    if (countdown <= 0) {
+                        clearInterval(interval);
+                        window.location.href = "' . esc_url(home_url('/la-republica-romana')) . '";
+                    }
+                }, 1000);
+            </script>';
+
             exit; // Asegúrate de usar exit para detener la ejecución
         } else {
-            echo '<h2 style="text-align: center;">Código de confirmación inválido o ya utilizado.</h2>';
+            echo 'Código de confirmación inválido o ya utilizado.';
         }
     }
 }
+
