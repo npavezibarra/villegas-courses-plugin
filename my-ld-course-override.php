@@ -21,9 +21,17 @@ add_filter( 'template_include', 'my_custom_ld_course_template' );
 // Encolar estilo de Course Page
 function my_custom_ld_course_styles() {
     wp_enqueue_style( 'my-course-page-style', plugin_dir_url( __FILE__ ) . 'assets/course-page.css', array(), '1.0', 'all' );
+    wp_enqueue_style('ingresa-roma-css', plugins_url('assets/ingresa-roma.css', __FILE__));
+    wp_enqueue_script('form-toggle-js', plugins_url('login-register/form-toggle.js', __FILE__), array('jquery'), null, true);
 }
 add_action( 'wp_enqueue_scripts', 'my_custom_ld_course_styles' );
 
+
+// Encolar el archivo CSS
+    wp_enqueue_style('ingresa-roma-css', plugins_url('assets/ingresa-roma.css', __FILE__));
+    
+    // Encolar el archivo JavaScript
+    wp_enqueue_script('form-toggle-js', plugins_url('login-register/form-toggle.js', __FILE__), array('jquery'), null, true);
 // Incluir metabox personalizado
 include_once 'learndash-course-metabox.php';
 include plugin_dir_path( __FILE__ ) . 'parts/comprar-stats.php';
@@ -72,7 +80,7 @@ function enqueue_quiz_resources() {
         // Enqueue the custom JS for quiz message
         wp_enqueue_script('custom-quiz-message', $plugin_url . 'assets/custom-quiz-message.js', array(), '1.0.0', true);
 
-        // Pass the course name to JS via `wp_localize_script`
+        // Pass the course name to JS via wp_localize_script
         $course_id = learndash_get_course_id();
         $course_title = get_the_title($course_id);
         wp_localize_script('custom-quiz-message', 'quizData', array(
@@ -100,10 +108,13 @@ require_once plugin_dir_path(__FILE__) . 'course-outline.php';
 require_once plugin_dir_path(__FILE__) . 'login-register/create-page.php';
 require_once plugin_dir_path(__FILE__) . 'login-register/registration-login.php';
 
+
 /**
  * Hook into 'wp_footer' to dynamically add the new div before entry content.
  */
 add_action('wp_footer', 'insert_div_before_entry_content');
 
+// Register the shortcode for the registration/login functionality
+add_shortcode('villegas_registration_login', 'villegas_registration_login_shortcode');
 
 ?>

@@ -1,50 +1,91 @@
-#registration-form,
-#login-form {
-    background-color: #ffffff; /* Fondo del formulario */
-    border-radius: 10px; /* Bordes redondeados */
-    padding: 20px; /* Espaciado interno */
+/* Estilo común para ambos formularios */
+#form-container {
+    max-width: 400px;
     margin: 20px auto; /* Margen superior e inferior */
-    max-width: 400px; /* Ancho máximo del formulario */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Sombra */
+    padding: 20px; /* Padding del contenedor */
+    border-radius: 10px; /* Bordes redondeados */
+    background-color: #ffffff; /* Fondo blanco */
 }
 
-#registration-form h2,
-#login-form h2 {
-    text-align: center; /* Centrar el título */
-    font-size: 24px; /* Tamaño de la fuente del título */
+/* Títulos */
+h2 {
+    font-family: 'Arial', sans-serif; /* O la fuente que uses */
+    font-size: 24px;
+    text-align: center;
     margin-bottom: 15px; /* Espaciado inferior */
 }
 
-#registration-form input[type="text"],
-#registration-form input[type="email"],
-#registration-form input[type="password"],
-#login-form input[type="text"],
-#login-form input[type="password"] {
+/* Estilo para los inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+#registration-form input[type="submit"],
+#login-form input[type="submit"] {
     width: 100%; /* Ancho completo */
     padding: 10px; /* Espaciado interno */
-    margin-bottom: 15px; /* Espaciado inferior entre campos */
-    border: 1px solid #ccc; /* Bordes */
+    margin: 10px 0; /* Espaciado inferior entre campos */
+    border: 1px solid #ccc; /* Color de borde */
     border-radius: 5px; /* Bordes redondeados */
     font-size: 16px; /* Tamaño de la fuente */
 }
 
-#registration-form input[type="submit"],
-#login-form input[type="submit"] {
-    background-color: #000000; /* Color de fondo del botón */
-    color: #ffffff; /* Color del texto del botón */
-    border: none; /* Sin bordes */
+/* Estilo para los inputs */
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: calc(100%); /* Ancho completo menos el padding */
     padding: 10px; /* Espaciado interno */
+    margin: 10px 0; /* Espaciado inferior entre campos */
+    border: 1px solid #ccc; /* Color de borde */
+    border-radius: 5px; /* Bordes redondeados */
+    font-size: 16px; /* Tamaño de la fuente */
+    box-sizing: border-box; /* Incluye padding y borde en el ancho total */
+}
+
+/* Estilo común para los botones */
+input[type="submit"] {
+    width: 100%;
+    padding: 10px;
+    background-color: #000; /* Color de fondo negro */
+    color: #fff; /* Texto blanco */
+    border: none; /* Sin bordes */
     border-radius: 5px; /* Bordes redondeados */
     font-size: 16px; /* Tamaño de la fuente */
     cursor: pointer; /* Cambia el cursor al pasar por encima */
-    width: 100%; /* Ancho completo del botón */
+    transition: background-color 0.3s ease; /* Suavizar el cambio de color */
 }
 
-#registration-form input[type="submit"]:hover,
-#login-form input[type="submit"]:hover {
-    background-color: #444444; /* Color al pasar el mouse sobre el botón */
+/* Efecto hover para el botón */
+input[type="submit"]:hover {
+    background-color: #444; /* Un gris más oscuro al pasar el mouse */
 }
 
+
+/* Estilo para párrafos en el formulario de inicio de sesión */
 #login-form p {
-    text-align: center; /* Centrar el texto del párrafo */
+    text-align: center !important; /* Centrar el texto del párrafo */
+    margin: auto;
+}
+
+/* Enlaces */
+a {
+    color: #000; /* Color del enlace */
+    text-decoration: none; /* Sin subrayado */
+}
+
+a:hover {
+    text-decoration: underline; /* Subrayar en hover */
+}
+
+p#form-subtitle {
+    text-align: center;
+}
+
+p#form-subtitle-register {
+    text-align: center;
+}
+
+p#forgot-pass {
+    text-align: center;
+    font-size: 12px;
 }
