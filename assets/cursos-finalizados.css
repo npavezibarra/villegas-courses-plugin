@@ -1,0 +1,134 @@
+.curso-finalizado-box {
+    border: 1px solid #ddd;
+    padding: 20px;
+    margin: 20px;
+    border-radius: 8px;
+    background-color: #fff;
+    max-width: 600px;
+  }
+  
+  .curso-finalizado-box h2 {
+    font-size: 28px;
+    margin-bottom: 15px;
+    text-align: left;
+    font-family: 'Cardo';
+    font-weight: 800;
+  }
+  
+  .quiz-row-inicial, .quiz-row-final {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    gap: 20px;
+  }
+  
+  .quiz-label {
+    font-weight: bold;
+    font-size: 15px;
+  }
+  
+  .quiz-date {
+    font-size: 13px;
+    color: #555;
+  }
+  
+  .progress-bar-container {
+    flex: 1;
+    max-width: 300px;
+    height: 20px;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    background-color: #ff9800;
+    width: 0%;
+    transition: width 0.5s ease;
+  }
+  
+  .quiz-percentage {
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+  }
+
+  .progress-bar-container.empty-bar {
+    height: 24px;
+    background-color: #eee;
+    border-radius: 12px;
+    position: relative;
+    margin-top: 5px;
+  }
+  
+  .quiz-percentage.no-quiz {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: bold;
+    color: #444;
+  }
+  
+  
+  .tooltip-info {
+    cursor: help;
+    font-weight: normal;
+    font-size: 13px;
+    color: #666;
+    border-bottom: 1px dotted #aaa;
+  }
+  
+  .quiz-status-link {
+    color: #0073aa;
+    text-decoration: underline;
+    font-weight: bold;
+  }
+  
+  .quiz-status-link:hover {
+    color: #005177;
+  }
+  
+  .extra-quiz-stats {
+    text-align: right;
+    margin-top: 10px;
+    font-weight: bold;
+  }
+  
+  .quiz-variation {
+    font-size: 16px;
+  }
+  
+  .quiz-days {
+    font-size: 15px;
+  }
+
+  #progreso-porentaje {
+    font-size: 12px;
+    margin-top: 0px;
+  }
+
+  .quiz-status-locked {
+    font-weight: bold;
+    text-align: center;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.villegas-progress-container {
+  background-color: #e0e0e0;
+  height: 12px;
+  border-radius: 5px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.villegas-progress-bar {
+  height: 100%;
+  background-color: #ff9800;
+  border-radius: 5px;
+  transition: width 0.4s ease;
+}

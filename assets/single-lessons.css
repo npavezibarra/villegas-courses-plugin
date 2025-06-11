@@ -1,0 +1,92 @@
+#lesson-title-section > h3 {
+    text-align: left;
+    font-family: 'Cardo';
+    font-size: 28px;
+    margin-top: 30px;
+    margin-bottom: 0px;
+}
+
+#pertecene-curso {
+    font-size: 14px;
+    margin-top: 0px;
+    color: #333;
+    margin-bottom: 2px;
+}
+
+li.course-section-header > h4 {
+    margin: 10px 0;
+    padding: 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    font-family: sans-serif;
+    font-weight: 800;
+    color: black;
+}
+
+span#status-incomplete {
+    position: relative;
+    font-size: 11px;
+    font-family: sans-serif;
+    background: #e8e8e8;
+    color: #9a9a9a;
+    border-radius: 5px;
+    padding: 3px 5px;
+    bottom: 3px;
+}
+
+span#status-incomplete {
+    position: relative;
+    font-size: 11px;
+    font-family: sans-serif;
+    background: #e8e8e8;
+    color: #9a9a9a;
+    border-radius: 5px;
+    padding: 3px 5px;
+    bottom: 3px;
+}
+
+span#status-complete {
+    position: relative;
+    font-size: 11px;
+    font-family: sans-serif;
+    background: #ff9800;
+    color: white;
+    border-radius: 5px;
+    padding: 3px 5px;
+    bottom: 3px;
+}
+/* BORRE PARA UNIFORMAR LESSON COMPLETED Y NOT COMPLETED
+li.lesson-item.not-completed.current-lesson {
+    padding: 10px;
+}
+
+li.lesson-item.not-completed {
+    padding: 10px;
+}
+*/
+.learndash-wrapper #learndash_mark_complete_button:disabled, .learndash-wrapper .learndash_mark_complete_button:disabled {
+    background: #4c4c4c !important;
+    cursor: pointer;
+    filter: grayscale(100%);
+    border-radius: 6px !important;
+}
+
+input.learndash_mark_complete_button {
+    border-radius: 6px !important;
+}
+
+a.ld-button {
+    position: relative;
+    top: 12px;
+    justify-content: start !important;
+}
+
+
+input.wpProQuiz_button {
+    background: black !important;
+}
+
+
+.learndash-wrapper .ld-content-actions {
+    border-top: 1px solid #c0bebe !important;
+}

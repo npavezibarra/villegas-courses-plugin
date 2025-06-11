@@ -1,0 +1,35 @@
+.quiz-result {
+    width: 100%;
+    padding: 10px 0px !important;
+}
+
+.quiz-result > p {
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
+
+@media (max-width: 850px) {
+    .test-buttons {
+        flex-direction: column;
+        width: 350px;
+    }
+
+    div#primer-test-score {
+        width: 100% !important;
+    }
+
+    .progress-bar {
+        width: 350px !important;
+    }
+
+    .quiz-result {
+        padding: 10px 0px !important;
+    }
+}
+
+.examen-inicial {
+    width: 50%;
+    margin: auto !important;
+    text-align: center;
+}

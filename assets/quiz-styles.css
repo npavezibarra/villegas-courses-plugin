@@ -1,0 +1,95 @@
+#quiz-card {
+    text-align: center;
+    width: 600px;
+    margin: 10px auto;
+    padding: 40px 80px;
+    background: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #e2e7ed;
+    overflow: hidden;
+}
+
+.custom-quiz-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh; /* Asegura que ocupe toda la pantalla */
+    padding: 40px 20px; /* opcional, para que no quede pegado en pantallas pequeñas */
+}
+
+a.back-to-course-link {
+    color: #2890e8;
+    font-size: 12px;
+    margin: auto;
+    border: 1px solid #2890e8;
+    max-width: 134px;
+    margin-top: 20px;
+    border-radius: 3px;
+}
+
+#quiz-card > h1 {
+    font-size:28px;
+    font-weight: 800;
+    margin: 0px;
+}
+
+ul.wpProQuiz_questionList {
+    text-align: left;
+}
+
+.wpProQuiz_question_text > p {
+    font-weight:700;
+}
+
+p.wpProQuiz_points {
+    max-width: 595px;
+    margin: auto !important;
+}
+
+.ld-quiz-actions > div > input {
+    width: 200px !important;
+}
+
+input.wpProQuiz_button {
+    border-radius: 4px !important;
+}
+
+h4.wpProQuiz_header {
+    color: black;
+}
+
+.quiz-name {
+    margin: auto;
+}
+
+.wpProQuiz_question_text > p {
+    font-size: 28px;
+}
+
+body[class^="quiz-style-"] > .custom-quiz-layout {
+    min-height: 75dvh;
+}
+
+body[class^="quiz-style-"] > footer {
+    display: none;
+}
+
+@media (max-width: 550px) {
+    #quiz-card {
+        width: 100%;
+        padding: 30px;
+        border-radius:0px;
+    }
+
+    .custom-quiz-layout {
+        padding: 0px;
+    }
+
+    .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-container-core-group-is-layout-4.wp-block-group-is-layout-flex {
+        justify-content: space-between !important;
+    }
+
+    body[class^="quiz-style-"] > .custom-quiz-layout {
+        min-height: 0;
+    }
+}

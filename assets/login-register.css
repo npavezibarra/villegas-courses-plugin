@@ -1,0 +1,73 @@
+/* Estilo común para ambos formularios en la página Ingresa Roma */
+#ingresa-roma #form-container {
+    max-width: 400px;
+    margin: 20px auto; /* Margen superior e inferior */
+    padding: 20px; /* Padding del contenedor */
+    border-radius: 10px; /* Bordes redondeados */
+    background-color: #ffffff; /* Fondo blanco */
+}
+
+/* Títulos */
+#ingresa-roma h2 {
+    font-family: 'Arial', sans-serif; /* O la fuente que uses */
+    font-size: 24px;
+    text-align: center;
+    margin-bottom: 15px; /* Espaciado inferior */
+}
+
+/* Estilo para los inputs */
+#ingresa-roma input[type="text"],
+#ingresa-roma input[type="email"],
+#ingresa-roma input[type="password"] {
+    width: 100%; /* Ancho completo */
+    padding: 10px; /* Espaciado interno */
+    margin: 10px 0; /* Espaciado inferior entre campos */
+    border: 1px solid #ccc; /* Color de borde */
+    border-radius: 5px; /* Bordes redondeados */
+    font-size: 16px; /* Tamaño de la fuente */
+    box-sizing: border-box; /* Incluye padding y borde en el ancho total */
+}
+
+/* Estilo común para los botones */
+#ingresa-roma input[type="submit"] {
+    width: 100%; /* Ancho completo */
+    padding: 10px; /* Espaciado interno */
+    background-color: #000; /* Color de fondo negro */
+    color: #fff; /* Texto blanco */
+    border: none; /* Sin bordes */
+    border-radius: 5px; /* Bordes redondeados */
+    font-size: 16px; /* Tamaño de la fuente */
+    cursor: pointer; /* Cambia el cursor al pasar por encima */
+    transition: background-color 0.3s ease; /* Suavizar el cambio de color */
+    margin: 10px 0; /* Espaciado superior e inferior */
+}
+
+/* Efecto hover para el botón */
+#ingresa-roma input[type="submit"]:hover {
+    background-color: #444; /* Un gris más oscuro al pasar el mouse */
+}
+
+/* Estilo para párrafos en el formulario de inicio de sesión */
+#ingresa-roma #login-form p {
+    text-align: center !important; /* Centrar el texto del párrafo */
+    margin: auto;
+}
+
+/* Enlaces */
+#ingresa-roma a {
+    color: #000; /* Color del enlace */
+    text-decoration: none; /* Sin subrayado */
+}
+
+#ingresa-roma a:hover {
+    text-decoration: underline; /* Subrayar en hover */
+}
+
+/* Estilos para subtítulos y párrafos */
+#ingresa-roma p#form-subtitle,
+#ingresa-roma p#form-subtitle-register,
+#ingresa-roma p#forgot-pass {
+    text-align: center;
+    margin: auto;
+    font-size: 12px;
+}
