@@ -93,3 +93,18 @@ body[class^="quiz-style-"] > footer {
         min-height: 0;
     }
 }
+
+#quiz-card .ld-alert.ld-alert-warning {
+    display: none !important;
+}
+  
+
+div#reiniciar-quiz {
+    background: white;
+    padding: 20px;
+    border-radius: 4px;
+}
+
+div#reiniciar-quiz>p {
+    font-size:14px;
+}

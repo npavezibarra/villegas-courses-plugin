@@ -124,3 +124,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
+
+<script>
+jQuery(document).ready(function($) {
+    $('.reiniciar-quiz-btn').on('click', function() {
+        const quiz_id = $(this).data('quiz-id');
+        const msgDiv = $('#reiniciar-quiz-msg');
+
+        $.post({
+            url: '<?php echo admin_url("admin-ajax.php"); ?>',
+            data: {
+                action: 'reiniciar_quiz',
+                quiz_id: quiz_id
+            },
+            success: function(response) {
+                msgDiv.html(response.data).css('color', response.success ? 'green' : 'red');
+                if (response.success) location.reload();
+            },
+            error: function() {
+                msgDiv.html('Error al procesar la solicitud.').css('color', 'red');
+            }
+        });
+    });
+});
+</script>
+
