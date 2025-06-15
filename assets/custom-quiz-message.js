@@ -1,33 +1,27 @@
 document.addEventListener("DOMContentLoaded", function () {
-    var startQuizButton = document.querySelector('.wpProQuiz_button[name="startQuiz"]');
+    const startQuizButton = document.querySelector('.wpProQuiz_button[name="startQuiz"]');
 
     if (
         startQuizButton &&
         typeof quizData !== 'undefined' &&
-        !document.getElementById('quiz-start-message') // evita duplicado
+        !document.getElementById('quiz-start-message')
     ) {
-        // Crear contenedor
-        var messageDiv = document.createElement('div');
+        const messageDiv = document.createElement('div');
         messageDiv.className = 'custom-quiz-message';
         messageDiv.id = 'quiz-start-message';
 
-        // Texto condicional según tipo de prueba
-        var messageContent = '';
+        let messageContent = `
+            <a id="back-to-course-link" href="${document.referrer}" class="back-to-course-link">Volver al curso</a>
+        `;
+
         if (quizData.type === 'first') {
-            messageContent = `
-                <a id="back-to-course-link" href="${document.referrer}" class="back-to-course-link">Volver al curso</a>
-                <p id="quiz-start-paragraph">
-                    Estás a punto de realizar la <strong>Prueba Inicial</strong> del curso <strong>${quizData.courseName}</strong>. 
-                    Esta evaluación tiene como objetivo medir tus conocimientos antes de comenzar. Consta de 30 preguntas contrarreloj, 
-                    con 45 segundos para cada una. Recuerda que solo puedes rendirla 3 veces. 
-                    <br><br>
-                    Una vez finalices todas las lecciones del curso, podrás acceder a la Prueba Final para comparar tu progreso. 
-                    ¡Te deseamos lo mejor!
-                </p>
+            messageContent += `
+                <div id="quiz-start-paragraph">
+                    ${quizData.description || '<p style="color:red;">(Falta la descripción del quiz)</p>'}
+                </div>
             `;
         } else if (quizData.type === 'final') {
-            messageContent = `
-                <a id="back-to-course-link" href="${document.referrer}" class="back-to-course-link">Volver al curso</a>
+            messageContent += `
                 <p id="quiz-start-paragraph">
                     Estás a punto de rendir la <strong>Prueba Final</strong> del curso <strong>${quizData.courseName}</strong>. 
                     Esta evaluación final te permitirá conocer cuánto has avanzado desde que comenzaste. 
@@ -39,11 +33,11 @@ document.addEventListener("DOMContentLoaded", function () {
             `;
         }
 
-        // Agregar contenido e insertar
         messageDiv.innerHTML = messageContent;
         startQuizButton.parentNode.insertBefore(messageDiv, startQuizButton);
     }
 });
+
 
 jQuery(document).on('learndash-quiz-finished', function () {
     if (typeof quizData !== 'undefined' && quizData.type === 'final') {

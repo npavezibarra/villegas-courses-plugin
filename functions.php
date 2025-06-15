@@ -155,17 +155,19 @@ function villegas_inyectar_quiz_data_footer() {
 
     ?>
     <script>
-        var quizData = {
-            courseName: <?php echo json_encode($course_title); ?>,
-            type: <?php echo json_encode($type); ?>,
-            userId: <?php echo json_encode($current_user_id); ?>, // <-- Añadir userId
-            quizId: <?php echo json_encode($quiz_id); ?> // <-- Añadir quizId
-        };
-        // Asegurarse de que ajax_object también está disponible si no fue localizado antes
-        // (Aunque tu otro código ya lo hace, es buena práctica tener un fallback o comprobar)
-        var ajax_object = ajax_object || { ajaxurl: '<?php echo admin_url('admin-ajax.php'); ?>' };
+    window.quizData = Object.assign(window.quizData || {}, {
+        courseName: <?php echo json_encode($course_title); ?>,
+        type: <?php echo json_encode($type); ?>,
+        userId: <?php echo json_encode($current_user_id); ?>,
+        quizId: <?php echo json_encode($quiz_id); ?>
+    });
 
-    </script>
+    // Fallback para ajax_object si no ha sido definido en otro lugar
+    window.ajax_object = window.ajax_object || {
+        ajaxurl: '<?php echo admin_url('admin-ajax.php'); ?>'
+    };
+</script>
+
     <?php
 }
 // Asegúrate de que esta función esté enganchada correctamente, como ya lo tienes:

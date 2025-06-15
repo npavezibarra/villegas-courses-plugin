@@ -189,12 +189,17 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     $type      = $analytics->isFirstQuiz() ? 'first' : 'final';
 
 
-    wp_localize_script( 'custom-quiz-message', 'quizData', [
-        'quizId'     => $quiz_id,
-        'userId'     => get_current_user_id(),
-        'courseName' => $course_title,
-        'type'       => $type
-    ] );
+    $quiz_description_raw = get_post_field('post_content', $quiz_id);
+$quiz_description = $quiz_description_raw ? apply_filters('the_content', do_blocks($quiz_description_raw)) : '';
+
+wp_localize_script( 'custom-quiz-message', 'quizData', [
+    'quizId'      => $quiz_id,
+    'userId'      => get_current_user_id(),
+    'courseName'  => $course_title,
+    'type'        => $type,
+    'description' => $quiz_description
+] );
+
 
     // ajax_object.ajaxurl → para la llamada POST
     wp_localize_script( 'custom-quiz-message', 'ajax_object', [

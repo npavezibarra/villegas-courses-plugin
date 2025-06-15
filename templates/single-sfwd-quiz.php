@@ -43,6 +43,13 @@ body.<?php echo esc_attr( $body_class ); ?> {
 }
 </style>
 <?php endif; ?>
+<?php
+$quiz_description_raw = get_post_field('post_content', $quiz_id);
+$quiz_description = $quiz_description_raw ? apply_filters('the_content', do_blocks($quiz_description_raw)) : '';
+
+$quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
+?>
 
 <body class="<?php echo esc_attr( $body_class ); ?>">
 
@@ -85,6 +92,7 @@ body.<?php echo esc_attr( $body_class ); ?> {
 
     </div>
   </div>
+
 
 </body>
 
