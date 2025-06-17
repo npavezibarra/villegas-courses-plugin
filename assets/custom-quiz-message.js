@@ -10,34 +10,17 @@ document.addEventListener("DOMContentLoaded", function () {
         messageDiv.className = 'custom-quiz-message';
         messageDiv.id = 'quiz-start-message';
 
-        let messageContent = `
+        const messageContent = `
             <a id="back-to-course-link" href="${document.referrer}" class="back-to-course-link">Volver al curso</a>
+            <div id="quiz-start-paragraph">
+                ${quizData.description || '<p style="color:red;">(Falta la descripción del quiz)</p>'}
+            </div>
         `;
-
-        if (quizData.type === 'first') {
-            messageContent += `
-                <div id="quiz-start-paragraph">
-                    ${quizData.description || '<p style="color:red;">(Falta la descripción del quiz)</p>'}
-                </div>
-            `;
-        } else if (quizData.type === 'final') {
-            messageContent += `
-                <p id="quiz-start-paragraph">
-                    Estás a punto de rendir la <strong>Prueba Final</strong> del curso <strong>${quizData.courseName}</strong>. 
-                    Esta evaluación final te permitirá conocer cuánto has avanzado desde que comenzaste. 
-                    Al completarla, recibirás una tabla comparativa entre esta prueba y la inicial, para que puedas visualizar tu progreso.
-                    <br><br>
-                    Consta de 30 preguntas contrarreloj, con un límite de 45 segundos por pregunta. 
-                    Tienes un máximo de 3 intentos. ¡Mucho éxito!
-                </p>
-            `;
-        }
 
         messageDiv.innerHTML = messageContent;
         startQuizButton.parentNode.insertBefore(messageDiv, startQuizButton);
     }
 });
-
 
 jQuery(document).on('learndash-quiz-finished', function () {
     if (typeof quizData !== 'undefined' && quizData.type === 'final') {
