@@ -495,29 +495,31 @@ $is_checked = ($puntaje_privado === '1' || $puntaje_privado === 1) ? 'checked' :
         var isFirstQuiz = <?php echo $is_first_quiz ? 'true' : 'false'; ?>;
 
         jQuery(document).ready(function($) {
-    $(document).on('learndash-quiz-finished', function() {
-        var correctAnswers = parseInt($('.wpProQuiz_correct_answer').text(), 10);
-        var totalQuestions = parseInt($('.total-questions').text(), 10);
+            const firstQuizNonce = (typeof quizData !== 'undefined' && quizData.firstQuizNonce) ? quizData.firstQuizNonce : '';
 
-        if (!isNaN(correctAnswers) && totalQuestions > 0) {
-            var percentage = Math.round((correctAnswers / totalQuestions) * 100);
-            $('#quiz-percentage').text(percentage + '%');
-            $('#quiz-progress-bar').css('width', percentage + '%');
+            $(document).on('learndash-quiz-finished', function() {
+                var correctAnswers = parseInt($('.wpProQuiz_correct_answer').text(), 10);
+                var totalQuestions = parseInt($('.total-questions').text(), 10);
 
-            if (isFirstQuiz) {
-                $.post(ajaxurl, {
-                    action: 'enviar_correo_first_quiz',
-                    quiz_percentage: percentage,
-                    quiz_id: <?php echo (int)$quiz_id; ?>,
-                    user_id: <?php echo get_current_user_id(); ?>
-                }, function(response) {
-                    console.log('Correo enviado (First Quiz):', response);
-                });
-            } 
-            // IMPORTANTE: No hacer nada aquí si es Final Quiz.
-        }
-    });
-});
+                if (!isNaN(correctAnswers) && totalQuestions > 0) {
+                    var percentage = Math.round((correctAnswers / totalQuestions) * 100);
+                    $('#quiz-percentage').text(percentage + '%');
+                    $('#quiz-progress-bar').css('width', percentage + '%');
+
+                    if (isFirstQuiz) {
+                        $.post(ajaxurl, {
+                            action: 'enviar_correo_first_quiz',
+                            quiz_percentage: percentage,
+                            quiz_id: <?php echo (int)$quiz_id; ?>,
+                            nonce: firstQuizNonce
+                        }, function(response) {
+                            console.log('Correo enviado (First Quiz):', response);
+                        });
+                    }
+                    // IMPORTANTE: No hacer nada aquí si es Final Quiz.
+                }
+            });
+        });
 
         </script>
 

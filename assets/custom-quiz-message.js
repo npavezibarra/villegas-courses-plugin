@@ -24,6 +24,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
 jQuery(document).on('learndash-quiz-finished', function () {
     if (typeof quizData !== 'undefined' && quizData.type === 'final') {
+        var finalQuizNonce = quizData.finalQuizNonce || '';
+
+        if (!finalQuizNonce) {
+            console.error('No se encontró nonce para el Final Quiz. Abortando envío.');
+            return;
+        }
+
         var correctAnswers = parseInt(jQuery('.wpProQuiz_correct_answer').text(), 10);
         var totalQuestions = parseInt(jQuery('.total-questions').text(), 10);
         if (isNaN(correctAnswers) || totalQuestions <= 0) return;
@@ -40,9 +47,9 @@ jQuery(document).on('learndash-quiz-finished', function () {
 
             jQuery.post(ajax_object.ajaxurl, {
                 action: 'enviar_correo_final_quiz',
-                user_id: quizData.userId,
                 quiz_id: quizData.quizId,
-                quiz_percentage: percentage
+                quiz_percentage: percentage,
+                nonce: finalQuizNonce
             }, function (response) {
                 if (response.success) {
                     console.log('📩 FINAL QUIZ EMAIL response:', response);
