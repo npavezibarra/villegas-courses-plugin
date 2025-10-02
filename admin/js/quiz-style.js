@@ -1,4 +1,11 @@
 jQuery(document).ready(function($) {
+    const ajaxUrl = (typeof villegasQuizStyleData !== 'undefined' && villegasQuizStyleData.ajaxurl)
+        ? villegasQuizStyleData.ajaxurl
+        : (typeof ajaxurl !== 'undefined' ? ajaxurl : '');
+    const securityNonce = (typeof villegasQuizStyleData !== 'undefined' && villegasQuizStyleData.security)
+        ? villegasQuizStyleData.security
+        : '';
+
     $('.select-image-button').click(function(e) {
         e.preventDefault();
         const button = $(this);
@@ -19,10 +26,11 @@ jQuery(document).ready(function($) {
             previewContainer.html('<img src="' + attachment.sizes.thumbnail.url + '" style="max-width:80px;">');
 
             // Guardar por AJAX
-            $.post(ajaxurl, {
+            $.post(ajaxUrl, {
                 action: 'guardar_imagen_estilo_quiz',
                 quiz_id: quizID,
-                image_id: attachment.id
+                image_id: attachment.id,
+                security: securityNonce
             }, function(response) {
                 if (response.success) {
                     console.log('Imagen guardada');

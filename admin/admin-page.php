@@ -79,5 +79,13 @@ function villegas_admin_quizzes_page() {
     // Encolar JS
     wp_enqueue_media();
     wp_enqueue_script('villegas-quiz-style', plugin_dir_url(__FILE__) . 'js/quiz-style.js', ['jquery'], '1.0', true);
+    wp_localize_script(
+        'villegas-quiz-style',
+        'villegasQuizStyleData',
+        [
+            'ajaxurl'  => admin_url('admin-ajax.php'),
+            'security' => wp_create_nonce('guardar_imagen_estilo_quiz'),
+        ]
+    );
 }
 
