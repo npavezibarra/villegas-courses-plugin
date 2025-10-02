@@ -230,6 +230,8 @@ function villegas_enqueue_quiz_float_fix() {
 add_action('wp_enqueue_scripts', 'villegas_enqueue_quiz_float_fix');
 
 add_action('wp_ajax_guardar_imagen_estilo_quiz', function () {
+    check_ajax_referer('guardar_imagen_estilo_quiz', 'security');
+
     if (!current_user_can('manage_options')) {
         wp_send_json_error('No autorizado');
     }
@@ -566,11 +568,12 @@ function villegas_enqueue_puntaje_privado_script() {
             '1.0',
             true
         );
-        
+
         wp_localize_script('puntaje-privado', 'puntajePrivadoData', [
             'ajaxurl' => admin_url('admin-ajax.php'),
-            'userId'  => get_current_user_id()
-        ]);        
+            'userId'  => get_current_user_id(),
+            'security' => wp_create_nonce('guardar_privacidad_puntaje'),
+        ]);
     }
 }
 
@@ -579,6 +582,8 @@ function villegas_enqueue_puntaje_privado_script() {
 add_action('wp_ajax_guardar_privacidad_puntaje', 'villegas_guardar_privacidad_puntaje');
 
 function villegas_guardar_privacidad_puntaje() {
+    check_ajax_referer('guardar_privacidad_puntaje', 'security');
+
     $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
     $puntaje_privado = isset($_POST['puntaje_privado']) && $_POST['puntaje_privado'] === '1';
 

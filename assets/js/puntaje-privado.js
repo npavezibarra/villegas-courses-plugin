@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log('Enviando AJAX:', {
             action: 'guardar_privacidad_puntaje',
             user_id: userId,
-            puntaje_privado: isPrivate ? '1' : '0'
+            puntaje_privado: isPrivate ? '1' : '0',
+            security: puntajePrivadoData.security
         });
 
         fetch(puntajePrivadoData.ajaxurl, {
@@ -19,7 +20,8 @@ document.addEventListener('DOMContentLoaded', function () {
             body: new URLSearchParams({
                 action: 'guardar_privacidad_puntaje',
                 user_id: userId,
-                puntaje_privado: isPrivate ? '1' : '0'
+                puntaje_privado: isPrivate ? '1' : '0',
+                security: puntajePrivadoData.security
             })
         })
         .then(res => res.json())
