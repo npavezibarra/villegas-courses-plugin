@@ -1,0 +1,7 @@
+# Composer
+/vendor/
+composer.lock
+
+# Local dev
+.phpcs.xml
+includes/Test.php
