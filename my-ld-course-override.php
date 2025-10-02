@@ -188,16 +188,21 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     $analytics = new QuizAnalytics($quiz_id, get_current_user_id());
     $type      = $analytics->isFirstQuiz() ? 'first' : 'final';
 
+    $first_quiz_nonce = wp_create_nonce( 'enviar_correo_first_quiz' );
+    $final_quiz_nonce = wp_create_nonce( 'enviar_correo_final_quiz' );
+
 
     $quiz_description_raw = get_post_field('post_content', $quiz_id);
 $quiz_description = $quiz_description_raw ? apply_filters('the_content', do_blocks($quiz_description_raw)) : '';
 
 wp_localize_script( 'custom-quiz-message', 'quizData', [
-    'quizId'      => $quiz_id,
-    'userId'      => get_current_user_id(),
-    'courseName'  => $course_title,
-    'type'        => $type,
-    'description' => $quiz_description
+    'quizId'          => $quiz_id,
+    'userId'          => get_current_user_id(),
+    'courseName'      => $course_title,
+    'type'            => $type,
+    'description'     => $quiz_description,
+    'firstQuizNonce'  => $first_quiz_nonce,
+    'finalQuizNonce'  => $final_quiz_nonce,
 ] );
 
 
@@ -310,28 +315,40 @@ function el_villegas_override_single_sfwd_quiz($template) {
 
 /* EMAIL FIRST QUIZ */
 
-// Registrar el endpoint AJAX para usuarios logueados y no logueados
+// Registrar el endpoint AJAX para usuarios logueados
 add_action('wp_ajax_enviar_correo_first_quiz', 'enviar_correo_first_quiz_handler');
-add_action('wp_ajax_nopriv_enviar_correo_first_quiz', 'enviar_correo_first_quiz_handler');
 
 function enviar_correo_first_quiz_handler() {
+    check_ajax_referer( 'enviar_correo_first_quiz', 'nonce' );
+
+    if ( ! is_user_logged_in() ) {
+        wp_send_json_error( 'No autorizado' );
+    }
+
+    $req = wp_unslash( $_POST );
+
+    $current_user_id = get_current_user_id();
+    $target_user_id  = isset( $req['user_id'] ) ? (int) $req['user_id'] : 0;
+
+    if ( $target_user_id && $target_user_id !== $current_user_id ) {
+        wp_send_json_error( 'Usuario no autorizado' );
+    }
+
     global $wpdb;
 
     // Recibir y sanitizar los datos enviados vía AJAX
-    $quiz_percentage = isset($_POST['quiz_percentage']) ? intval($_POST['quiz_percentage']) : 0;
-    $quiz_id = isset($_POST['quiz_id']) ? intval($_POST['quiz_id']) : 0;
-    $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
+    $quiz_percentage = isset( $req['quiz_percentage'] ) ? (int) $req['quiz_percentage'] : 0;
+    $quiz_id         = isset( $req['quiz_id'] ) ? (int) $req['quiz_id'] : 0;
+    $user_id         = $current_user_id;
 
-    if ( !$user_id || !$quiz_id ) {
-        wp_send_json_error('Datos faltantes');
-        wp_die();
+    if ( ! $user_id || ! $quiz_id ) {
+        wp_send_json_error( 'Datos faltantes' );
     }
 
     // Obtener datos del usuario
-    $user = get_userdata($user_id);
-    if ( !$user ) {
-        wp_send_json_error('Usuario no encontrado');
-        wp_die();
+    $user = get_userdata( $user_id );
+    if ( ! $user ) {
+        wp_send_json_error( 'Usuario no encontrado' );
     }
     $user_email = $user->user_email;
     $user_name  = $user->display_name;
@@ -428,18 +445,30 @@ function enviar_correo_first_quiz_handler() {
 /* --------------------------------------------------------------------------
  *  FINAL QUIZ – ENVÍO DE CORREO CON PLANTILLA (una vez por intento)
  * --------------------------------------------------------------------------*/
-add_action( 'wp_ajax_enviar_correo_final_quiz',        'handle_enviar_correo_final_quiz' );
-add_action( 'wp_ajax_nopriv_enviar_correo_final_quiz', 'handle_enviar_correo_final_quiz' );
+add_action( 'wp_ajax_enviar_correo_final_quiz', 'handle_enviar_correo_final_quiz' );
 
 function handle_enviar_correo_final_quiz() {
-	$req             = wp_unslash( $_POST );
-	$quiz_id         = isset( $req['quiz_id'] )         ? (int) $req['quiz_id']         : 0;
-	$user_id         = isset( $req['user_id'] )         ? (int) $req['user_id']         : get_current_user_id();
-	$quiz_percentage = isset( $req['quiz_percentage'] ) ? (int) $req['quiz_percentage'] : 0;
+        check_ajax_referer( 'enviar_correo_final_quiz', 'nonce' );
 
-	if ( ! $quiz_id || ! $user_id ) {
-		wp_send_json_error( 'Datos incompletos' );
-	}
+        if ( ! is_user_logged_in() ) {
+                wp_send_json_error( 'No autorizado' );
+        }
+
+        $req             = wp_unslash( $_POST );
+        $quiz_id         = isset( $req['quiz_id'] )         ? (int) $req['quiz_id']         : 0;
+        $requested_user  = isset( $req['user_id'] )         ? (int) $req['user_id']         : 0;
+        $current_user_id = get_current_user_id();
+
+        if ( $requested_user && $requested_user !== $current_user_id ) {
+                wp_send_json_error( 'Usuario no autorizado' );
+        }
+
+        $user_id         = $current_user_id;
+        $quiz_percentage = isset( $req['quiz_percentage'] ) ? (int) $req['quiz_percentage'] : 0;
+
+        if ( ! $quiz_id || ! $user_id ) {
+                wp_send_json_error( 'Datos incompletos' );
+        }
 
 	global $wpdb;
 
