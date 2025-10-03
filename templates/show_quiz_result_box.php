@@ -170,6 +170,17 @@ if ( $latest_activity_pending ) {
     gap: 6px;
     align-items: center;
 }
+.built-in-result,
+.custom-result {
+    background: #f7f7f7;
+    border-radius: 8px;
+    margin-top: 16px;
+    padding: 16px;
+}
+.built-in-result h3,
+.custom-result h3 {
+    margin-top: 0;
+}
 .politeia-score-highlight {
     font-size: 32px;
     font-weight: 700;
@@ -333,6 +344,20 @@ if ( $latest_activity_pending ) {
             </span>
         </div>
 
+        <div class="built-in-result">
+            <h3>Built-in LearnDash Result</h3>
+            <p>ID de usuario: <?php echo esc_html( $user_id ); ?></p>
+            <p>ID de actividad: <?php echo $latest_activity_id > 0 ? esc_html( $latest_activity_id ) : '—'; ?></p>
+            <p>Puntaje: <?php echo $current_percentage_value !== null ? esc_html( $current_percentage_value . '%' ) : '—'; ?></p>
+        </div>
+
+        <div class="custom-result">
+            <h3>Politeia Custom Result (AJAX)</h3>
+            <p>ID de usuario: <span id="custom-user-id"><?php echo esc_html( $user_id ); ?></span></p>
+            <p>ID de actividad: <span id="custom-activity-id">—</span></p>
+            <p>Puntaje: <span id="custom-percentage">—</span></p>
+        </div>
+
         <div
             id="politeia-loading-notice"
             class="politeia-loading-notice"
@@ -489,6 +514,8 @@ if ( $latest_activity_pending ) {
             : (ajaxConfig.activityNonce || '')
     };
 
+    window.quizConfig = quizConfig;
+
     const ajaxUrl = ajaxConfig.ajaxUrl || '';
     const defaultRetry = parseInt(ajaxConfig.retryAfter, 10) > 0 ? parseInt(ajaxConfig.retryAfter, 10) : 5;
     const maxPollRetries = 30;
@@ -503,6 +530,17 @@ if ( $latest_activity_pending ) {
     const restoreLastAttempt = (typeof window.restoreLastAttemptState === 'function')
         ? window.restoreLastAttemptState.bind(window)
         : null;
+
+    const customActivityEl = $('#custom-activity-id');
+    const customPercentageEl = $('#custom-percentage');
+
+    let customLastSeenActivityId = 0;
+    if (typeof quizConfig.currentActivityId === 'number' && !isNaN(quizConfig.currentActivityId)) {
+        customLastSeenActivityId = quizConfig.currentActivityId;
+    } else if (typeof quizConfig.currentActivityId === 'string' && quizConfig.currentActivityId) {
+        const parsedActivity = parseInt(quizConfig.currentActivityId, 10);
+        customLastSeenActivityId = isNaN(parsedActivity) ? 0 : parsedActivity;
+    }
 
     function restorePendingAttemptState() {
         if (!quizConfig.awaitingAttempt || !restoreLastAttempt) {
@@ -824,6 +862,65 @@ if ( $latest_activity_pending ) {
         });
     }
 
+    function scheduleCustomPoll(lastId, waitSeconds) {
+        const delaySeconds = parseInt(waitSeconds, 10) > 0 ? parseInt(waitSeconds, 10) : 2;
+
+        setTimeout(function(){ pollCustomAttempt(lastId); }, delaySeconds * 1000);
+    }
+
+    function pollCustomAttempt(lastId) {
+        if (!quizConfig.nonce || !ajaxUrl) {
+            return;
+        }
+
+        const numericLastId = typeof lastId === 'number' ? lastId : 0;
+
+        $.post(ajaxUrl, {
+            action: 'politeia_poll_latest_attempt_strict',
+            quiz_id: quizConfig.quizId,
+            last_activity_id: numericLastId,
+            nonce: quizConfig.nonce
+        }).done(function(response){
+            if (!response || !response.success || !response.data) {
+                return;
+            }
+
+            const payload = response.data;
+            console.log('[CustomPoll]', payload);
+
+            if (payload.status === 'waiting_new_attempt' || payload.status === 'pending') {
+                scheduleCustomPoll(numericLastId, payload.retry_after || 2);
+
+                if (payload.status === 'pending' && payload.activity_id && customActivityEl.length) {
+                    customActivityEl.text(payload.activity_id);
+                }
+
+                return;
+            }
+
+            if (payload.status === 'ready') {
+                const activityId = parseInt(payload.activity_id, 10);
+                const percentage = typeof payload.percentage === 'number'
+                    ? Math.round(payload.percentage)
+                    : null;
+
+                if (!isNaN(activityId)) {
+                    customLastSeenActivityId = activityId;
+                    customActivityEl.text(activityId);
+                }
+
+                if (percentage !== null) {
+                    customPercentageEl.text(percentage + '%');
+                }
+            }
+        }).fail(function(){
+            console.error('[CustomPoll] AJAX failed');
+            scheduleCustomPoll(numericLastId, 2);
+        });
+    }
+
+    window.politeiaCustomPollerInitialized = true;
+
     document.addEventListener('DOMContentLoaded', function(){
         const baseSeries = quizConfig.isFinalQuiz
             ? [
@@ -845,20 +942,31 @@ if ( $latest_activity_pending ) {
                 score: <?php echo intval( $current_summary['score'] ); ?>,
                 timestamp: <?php echo intval( $current_summary['timestamp'] ); ?>
             });
+
+            if (customPercentageEl.length && <?php echo $current_percentage_value !== null ? 'true' : 'false'; ?>) {
+                customPercentageEl.text(<?php echo $current_percentage_value !== null ? (int) $current_percentage_value : 0; ?> + '%');
+            }
+
+            if (customActivityEl.length && <?php echo $latest_activity_id ? 'true' : 'false'; ?>) {
+                customActivityEl.text(<?php echo $latest_activity_id ? intval( $latest_activity_id ) : 0; ?>);
+            }
         } else {
             pollLatestAttempt(maxPollRetries);
+            pollCustomAttempt(customLastSeenActivityId);
         }
 
         if (quizConfig.awaitingAttempt) {
             quizConfig.hideResultsWhilePending = true;
             setAwaitingState(true);
             pollLatestAttempt(maxPollRetries);
+            pollCustomAttempt(customLastSeenActivityId);
         }
     });
 
     $(document).on('learndash-quiz-finished', function(){
         setAwaitingState(true);
         pollLatestAttempt(maxPollRetries);
+        pollCustomAttempt(customLastSeenActivityId);
     });
 
     $(document).on('click', '.wpProQuiz_sending .wpProQuiz_button_cancel, .wpProQuiz_button_cancel', function(){
