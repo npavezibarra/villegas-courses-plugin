@@ -97,18 +97,35 @@ class Villegas_Quiz_Email_Handler {
     }
 
     private static function send_email( $quiz_data, $user, $debug ) {
-        $email_content = null;
+        $default_first_body = "Hello {user_name},\n\nYou scored {first_score} in {quiz_title} for {course_title}.\nDate: {quiz_date}";
+        $default_final_body = "Hello {user_name},\n\nYou scored {final_score} in {quiz_title}.\nYour First Quiz was {first_score}, so your progress is {progress_delta}%.\nDate: {quiz_date}";
 
-        if ( $debug['is_first_quiz'] ) {
-            require_once plugin_dir_path( __FILE__ ) . '../emails/first-quiz-email.php';
-            $email_content = villegas_get_first_quiz_email_content( $quiz_data, $user, $debug );
-        } elseif ( $debug['is_final_quiz'] ) {
-            require_once plugin_dir_path( __FILE__ ) . '../emails/final-quiz-email.php';
-            $email_content = villegas_get_final_quiz_email_content( $quiz_data, $user, $debug );
+        $subject = '';
+        $body    = '';
+
+        if ( ! empty( $debug['is_first_quiz'] ) ) {
+            $subject = get_option( 'villegas_quiz_email_first_subject', 'Your First Quiz Results: {quiz_title}' );
+            $body    = get_option( 'villegas_quiz_email_first_body', $default_first_body );
+        } elseif ( ! empty( $debug['is_final_quiz'] ) ) {
+            $subject = get_option( 'villegas_quiz_email_final_subject', 'Your Final Quiz Results: {quiz_title}' );
+            $body    = get_option( 'villegas_quiz_email_final_body', $default_final_body );
+
+            $first_percentage        = intval( $debug['first_quiz_attempt'] );
+            $final_percentage        = intval( $debug['final_quiz_attempt'] );
+            $debug['progress_delta'] = $final_percentage - $first_percentage;
+        } else {
+            return;
         }
 
-        if ( ! is_array( $email_content ) || empty( $email_content['subject'] ) || empty( $email_content['body'] ) ) {
+        $subject = Villegas_Quiz_Emails::replace_placeholders( $subject, $debug );
+        $body    = Villegas_Quiz_Emails::replace_placeholders( $body, $debug );
+
+        if ( '' === trim( $subject ) || '' === trim( $body ) ) {
             return;
+        }
+
+        if ( strpos( $body, '<' ) === false ) {
+            $body = nl2br( $body );
         }
 
         $send_to_student = get_option( 'villegas_quiz_email_send_to_student', 1 );
@@ -131,8 +148,14 @@ class Villegas_Quiz_Email_Handler {
 
         $recipients = apply_filters( 'villegas_quiz_email_recipients', $recipients, $debug );
 
-        $subject = apply_filters( 'villegas_quiz_email_subject', ( $custom_prefix ? $custom_prefix . ' ' : '' ) . $email_content['subject'], $debug );
-        $body    = apply_filters( 'villegas_quiz_email_body', $email_content['body'], $debug );
+        if ( empty( $recipients ) ) {
+            return;
+        }
+
+        $subject = trim( ( $custom_prefix ? $custom_prefix . ' ' : '' ) . $subject );
+
+        $subject = apply_filters( 'villegas_quiz_email_subject', $subject, $debug );
+        $body    = apply_filters( 'villegas_quiz_email_body', $body, $debug );
 
         $headers = [ 'Content-Type: text/html; charset=UTF-8' ];
 
