@@ -1,0 +1,27 @@
+{
+  "name": "npavezibarra/villegas-courses-plugin",
+  "description": "Custom LearnDash + WooCommerce integration for El Villegas",
+  "type": "wordpress-plugin",
+  "license": "GPL-2.0-or-later",
+  "authors": [
+    {
+      "name": "Nicolas Pavez",
+      "email": "npavezibarra@gmail.com"
+    }
+  ],
+  "require-dev": {
+    "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+    "wp-coding-standards/wpcs": "^3.1",
+    "phpcompatibility/phpcompatibility-wp": "^2.1"
+  },
+  "config": {
+    "allow-plugins": {
+      "dealerdirect/phpcodesniffer-composer-installer": true
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "VillegasCourses\\": "includes/"
+    }
+  }
+}
