@@ -202,3 +202,80 @@ function politeia_get_quiz_poll_retry_interval() {
 
     return max( 1, intval( apply_filters( 'villegas_quiz_activity_retry_after', $default ) ) );
 }
+
+function villegas_get_latest_quiz_result() {
+    if ( ! is_user_logged_in() || ! current_user_can( 'read' ) ) {
+        wp_send_json_error( [
+            'message' => esc_html__( 'No autorizado.', 'villegas-courses' ),
+            'code'    => 'not_authorized',
+        ], 403 );
+    }
+
+    $quiz_id          = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
+    $last_activity_id = isset( $_POST['last_activity_id'] ) ? absint( $_POST['last_activity_id'] ) : 0;
+
+    if ( ! $quiz_id ) {
+        wp_send_json_error( [
+            'message' => esc_html__( 'Faltan datos del cuestionario.', 'villegas-courses' ),
+            'code'    => 'invalid_parameters',
+        ], 400 );
+    }
+
+    global $wpdb;
+
+    $activity_id = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT activity_id
+             FROM {$wpdb->prefix}learndash_user_activity
+             WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'
+             ORDER BY activity_completed DESC
+             LIMIT 1",
+            get_current_user_id(),
+            $quiz_id
+        )
+    );
+
+    if ( ! $activity_id ) {
+        wp_send_json_error( [
+            'message' => esc_html__( 'Todavía no registramos tu intento.', 'villegas-courses' ),
+            'code'    => 'not_ready',
+        ] );
+    }
+
+    $activity_id = absint( $activity_id );
+
+    if ( $last_activity_id && $activity_id <= $last_activity_id ) {
+        wp_send_json_error( [
+            'message' => esc_html__( 'Esperando nuevo intento.', 'villegas-courses' ),
+            'code'    => 'not_ready',
+        ] );
+    }
+
+    $percentage_raw = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT activity_meta_value
+             FROM {$wpdb->prefix}learndash_user_activity_meta
+             WHERE activity_id = %d AND activity_meta_key = 'percentage'
+             LIMIT 1",
+            $activity_id
+        )
+    );
+
+    if ( null === $percentage_raw || '' === $percentage_raw || ! is_numeric( $percentage_raw ) ) {
+        wp_send_json_error( [
+            'message' => esc_html__( 'El porcentaje aún no está disponible.', 'villegas-courses' ),
+            'code'    => 'not_ready',
+        ] );
+    }
+
+    $percentage = intval( round( floatval( $percentage_raw ) ) );
+
+    wp_send_json_success(
+        [
+            'percentage'  => $percentage,
+            'activity_id' => $activity_id,
+        ]
+    );
+}
+add_action( 'wp_ajax_villegas_get_latest_quiz_result', 'villegas_get_latest_quiz_result' );
+add_action( 'wp_ajax_nopriv_villegas_get_latest_quiz_result', 'villegas_get_latest_quiz_result' );

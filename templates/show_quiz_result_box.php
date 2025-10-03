@@ -19,24 +19,48 @@ $quiz_id = isset( $post->ID ) ? intval( $post->ID ) : 0;
 $user_id = get_current_user_id();
 $stats    = new Politeia_Quiz_Stats( $quiz_id, $user_id );
 
+global $wpdb;
+
 $course_id       = $stats->get_course_id();
 $course_title    = $course_id ? get_the_title( $course_id ) : '';
 $is_first_quiz   = $stats->is_first_quiz();
 $is_final_quiz   = $stats->is_final_quiz();
-$current_summary = $stats->get_current_quiz_summary();
+$latest_summary  = $stats->get_current_quiz_summary();
 $first_summary   = $stats->get_first_quiz_summary();
 $final_summary   = $stats->get_final_quiz_summary();
 $first_quiz_id   = $stats->get_first_quiz_id();
 $final_quiz_id   = $stats->get_final_quiz_id();
 
+$latest_percentage = ( isset( $latest_summary['percentage_rounded'] ) && is_numeric( $latest_summary['percentage_rounded'] ) )
+    ? intval( $latest_summary['percentage_rounded'] )
+    : null;
+
+$latest_activity_id = 0;
+
+if ( $user_id && $quiz_id ) {
+    $latest_activity_id = intval(
+        $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT activity_id
+                 FROM {$wpdb->prefix}learndash_user_activity
+                 WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'
+                 ORDER BY activity_completed DESC
+                 LIMIT 1",
+                $user_id,
+                $quiz_id
+            )
+        )
+    );
+}
+
 $has_first_quiz = (bool) $first_quiz_id;
 $has_final_quiz = (bool) $final_quiz_id;
 
-$current_percentage       = $current_summary['percentage_rounded'];
-$current_percentage_value = is_numeric( $current_percentage ) ? intval( $current_percentage ) : null;
 $first_percentage_value   = is_numeric( $first_summary['percentage_rounded'] ) ? intval( $first_summary['percentage_rounded'] ) : null;
 $final_percentage_value   = is_numeric( $final_summary['percentage_rounded'] ) ? intval( $final_summary['percentage_rounded'] ) : null;
-$current_formatted  = $current_summary['formatted_date'] ?: date_i18n( 'j \d\e F \d\e Y' );
+
+$last_attempt_timestamp = intval( $latest_summary['timestamp'] );
+$has_latest_attempt     = ! empty( $latest_summary['has_attempt'] );
 
 $has_course    = (bool) $course_id;
 $has_access    = $has_course ? PoliteiaCourse::userHasAccess( $course_id, $user_id ) : false;
@@ -44,27 +68,8 @@ $product_id    = $has_course ? PoliteiaCourse::getRelatedProductId( $course_id )
 $product_url   = $product_id ? get_permalink( $product_id ) : '#';
 $course_url    = $has_course ? get_permalink( $course_id ) : '#';
 
-$comparison_available = $is_final_quiz
-    && $has_first_quiz
-    && $has_final_quiz
-    && $first_summary['has_attempt']
-    && $final_summary['has_attempt'];
-
-$progress_delta = null;
-$days_elapsed   = null;
-
-if ( $comparison_available ) {
-    if ( ! is_null( $final_percentage_value ) && ! is_null( $first_percentage_value ) ) {
-        $progress_delta = $final_percentage_value - $first_percentage_value;
-    }
-
-    if ( $first_summary['timestamp'] && $final_summary['timestamp'] && $final_summary['timestamp'] >= $first_summary['timestamp'] ) {
-        $days_elapsed = max( 1, floor( ( $final_summary['timestamp'] - $first_summary['timestamp'] ) / DAY_IN_SECONDS ) );
-    }
-}
-
 $first_alert_messages = [];
-if ( $is_first_quiz && ! $current_summary['has_attempt'] ) {
+if ( $is_first_quiz && ! $has_latest_attempt ) {
     $first_alert_messages[] = __( 'Estamos guardando tu resultado. Refresca la página si no aparece en unos minutos.', 'villegas-courses' );
 }
 
@@ -84,26 +89,6 @@ if ( $is_final_quiz ) {
 
     if ( $has_final_quiz && ! $final_summary['has_attempt'] ) {
         $final_alert_messages[] = __( 'Aún no registramos resultados de tu Prueba Final.', 'villegas-courses' );
-    }
-}
-
-$motivation_copy = '';
-if ( $is_first_quiz && ! is_null( $current_percentage_value ) ) {
-    if ( $current_percentage_value >= 80 ) {
-        $motivation_copy = sprintf(
-            '¡Excelente comienzo con %s%%! Imagina cuánto podrás reforzar tu conocimiento al acceder a todas las lecciones.',
-            $current_percentage_value
-        );
-    } elseif ( $current_percentage_value >= 50 ) {
-        $motivation_copy = sprintf(
-            'Tu puntaje de %s%% demuestra que ya conoces parte del contenido. Con el curso completo podrás dominarlo.',
-            $current_percentage_value
-        );
-    } else {
-        $motivation_copy = sprintf(
-            'Este es solo el inicio: con el curso completo podrás mejorar ampliamente ese %s%% obtenido en la Prueba Inicial.',
-            $current_percentage_value
-        );
     }
 }
 
@@ -129,6 +114,19 @@ $show_loading_notice = ! $current_summary['has_attempt'];
 .politeia-quiz-chart {
     margin: 30px auto;
     max-width: 320px;
+}
+.politeia-activity-meta {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #5f6b75;
+}
+.politeia-activity-meta span {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
 }
 .politeia-score-highlight {
     font-size: 32px;
@@ -269,9 +267,16 @@ $show_loading_notice = ! $current_summary['has_attempt'];
             <div id="politeia-quiz-chart"></div>
         </div>
 
-        <div class="politeia-score-highlight">
-            <span id="quiz-percentage">
-                <?php echo ! is_null( $current_percentage_value ) ? esc_html( $current_percentage_value ) : '0'; ?>%
+        <div class="politeia-activity-meta">
+            <span>
+                <?php esc_html_e( 'ID de usuario:', 'villegas-courses' ); ?>
+                <strong id="politeia-user-id"><?php echo $user_id ? esc_html( $user_id ) : '--'; ?></strong>
+            </span>
+            <span>
+                <?php esc_html_e( 'ID de actividad:', 'villegas-courses' ); ?>
+                <strong id="politeia-activity-id-top" data-activity-id-target>
+                    <?php echo $latest_activity_id > 0 ? esc_html( $latest_activity_id ) : '--'; ?>
+                </strong>
             </span>
         </div>
 
@@ -290,19 +295,18 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 data-score-template="<?php echo esc_attr__( 'Puntaje obtenido: %d pts.', 'villegas-courses' ); ?>"
                 data-score-fallback="<?php echo esc_attr__( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>"
             >
-                <?php
-                if ( $current_summary['score'] ) {
-                    printf(
-                        /* translators: %d: quiz score */
-                        esc_html__( 'Puntaje obtenido: %d pts.', 'villegas-courses' ),
-                        intval( $current_summary['score'] )
-                    );
-                } else {
-                    esc_html_e( 'Puntaje disponible pronto.', 'villegas-courses' );
-                }
-                ?>
-            </div>
-        <?php endif; ?>
+                <?php echo $latest_percentage !== null ? esc_html( $latest_percentage . '%' ) : '--%'; ?>
+            </span>
+        </div>
+
+        <div
+            class="politeia-score-detail"
+            id="politeia-score-detail"
+            data-score-template="<?php echo esc_attr__( 'Puntaje obtenido: %d pts.', 'villegas-courses' ); ?>"
+            data-score-fallback="<?php echo esc_attr__( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>"
+        >
+            <?php esc_html_e( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>
+        </div>
 
         <?php if ( $is_first_quiz ) : ?>
             <?php if ( ! empty( $first_alert_messages ) ) : ?>
@@ -312,10 +316,14 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                     <?php endforeach; ?>
                 </div>
             <?php endif; ?>
-            <div class="politeia-cta-box">
-                <?php if ( $motivation_copy ) : ?>
-                    <p><?php echo esc_html( $motivation_copy ); ?></p>
-                <?php endif; ?>
+            <div
+                class="politeia-cta-box"
+                id="politeia-motivation"
+                data-motivation-high="<?php echo esc_attr__( '¡Excelente comienzo con %s%%! Imagina cuánto podrás reforzar tu conocimiento al acceder a todas las lecciones.', 'villegas-courses' ); ?>"
+                data-motivation-mid="<?php echo esc_attr__( 'Tu puntaje de %s%% demuestra que ya conoces parte del contenido. Con el curso completo podrás dominarlo.', 'villegas-courses' ); ?>"
+                data-motivation-low="<?php echo esc_attr__( 'Este es solo el inicio: con el curso completo podrás mejorar ampliamente ese %s%% obtenido en la Prueba Inicial.', 'villegas-courses' ); ?>"
+            >
+                <p id="politeia-motivation-text" style="display:none;"></p>
                 <?php if ( $has_course ) : ?>
                     <a class="politeia-button" href="<?php echo esc_url( $cta_url ); ?>">
                         <?php echo esc_html( $cta_text ); ?>
@@ -323,53 +331,33 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 <?php endif; ?>
             </div>
         <?php elseif ( $is_final_quiz ) : ?>
-            <?php if ( $comparison_available ) : ?>
-                <div class="politeia-comparison">
-                    <h4><?php esc_html_e( 'Comparativa con tu Prueba Inicial', 'villegas-courses' ); ?></h4>
-                    <div class="politeia-comparison-grid">
-                        <div class="politeia-comparison-card">
-                            <span><?php esc_html_e( 'Prueba Inicial', 'villegas-courses' ); ?></span>
-                            <strong id="politeia-first-score">
-                                <?php
-                                echo ! is_null( $first_percentage_value )
-                                    ? esc_html( $first_percentage_value ) . '%'
-                                    : '--';
-                                ?>
-                            </strong>
-                        </div>
-                        <div class="politeia-comparison-card">
-                            <span><?php esc_html_e( 'Prueba Final', 'villegas-courses' ); ?></span>
-                            <strong id="politeia-final-score">
-                                <?php
-                                echo ! is_null( $final_percentage_value )
-                                    ? esc_html( $final_percentage_value ) . '%'
-                                    : '--';
-                                ?>
-                            </strong>
-                        </div>
+            <div class="politeia-comparison" id="politeia-comparison-block" style="display:none;">
+                <h4><?php esc_html_e( 'Comparativa con tu Prueba Inicial', 'villegas-courses' ); ?></h4>
+                <div class="politeia-comparison-grid">
+                    <div class="politeia-comparison-card">
+                        <span><?php esc_html_e( 'Prueba Inicial', 'villegas-courses' ); ?></span>
+                        <strong id="politeia-first-score">--%</strong>
                     </div>
-                    <div class="politeia-comparison-meta">
-                        <?php if ( ! is_null( $progress_delta ) ) : ?>
-                            <div
-                                class="politeia-chip"
-                                id="politeia-progress-delta"
-                                data-label="<?php echo esc_attr__( 'Progreso:', 'villegas-courses' ); ?>"
-                            >
-                                <?php esc_html_e( 'Progreso:', 'villegas-courses' ); ?> <?php echo $progress_delta >= 0 ? '+' : ''; ?><?php echo esc_html( $progress_delta ); ?>%
-                            </div>
-                        <?php endif; ?>
-                        <?php if ( ! is_null( $days_elapsed ) ) : ?>
-                            <div
-                                class="politeia-chip"
-                                id="politeia-days-elapsed"
-                                data-label="<?php echo esc_attr__( 'Días transcurridos:', 'villegas-courses' ); ?>"
-                            >
-                                <?php esc_html_e( 'Días transcurridos:', 'villegas-courses' ); ?> <?php echo esc_html( $days_elapsed ); ?>
-                            </div>
-                        <?php endif; ?>
+                    <div class="politeia-comparison-card">
+                        <span><?php esc_html_e( 'Prueba Final', 'villegas-courses' ); ?></span>
+                        <strong id="politeia-final-score">--%</strong>
                     </div>
                 </div>
-            <?php endif; ?>
+                <div class="politeia-comparison-meta">
+                    <div
+                        class="politeia-chip"
+                        id="politeia-progress-delta"
+                        data-label="<?php echo esc_attr__( 'Progreso:', 'villegas-courses' ); ?>"
+                        style="display:none;"
+                    ></div>
+                    <div
+                        class="politeia-chip"
+                        id="politeia-days-elapsed"
+                        data-label="<?php echo esc_attr__( 'Días transcurridos:', 'villegas-courses' ); ?>"
+                        style="display:none;"
+                    ></div>
+                </div>
+            </div>
 
             <?php if ( ! empty( $final_alert_messages ) ) : ?>
                 <div class="politeia-alert" id="politeia-final-alert">
@@ -399,12 +387,20 @@ $show_loading_notice = ! $current_summary['has_attempt'];
             <h4>Datos del Intento</h4>
             <div class="politeia-comparison-grid">
                 <div class="politeia-comparison-card">
-                    <span>Puntaje obtenido</span>
-                    <strong id="politeia-attempt-percentage">--%</strong>
+                    <span><?php esc_html_e( 'Puntaje obtenido', 'villegas-courses' ); ?></span>
+                    <strong id="politeia-attempt-percentage">
+                        <?php echo $latest_percentage !== null ? esc_html( $latest_percentage . '%' ) : '--%'; ?>
+                    </strong>
                 </div>
                 <div class="politeia-comparison-card">
-                    <span>Fecha de intento</span>
+                    <span><?php esc_html_e( 'Fecha de intento', 'villegas-courses' ); ?></span>
                     <strong id="politeia-attempt-date">--</strong>
+                </div>
+                <div class="politeia-comparison-card">
+                    <span><?php esc_html_e( 'ID de actividad', 'villegas-courses' ); ?></span>
+                    <strong id="politeia-attempt-activity-id" data-activity-id-target>
+                        <?php echo $latest_activity_id > 0 ? esc_html( $latest_activity_id ) : '--'; ?>
+                    </strong>
                 </div>
             </div>
         </div>
@@ -624,6 +620,9 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         if (!quizConfig.nonce || !ajaxUrl) {
             return;
         }
+        $loader.hide();
+        $results.show();
+    }
 
         const retriesLeft = typeof retries === 'number' ? retries : 0;
         const lastTimestamp = parseInt(quizConfig.currentAttemptTimestamp, 10) || 0;
@@ -664,6 +663,7 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                     });
                     return;
                 }
+            }
 
                 queueRetry(retriesLeft - 1, waitSeconds);
             } else {
@@ -712,5 +712,5 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         }
         pollLatestAttempt(6);
     });
-})(jQuery);
+});
 </script>
