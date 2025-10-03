@@ -116,6 +116,7 @@ if ( $is_final_quiz ) {
     $cta_text = __( 'View course summary', 'villegas-courses' );
     $cta_url  = $course_url ? $course_url : home_url();
 }
+$show_loading_notice = ! $current_summary['has_attempt'];
 ?>
 <style>
 .politeia-quiz-results {
@@ -124,22 +125,6 @@ if ( $is_final_quiz ) {
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 24px;
-}
-.politeia-quiz-header {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: center;
-}
-.politeia-quiz-header h3 {
-    margin: 0;
-    font-size: 20px;
-}
-.politeia-quiz-meta {
-    color: #728188;
-    font-size: 14px;
-    font-weight: 600;
 }
 .politeia-quiz-chart {
     margin: 30px auto;
@@ -155,6 +140,16 @@ if ( $is_final_quiz ) {
     color: #5f6b75;
     font-weight: 600;
     margin-top: 8px;
+}
+.politeia-loading-notice {
+    margin-top: 16px;
+    background: #fff4e6;
+    border: 1px solid #f5c48d;
+    color: #8a5200;
+    padding: 16px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 600;
 }
 .politeia-cta-box {
     margin-top: 24px;
@@ -270,20 +265,6 @@ if ( $is_final_quiz ) {
 
 <div style="display:none;" class="wpProQuiz_results">
     <div class="politeia-quiz-results" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>">
-        <div class="politeia-quiz-header">
-            <div>
-                <h3><?php echo esc_html( get_the_title( $quiz_id ) ); ?></h3>
-                <div class="politeia-quiz-meta">
-                    <?php echo esc_html( $course_title ); ?> · <?php echo esc_html( $current_formatted ); ?>
-                </div>
-            </div>
-            <?php if ( $is_final_quiz && $first_summary['formatted_date'] ) : ?>
-                <div class="politeia-quiz-meta" style="text-align:right;">
-                    Prueba Inicial: <?php echo esc_html( $first_summary['formatted_date'] ); ?>
-                </div>
-            <?php endif; ?>
-        </div>
-
         <div class="politeia-quiz-chart">
             <div id="politeia-quiz-chart"></div>
         </div>
@@ -292,6 +273,14 @@ if ( $is_final_quiz ) {
             <span id="quiz-percentage">
                 <?php echo ! is_null( $current_percentage_value ) ? esc_html( $current_percentage_value ) : '0'; ?>%
             </span>
+        </div>
+
+        <div
+            id="politeia-loading-notice"
+            class="politeia-loading-notice"
+            <?php echo $show_loading_notice ? '' : 'style="display:none;"'; ?>
+        >
+            <?php esc_html_e( 'Estamos guardando tu resultado. Refresca la página si no aparece en unos minutos.', 'villegas-courses' ); ?>
         </div>
 
         <?php if ( $current_summary['has_attempt'] ) : ?>
@@ -406,7 +395,7 @@ if ( $is_final_quiz ) {
             </div>
         <?php endif; ?>
 
-        <div id="politeia-quiz-attempt" class="politeia-quiz-attempt">
+        <div id="politeia-quiz-attempt" class="politeia-quiz-attempt" style="display:none;">
             <h4>Datos del Intento</h4>
             <div class="politeia-comparison-grid">
                 <div class="politeia-comparison-card">
@@ -452,6 +441,8 @@ if ( $is_final_quiz ) {
 
     const ajaxUrl = ajaxConfig.ajaxUrl || '';
     const defaultRetry = parseInt(ajaxConfig.retryAfter, 10) > 0 ? parseInt(ajaxConfig.retryAfter, 10) : 5;
+
+    const loadingNotice = document.getElementById('politeia-loading-notice');
 
     let chartInstance = null;
     const attemptBox = $('#politeia-quiz-attempt');
@@ -513,6 +504,11 @@ if ( $is_final_quiz ) {
             return;
         }
 
+        if (loadingNotice) {
+            loadingNotice.style.display = 'none';
+        }
+
+        const attemptBox = $('#politeia-quiz-attempt');
         const attemptPercentage = (typeof data.percentage === 'number') ? Math.round(data.percentage) : 0;
         const attemptScore = (typeof data.score === 'number') ? Math.round(data.score) : null;
         const attemptTimestamp = parseInt(data.timestamp, 10);
@@ -620,16 +616,12 @@ if ( $is_final_quiz ) {
                 const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
 
                 if (payload.status === 'pending') {
-                    queueRetry(retriesLeft - 1, waitSeconds);
-                    return;
-                }
-
-                if (payload.status === 'ready') {
-                    const responseTimestamp = parseInt(payload.timestamp, 10) || 0;
-
-                    if (!responseTimestamp || (lastTimestamp && responseTimestamp <= lastTimestamp)) {
-                        queueRetry(retriesLeft - 1, waitSeconds);
-                        return;
+                    if (loadingNotice) {
+                        loadingNotice.style.display = '';
+                    }
+                    if (retries > 0) {
+                        const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
+                        setTimeout(function(){ pollLatestAttempt(retries - 1); }, waitSeconds * 1000);
                     }
 
                     updateAttemptUI({
@@ -673,11 +665,15 @@ if ( $is_final_quiz ) {
                 score: <?php echo intval( $current_summary['score'] ); ?>,
                 timestamp: <?php echo intval( $current_summary['timestamp'] ); ?>
             });
+        } else {
+            pollLatestAttempt(6);
         }
     });
 
     $(document).on('learndash-quiz-finished', function(){
-        setAwaitingState(true);
+        if (loadingNotice) {
+            loadingNotice.style.display = '';
+        }
         pollLatestAttempt(6);
     });
 })(jQuery);
