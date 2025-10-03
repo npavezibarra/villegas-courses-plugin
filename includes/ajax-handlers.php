@@ -50,6 +50,8 @@ function politeia_get_latest_quiz_activity() {
     $default_retry_after = politeia_get_quiz_poll_retry_interval();
 
     if ( empty( $activity ) || empty( $activity['activity_id'] ) ) {
+        error_log( sprintf( '[AJAX] User %d, Quiz %d, Activity %d, Status: pending', $user_id, $quiz_id, 0 ) );
+
         wp_send_json_success(
             [
                 'status'      => 'pending',
@@ -83,6 +85,8 @@ function politeia_get_latest_quiz_activity() {
             'message'     => esc_html__( 'Quiz meta pending...', 'villegas-courses' ),
         ];
 
+        error_log( sprintf( '[AJAX] User %d, Quiz %d, Activity %d, Status: pending', $user_id, $quiz_id, $activity_id ) );
+
         wp_send_json_success( $pending_payload );
     }
 
@@ -105,6 +109,8 @@ function politeia_get_latest_quiz_activity() {
         'timestamp'          => $activity_timestamp,
         'formatted_date'     => politeia_format_quiz_activity_date( $activity_timestamp ),
     ];
+
+    error_log( sprintf( '[AJAX] User %d, Quiz %d, Activity %d, Status: ready, Percentage %s', $user_id, $quiz_id, $activity_id, $percentage ) );
 
     $course_id      = 0;
     $first_quiz_id  = 0;

@@ -114,6 +114,11 @@ class Politeia_Quiz_Stats {
             : null;
 
         $timestamp = isset( $performance['timestamp'] ) ? intval( $performance['timestamp'] ) : 0;
+        $has_attempt = ! empty( $performance['has_attempt'] );
+
+        if ( $timestamp <= 0 ) {
+            $has_attempt = false;
+        }
 
         return [
             'quiz_id'            => $quiz_id,
@@ -122,8 +127,9 @@ class Politeia_Quiz_Stats {
             'percentage_rounded' => is_null( $percentage ) ? null : round( $percentage ),
             'timestamp'          => $timestamp,
             'date'               => $performance['date'] ?? null,
-            'has_attempt'        => $timestamp > 0,
+            'has_attempt'        => $has_attempt,
             'formatted_date'     => $timestamp > 0 ? date_i18n( 'j \d\e F \d\e Y', $timestamp ) : null,
+            'activity_id'        => intval( $performance['activity_id'] ?? 0 ),
         ];
     }
 

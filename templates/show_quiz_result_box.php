@@ -32,22 +32,22 @@ $first_quiz_id   = $stats->get_first_quiz_id();
 $final_quiz_id   = $stats->get_final_quiz_id();
 
 $current_summary = is_array( $latest_summary ) ? $latest_summary : [];
-$current_summary = wp_parse_args(
-    $current_summary,
-    [
-        'has_attempt'        => false,
-        'timestamp'          => 0,
-        'formatted_date'     => '',
-        'score'              => null,
-        'percentage_rounded' => null,
-    ]
-);
-
-$current_percentage_value = ( isset( $current_summary['percentage_rounded'] ) && is_numeric( $current_summary['percentage_rounded'] ) )
-    ? intval( $current_summary['percentage_rounded'] )
-    : null;
+    $current_summary = wp_parse_args(
+        $current_summary,
+        [
+            'has_attempt'        => false,
+            'timestamp'          => 0,
+            'formatted_date'     => '',
+            'score'              => null,
+            'percentage_rounded' => null,
+            'activity_id'        => 0,
+        ]
+    );
 
 $latest_activity_id = 0;
+
+$latest_activity_meta    = [];
+$latest_activity_pending = false;
 
 if ( $user_id && $quiz_id ) {
     $latest_activity_id = intval(
@@ -56,14 +56,39 @@ if ( $user_id && $quiz_id ) {
                 "SELECT activity_id
                  FROM {$wpdb->prefix}learndash_user_activity
                  WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'
-                 ORDER BY activity_completed DESC
+                 ORDER BY activity_id DESC
                  LIMIT 1",
                 $user_id,
                 $quiz_id
             )
         )
     );
+
+    if ( $latest_activity_id ) {
+        $latest_activity_meta      = politeia_fetch_activity_meta_map( $latest_activity_id );
+        $latest_activity_quiz_id   = isset( $latest_activity_meta['quiz'] ) ? intval( $latest_activity_meta['quiz'] ) : 0;
+        $latest_activity_perc_raw  = isset( $latest_activity_meta['percentage'] ) ? $latest_activity_meta['percentage'] : null;
+        $latest_activity_has_perc  = ( '' !== $latest_activity_perc_raw && null !== $latest_activity_perc_raw && is_numeric( $latest_activity_perc_raw ) );
+
+        if ( $latest_activity_quiz_id !== $quiz_id || ! $latest_activity_has_perc ) {
+            $latest_activity_pending = true;
+
+            $current_summary['has_attempt']        = false;
+            $current_summary['timestamp']          = 0;
+            $current_summary['formatted_date']     = '';
+            $current_summary['score']              = null;
+            $current_summary['percentage']         = null;
+            $current_summary['percentage_rounded'] = null;
+            $current_summary['activity_id']        = $latest_activity_id;
+
+            error_log( sprintf( '[QuizTemplate] User %d, Quiz %d, Activity %d, Pending state triggered', $user_id, $quiz_id, $latest_activity_id ) );
+        }
+    }
 }
+
+$current_percentage_value = ( isset( $current_summary['percentage_rounded'] ) && is_numeric( $current_summary['percentage_rounded'] ) )
+    ? intval( $current_summary['percentage_rounded'] )
+    : null;
 
 $has_first_quiz = (bool) $first_quiz_id;
 $has_final_quiz = (bool) $final_quiz_id;
@@ -114,6 +139,11 @@ if ( $is_final_quiz ) {
     $cta_url  = $course_url ? $course_url : home_url();
 }
 $show_loading_notice = ! $current_summary['has_attempt'];
+
+if ( $latest_activity_pending ) {
+    $show_loading_notice      = true;
+    $current_percentage_value = null;
+}
 ?>
 <style>
 .politeia-quiz-results {
