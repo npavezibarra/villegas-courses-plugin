@@ -29,6 +29,10 @@ $final_summary   = $stats->get_final_quiz_summary();
 $first_quiz_id   = $stats->get_first_quiz_id();
 $final_quiz_id   = $stats->get_final_quiz_id();
 
+$latest_percentage = ( isset( $latest_summary['percentage_rounded'] ) && is_numeric( $latest_summary['percentage_rounded'] ) )
+    ? intval( $latest_summary['percentage_rounded'] )
+    : null;
+
 $has_first_quiz = (bool) $first_quiz_id;
 $has_final_quiz = (bool) $final_quiz_id;
 
@@ -254,7 +258,12 @@ if ( $is_final_quiz ) {
         </div>
 
         <div class="politeia-score-highlight">
-            <span id="quiz-percentage">--%</span>
+            <span
+                id="quiz-percentage"
+                data-has-value="<?php echo $latest_percentage !== null ? '1' : '0'; ?>"
+            >
+                <?php echo $latest_percentage !== null ? esc_html( $latest_percentage . '%' ) : '--%'; ?>
+            </span>
         </div>
 
         <div
@@ -346,7 +355,9 @@ if ( $is_final_quiz ) {
             <div class="politeia-comparison-grid">
                 <div class="politeia-comparison-card">
                     <span><?php esc_html_e( 'Puntaje obtenido', 'villegas-courses' ); ?></span>
-                    <strong id="politeia-attempt-percentage">--%</strong>
+                    <strong id="politeia-attempt-percentage">
+                        <?php echo $latest_percentage !== null ? esc_html( $latest_percentage . '%' ) : '--%'; ?>
+                    </strong>
                 </div>
                 <div class="politeia-comparison-card">
                     <span><?php esc_html_e( 'Fecha de intento', 'villegas-courses' ); ?></span>
@@ -373,11 +384,14 @@ jQuery(document).ready(function($) {
     $(document).on('learndash-quiz-finished', function() {
         var correct = parseInt($('.wpProQuiz_correct_answer').text(), 10);
         var total   = parseInt($('.wpProQuiz_results .wpProQuiz_resultValue_YourScore span').last().text(), 10);
+        var $quizPercentage    = $('#quiz-percentage');
+        var $attemptPercentage = $('#politeia-attempt-percentage');
 
         if (!isNaN(correct) && !isNaN(total) && total > 0) {
             var percentage = Math.round((correct / total) * 100);
-            $('#quiz-percentage').text(percentage + '%');
-            $('#politeia-attempt-percentage').text(percentage + '%');
+            var percentageText = percentage + '%';
+            $quizPercentage.text(percentageText).attr('data-has-value', '1');
+            $attemptPercentage.text(percentageText);
         }
 
         $('#politeia-loading-notice').hide();
