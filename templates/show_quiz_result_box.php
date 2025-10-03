@@ -647,12 +647,17 @@ $show_loading_notice = ! $current_has_attempt;
             return;
         }
 
+        const hasNumericPercentage = typeof data.percentage === 'number' || typeof data.percentage_rounded === 'number';
+        if (!hasNumericPercentage) {
+            return;
+        }
+
         if (loadingNoticeEl) {
             loadingNoticeEl.style.display = 'none';
         }
 
         const attemptPercentage = (typeof data.percentage === 'number') ? Math.round(data.percentage)
-            : (typeof data.percentage_rounded === 'number' ? Math.round(data.percentage_rounded) : 0);
+            : Math.round(data.percentage_rounded);
         const attemptScore = (typeof data.score === 'number') ? Math.round(data.score) : null;
         const attemptTimestamp = parseInt(data.timestamp, 10);
 
@@ -781,6 +786,15 @@ $show_loading_notice = ! $current_has_attempt;
                 const hasNewActivity = normalizedActivityId > 0 && normalizedActivityId > knownActivityId;
 
                 if (quizConfig.awaitingAttempt && !hasNewTimestamp && !hasNewActivity) {
+                    queueRetry(nextRetries, waitSeconds);
+                    return;
+                }
+
+                const hasNumericPercentage = typeof payload.percentage === 'number'
+                    || typeof payload.percentage_rounded === 'number';
+                const hasNumericScore = typeof payload.score === 'number';
+
+                if (quizConfig.awaitingAttempt && !hasNumericPercentage && !hasNumericScore) {
                     queueRetry(nextRetries, waitSeconds);
                     return;
                 }
