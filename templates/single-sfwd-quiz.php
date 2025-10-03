@@ -60,9 +60,10 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
       // Título del quiz
       the_title('<h1>', '</h1>');
 
-      // Fecha actual en español
-      setlocale(LC_TIME, 'es_ES.UTF-8');
-      echo strftime('%e de %B de %Y');
+      // Fecha actual en español utilizando la configuración del sitio
+      $current_timestamp = current_time( 'timestamp' );
+      $formatted_date    = wp_date( 'j \d\e F \d\e Y', $current_timestamp );
+      echo esc_html( $formatted_date );
       ?>
 
       <?php
