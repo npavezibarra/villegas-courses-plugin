@@ -289,3 +289,268 @@ function villegas_mensaje_personalizado_intentos($quiz_id, $ignored, $user_id) {
     echo '</div>';
 }
 
+/**
+ * Resolve the WooCommerce product associated with a LearnDash course.
+ *
+ * @param int $course_id Course post ID.
+ *
+ * @return int Product post ID or 0 when none can be found.
+ */
+function villegas_get_course_product_id( $course_id ) {
+    $course_id  = intval( $course_id );
+    $product_id = 0;
+
+    if ( ! $course_id ) {
+        return 0;
+    }
+
+    $linked_product = get_post_meta( $course_id, '_linked_woocommerce_product', true );
+    if ( $linked_product ) {
+        $product_id = intval( $linked_product );
+    }
+
+    if ( ! $product_id ) {
+        $products = get_posts(
+            array(
+                'post_type'      => 'product',
+                'post_status'    => 'publish',
+                'posts_per_page' => 1,
+                'fields'         => 'ids',
+                'meta_query'     => array(
+                    array(
+                        'key'     => '_related_course',
+                        'value'   => $course_id,
+                        'compare' => 'LIKE',
+                    ),
+                ),
+            )
+        );
+
+        if ( ! empty( $products ) ) {
+            $product_id = intval( $products[0] );
+        }
+    }
+
+    return $product_id;
+}
+
+/**
+ * Determine if the user has access to a LearnDash course through enrollment or purchase.
+ *
+ * @param int $course_id Course post ID.
+ * @param int $user_id   User ID.
+ *
+ * @return bool
+ */
+function villegas_user_has_course_access( $course_id, $user_id ) {
+    $course_id = intval( $course_id );
+    $user_id   = intval( $user_id );
+
+    if ( ! $course_id || ! $user_id ) {
+        return false;
+    }
+
+    if ( function_exists( 'sfwd_lms_has_access' ) && sfwd_lms_has_access( $course_id, $user_id ) ) {
+        return true;
+    }
+
+    $product_id = villegas_get_course_product_id( $course_id );
+
+    if ( $product_id && function_exists( 'wc_customer_bought_product' ) ) {
+        $user      = get_userdata( $user_id );
+        $user_mail = $user ? $user->user_email : '';
+
+        if ( $user_mail && wc_customer_bought_product( $user_mail, $user_id, $product_id ) ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Retrieve the completion percentage for a user in a given course.
+ *
+ * @param int $course_id Course post ID.
+ * @param int $user_id   User ID.
+ *
+ * @return float Value from 0 to 100.
+ */
+function villegas_get_course_progress_percentage( $course_id, $user_id ) {
+    $course_id = intval( $course_id );
+    $user_id   = intval( $user_id );
+
+    if ( ! $course_id || ! $user_id ) {
+        return 0;
+    }
+
+    if ( function_exists( 'learndash_course_progress' ) ) {
+        $progress = learndash_course_progress(
+            array(
+                'user_id' => $user_id,
+                'course_id' => $course_id,
+                'array' => true,
+            )
+        );
+
+        if ( is_array( $progress ) && isset( $progress['percentage'] ) ) {
+            return floatval( $progress['percentage'] );
+        }
+    }
+
+    if ( function_exists( 'learndash_user_get_course_progress' ) ) {
+        $progress = learndash_user_get_course_progress( $user_id, $course_id );
+
+        if ( is_array( $progress ) && isset( $progress['percentage'] ) ) {
+            return floatval( $progress['percentage'] );
+        }
+    }
+
+    return 0;
+}
+
+/**
+ * Determine if a Final Quiz is available for a user based on enrollment and completion.
+ *
+ * @param int $quiz_id Quiz post ID.
+ * @param int $user_id User ID.
+ *
+ * @return bool
+ */
+function isFinalQuizAccessible( $quiz_id, $user_id ) {
+    $quiz_id = intval( $quiz_id );
+    $user_id = intval( $user_id );
+
+    if ( ! $quiz_id ) {
+        return false;
+    }
+
+    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+
+    if ( ! $course_id ) {
+        return true;
+    }
+
+    $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+
+    if ( ! $final_quiz_id || intval( $final_quiz_id ) !== $quiz_id ) {
+        return true;
+    }
+
+    if ( ! $user_id ) {
+        return false;
+    }
+
+    if ( ! villegas_user_has_course_access( $course_id, $user_id ) ) {
+        return false;
+    }
+
+    $percentage = villegas_get_course_progress_percentage( $course_id, $user_id );
+
+    return $percentage >= 100;
+}
+
+/**
+ * Enforce access rules for First and Final Quizzes.
+ */
+function villegas_enforce_quiz_access_control() {
+    if ( is_admin() || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) {
+        return;
+    }
+
+    if ( ! is_singular( 'sfwd-quiz' ) ) {
+        return;
+    }
+
+    global $post;
+
+    if ( ! $post instanceof WP_Post ) {
+        return;
+    }
+
+    $quiz_id   = intval( $post->ID );
+    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+
+    if ( ! $course_id ) {
+        return;
+    }
+
+    $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
+    $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+
+    if ( $first_quiz_id && $quiz_id === intval( $first_quiz_id ) ) {
+        if ( is_user_logged_in() ) {
+            return;
+        }
+
+        $login_url    = wp_login_url( get_permalink( $quiz_id ) );
+        $register_url = function_exists( 'wc_get_page_permalink' ) ? wc_get_page_permalink( 'myaccount' ) : wp_registration_url();
+
+        $message  = '<div class="villegas-quiz-gate villegas-quiz-gate--login">';
+        $message .= '<h2>' . esc_html__( 'Inicia sesión para continuar', 'villegas-courses' ) . '</h2>';
+        $message .= '<p>' . esc_html__( 'Debes iniciar sesión o crear una cuenta para rendir la Prueba Inicial.', 'villegas-courses' ) . '</p>';
+        $message .= '<p><a class="button" href="' . esc_url( $login_url ) . '">' . esc_html__( 'Iniciar sesión', 'villegas-courses' ) . '</a>';
+
+        if ( $register_url ) {
+            $message .= ' <a class="button button-primary" href="' . esc_url( $register_url ) . '">' . esc_html__( 'Crear cuenta', 'villegas-courses' ) . '</a>';
+        }
+
+        $message .= '</p></div>';
+
+        wp_die( wp_kses_post( $message ), esc_html__( 'Acceso restringido', 'villegas-courses' ), array( 'response' => 401 ) );
+    }
+
+    if ( ! $final_quiz_id || $quiz_id !== intval( $final_quiz_id ) ) {
+        return;
+    }
+
+    $user_id      = get_current_user_id();
+    $has_access   = isFinalQuizAccessible( $quiz_id, $user_id );
+    $is_enrolled  = $user_id ? villegas_user_has_course_access( $course_id, $user_id ) : false;
+    $progress     = $user_id ? villegas_get_course_progress_percentage( $course_id, $user_id ) : 0;
+    $course_title = get_the_title( $course_id );
+
+    if ( $has_access ) {
+        return;
+    }
+
+    if ( ! $user_id ) {
+        $login_url = wp_login_url( get_permalink( $quiz_id ) );
+
+        $message  = '<div class="villegas-quiz-gate villegas-quiz-gate--login">';
+        $message .= '<h2>' . esc_html__( 'Inicia sesión para continuar', 'villegas-courses' ) . '</h2>';
+        $message .= '<p>' . esc_html__( 'Debes iniciar sesión con tu cuenta para acceder a la Prueba Final.', 'villegas-courses' ) . '</p>';
+        $message .= '<p><a class="button" href="' . esc_url( $login_url ) . '">' . esc_html__( 'Iniciar sesión', 'villegas-courses' ) . '</a></p>';
+        $message .= '</div>';
+
+        wp_die( wp_kses_post( $message ), esc_html__( 'Prueba Final bloqueada', 'villegas-courses' ), array( 'response' => 403 ) );
+    }
+
+    if ( ! $is_enrolled ) {
+        $product_id = villegas_get_course_product_id( $course_id );
+        $cta_url    = $product_id ? get_permalink( $product_id ) : get_permalink( $course_id );
+
+        $message  = '<div class="villegas-quiz-gate villegas-quiz-gate--purchase">';
+        $message .= '<h2>' . esc_html__( 'Purchase the course to unlock the Final Quiz', 'villegas-courses' ) . '</h2>';
+        $message .= '<p>' . sprintf( esc_html__( 'Compra el curso %s para acceder a la Prueba Final.', 'villegas-courses' ), esc_html( $course_title ) ) . '</p>';
+        $message .= '<p><a class="button button-primary" href="' . esc_url( $cta_url ) . '">' . esc_html__( 'Comprar curso', 'villegas-courses' ) . '</a></p>';
+        $message .= '</div>';
+
+        wp_die( wp_kses_post( $message ), esc_html__( 'Prueba Final bloqueada', 'villegas-courses' ), array( 'response' => 403 ) );
+    }
+
+    if ( $progress < 100 ) {
+        $course_url = get_permalink( $course_id );
+
+        $message  = '<div class="villegas-quiz-gate villegas-quiz-gate--progress">';
+        $message .= '<h2>' . esc_html__( 'Complete all lessons to unlock the Final Quiz', 'villegas-courses' ) . '</h2>';
+        $message .= '<p>' . esc_html__( 'Debes completar el 100% de las lecciones antes de rendir la Prueba Final.', 'villegas-courses' ) . '</p>';
+        $message .= '<p><a class="button" href="' . esc_url( $course_url ) . '">' . esc_html__( 'Volver al curso', 'villegas-courses' ) . '</a></p>';
+        $message .= '</div>';
+
+        wp_die( wp_kses_post( $message ), esc_html__( 'Prueba Final bloqueada', 'villegas-courses' ), array( 'response' => 403 ) );
+    }
+}
+
+add_action( 'template_redirect', 'villegas_enforce_quiz_access_control' );
+
