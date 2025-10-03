@@ -126,19 +126,22 @@ function villegas_show_resultados_button($course_id, $user_id) {
     }
 }
 
-add_action(
-    'wp_enqueue_scripts',
-    function() {
-        wp_localize_script(
-            'custom-quiz-message',
-            'ajax_object',
-            [
-                'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-                'resultsNonce' => wp_create_nonce( 'mostrar_resultados_curso' ),
-            ]
-        );
-    }
-);
+add_action( 'wp_enqueue_scripts', 'villegas_enqueue_ajax_globals' );
+
+function villegas_enqueue_ajax_globals() {
+    wp_register_script( 'villegas-ajax-globals', '', [], false, true );
+    wp_enqueue_script( 'villegas-ajax-globals' );
+
+    $ajax_data = [
+        'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+        'activityNonce'=> wp_create_nonce( 'politeia_quiz_activity' ),
+        'resultsNonce' => wp_create_nonce( 'mostrar_resultados_curso' ),
+        'privacyNonce' => wp_create_nonce( 'guardar_privacidad_puntaje' ),
+        'retryAfter'   => 5,
+    ];
+
+    wp_localize_script( 'villegas-ajax-globals', 'villegasAjax', $ajax_data );
+}
 
 /* INYECTAR EVALUACON CATEGORIAS A QUIZ (PRimera o Final) */
 
@@ -172,9 +175,9 @@ function villegas_inyectar_quiz_data_footer() {
         quizId: <?php echo json_encode($quiz_id); ?>
     });
 
-    // Fallback para ajax_object si no ha sido definido en otro lugar
-    window.ajax_object = window.ajax_object || {
-        ajaxurl: '<?php echo admin_url('admin-ajax.php'); ?>'
+    // Fallback para villegasAjax si no ha sido definido en otro lugar
+    window.villegasAjax = window.villegasAjax || {
+        ajaxUrl: '<?php echo admin_url('admin-ajax.php'); ?>'
     };
 </script>
 

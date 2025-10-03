@@ -1,19 +1,28 @@
 document.addEventListener('DOMContentLoaded', function () {
     const checkbox = document.getElementById('puntaje_privado_checkbox');
-    if (!checkbox || typeof puntajePrivadoData === 'undefined') return;
+    if (!checkbox) return;
+
+    const ajaxConfig = window.villegasAjax || {};
+    const ajaxUrl = ajaxConfig.ajaxUrl || '';
+    const nonce = ajaxConfig.privacyNonce || '';
 
     checkbox.addEventListener('change', function () {
         const isPrivate = checkbox.checked;
-        const userId = puntajePrivadoData.userId;
+        const userId = parseInt(checkbox.dataset.userId || '0', 10);
+
+        if (!ajaxUrl || !nonce || !userId) {
+            console.error('No se pudo determinar la información necesaria para actualizar la privacidad del puntaje.');
+            return;
+        }
 
         console.log('Enviando AJAX:', {
             action: 'guardar_privacidad_puntaje',
             user_id: userId,
             puntaje_privado: isPrivate ? '1' : '0',
-            security: puntajePrivadoData.security
+            nonce: nonce
         });
 
-        fetch(puntajePrivadoData.ajaxurl, {
+        fetch(ajaxUrl, {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -21,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 action: 'guardar_privacidad_puntaje',
                 user_id: userId,
                 puntaje_privado: isPrivate ? '1' : '0',
-                security: puntajePrivadoData.security
+                nonce: nonce
             })
         })
         .then(res => res.json())
