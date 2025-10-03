@@ -1,7 +1,7 @@
 <?php
 
-if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
-    require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
+if ( ! class_exists( 'PoliteiaCourse' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . '../classes/class-politeia-course.php';
 }
 ob_start();
 
@@ -92,7 +92,7 @@ function mostrar_comprar_stats() {
     }
 
     // First quiz ID and URL
-    $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
+    $first_quiz_id = PoliteiaCourse::getFirstQuizId( $course_id );
     $first_quiz_url = !empty($first_quiz_id) && ($quiz_post = get_post($first_quiz_id))
         ? home_url('/evaluaciones/' . $quiz_post->post_name . '/')
         : '#';
@@ -171,7 +171,7 @@ function mostrar_comprar_stats() {
                 <div id="final-test-button" class="tooltip" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                     <?php
                     global $wpdb;
-                    $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+                    $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
                     $final_quiz_url = $final_quiz_id ? get_permalink($final_quiz_id) : '';
 
                     $latest_attempt_final = $wpdb->get_row($wpdb->prepare(
