@@ -19,7 +19,9 @@ function politeia_get_latest_quiz_activity() {
     $quiz_id        = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
     $requested_user = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
     $current_user   = get_current_user_id();
-    $last_timestamp = isset( $_POST['last_timestamp'] ) ? intval( $_POST['last_timestamp'] ) : 0;
+    $last_timestamp    = isset( $_POST['last_timestamp'] ) ? intval( $_POST['last_timestamp'] ) : 0;
+    $last_activity_id  = isset( $_POST['last_activity_id'] ) ? intval( $_POST['last_activity_id'] ) : 0;
+    $awaiting_attempt  = isset( $_POST['awaiting_attempt'] ) && '1' === $_POST['awaiting_attempt'];
 
     if ( ! $quiz_id ) {
         wp_send_json_error( [ 'message' => esc_html__( 'Faltan datos del cuestionario.', 'villegas-courses' ) ], 400 );
@@ -35,9 +37,13 @@ function politeia_get_latest_quiz_activity() {
     $cached    = get_transient( $cache_key );
 
     if ( false !== $cached ) {
-        $cached_timestamp = isset( $cached['timestamp'] ) ? intval( $cached['timestamp'] ) : 0;
+        $cached_timestamp   = isset( $cached['timestamp'] ) ? intval( $cached['timestamp'] ) : 0;
+        $cached_activity_id = isset( $cached['activity_id'] ) ? intval( $cached['activity_id'] ) : 0;
 
-        if ( $last_timestamp && $cached_timestamp && $cached_timestamp <= $last_timestamp ) {
+        $is_stale_timestamp = $last_timestamp && $cached_timestamp && $cached_timestamp <= $last_timestamp;
+        $is_stale_activity  = $last_activity_id && $cached_activity_id && $cached_activity_id <= $last_activity_id;
+
+        if ( $is_stale_timestamp || $is_stale_activity ) {
             $cached = false;
         }
     }
@@ -62,8 +68,33 @@ function politeia_get_latest_quiz_activity() {
     }
 
     $current_timestamp = intval( $summary['timestamp'] );
+    $current_activity  = intval( $summary['activity_id'] );
 
-    if ( $last_timestamp && $current_timestamp && $current_timestamp <= $last_timestamp ) {
+    $no_new_timestamp = $last_timestamp && $current_timestamp && $current_timestamp <= $last_timestamp;
+    $no_new_activity  = $last_activity_id && $current_activity && $current_activity <= $last_activity_id;
+
+    $should_wait = false;
+
+    if ( $awaiting_attempt ) {
+        if ( $last_activity_id ) {
+            $should_wait = $no_new_activity;
+        } elseif ( $last_timestamp ) {
+            $should_wait = $no_new_timestamp || $current_activity <= 0;
+        } else {
+            $should_wait = $current_activity <= 0;
+        }
+    }
+
+    if ( $awaiting_attempt && $should_wait ) {
+        $pending = [
+            'status'      => 'pending',
+            'retry_after' => $retry_seconds,
+        ];
+
+        wp_send_json_success( $pending );
+    }
+
+    if ( $awaiting_attempt && is_null( $summary['percentage'] ) && is_null( $summary['score'] ) ) {
         $pending = [
             'status'      => 'pending',
             'retry_after' => $retry_seconds,
@@ -93,9 +124,10 @@ function politeia_get_latest_quiz_activity() {
         'status'             => 'ready',
         'percentage'         => is_null( $summary['percentage'] ) ? null : (float) $summary['percentage'],
         'percentage_rounded' => is_null( $summary['percentage'] ) ? null : intval( round( $summary['percentage'] ) ),
-        'score'              => intval( $summary['score'] ),
+        'score'              => is_null( $summary['score'] ) ? null : intval( $summary['score'] ),
         'timestamp'          => intval( $summary['timestamp'] ),
         'formatted_date'     => $summary['formatted_date'],
+        'activity_id'        => $current_activity,
         'course_id'          => $course_id ? intval( $course_id ) : 0,
         'is_first_quiz'      => (bool) $is_first,
         'is_final_quiz'      => (bool) $is_final,
@@ -143,8 +175,9 @@ function politeia_extract_quiz_attempt_summary( $user_id, $quiz_id ) {
     $empty = [
         'has_attempt'    => false,
         'percentage'     => null,
-        'score'          => 0,
+        'score'          => null,
         'timestamp'      => 0,
+        'activity_id'    => 0,
         'formatted_date' => '',
     ];
 
@@ -152,47 +185,62 @@ function politeia_extract_quiz_attempt_summary( $user_id, $quiz_id ) {
         return $empty;
     }
 
-    static $user_attempts = [];
+    global $wpdb;
 
-    if ( ! isset( $user_attempts[ $user_id ] ) ) {
-        $raw_attempts = get_user_meta( $user_id, '_sfwd-quizzes', true );
-        $attempts     = maybe_unserialize( $raw_attempts );
-        $user_attempts[ $user_id ] = is_array( $attempts ) ? $attempts : [];
-    }
+    $activity_row = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT activity_id, activity_completed, activity_updated
+               FROM {$wpdb->prefix}learndash_user_activity
+              WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'
+           ORDER BY activity_updated DESC, activity_completed DESC, activity_id DESC
+              LIMIT 1",
+            $user_id,
+            $quiz_id
+        ),
+        ARRAY_A
+    );
 
-    $latest_attempt = null;
-
-    foreach ( $user_attempts[ $user_id ] as $attempt ) {
-        if ( ! is_array( $attempt ) || ! isset( $attempt['quiz'] ) ) {
-            continue;
-        }
-
-        if ( intval( $attempt['quiz'] ) !== $quiz_id ) {
-            continue;
-        }
-
-        $attempt_time = isset( $attempt['time'] ) ? intval( $attempt['time'] ) : 0;
-
-        if ( null === $latest_attempt || $attempt_time > intval( $latest_attempt['time'] ?? 0 ) ) {
-            $latest_attempt = $attempt;
-        }
-    }
-
-    if ( null === $latest_attempt ) {
+    if ( ! $activity_row ) {
         return $empty;
     }
 
-    $percentage = isset( $latest_attempt['percentage'] ) && is_numeric( $latest_attempt['percentage'] )
-        ? floatval( $latest_attempt['percentage'] )
+    $activity_id = intval( $activity_row['activity_id'] );
+    $timestamp   = isset( $activity_row['activity_completed'] ) ? intval( $activity_row['activity_completed'] ) : 0;
+
+    $percentage_value = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT activity_meta_value
+               FROM {$wpdb->prefix}learndash_user_activity_meta
+              WHERE activity_id = %d AND activity_meta_key = 'percentage'
+              LIMIT 1",
+            $activity_id
+        )
+    );
+
+    $score_value = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT activity_meta_value
+               FROM {$wpdb->prefix}learndash_user_activity_meta
+              WHERE activity_id = %d AND activity_meta_key = 'score'
+              LIMIT 1",
+            $activity_id
+        )
+    );
+
+    $percentage = ( '' !== $percentage_value && null !== $percentage_value && is_numeric( $percentage_value ) )
+        ? floatval( $percentage_value )
         : null;
 
-    $timestamp = isset( $latest_attempt['time'] ) ? intval( $latest_attempt['time'] ) : 0;
+    $score = ( '' !== $score_value && null !== $score_value && is_numeric( $score_value ) )
+        ? intval( $score_value )
+        : null;
 
     return [
-        'has_attempt'    => $timestamp > 0,
+        'has_attempt'    => $activity_id > 0,
         'percentage'     => $percentage,
-        'score'          => isset( $latest_attempt['score'] ) ? intval( $latest_attempt['score'] ) : 0,
+        'score'          => $score,
         'timestamp'      => $timestamp,
+        'activity_id'    => $activity_id,
         'formatted_date' => $timestamp ? esc_html( date_i18n( 'j \d\e F \d\e Y', $timestamp ) ) : '',
     ];
 }
