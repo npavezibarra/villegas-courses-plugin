@@ -295,15 +295,6 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     $course_id    = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
     $course_title = $course_id ? get_the_title( $course_id ) : '';
 
-    // -----------------------------------------------------------
-    // DEBUG: Verificamos qué devuelve QuizAnalytics para este quiz
-    // -----------------------------------------------------------
-    if ( class_exists('QuizAnalytics') ) {
-        $analytics_demo = new QuizAnalytics( $quiz_id, get_current_user_id() );
-        error_log( '[DEBUG] QuizAnalytics->getFirstQuiz(): ' . $analytics_demo->getFirstQuiz() );
-        error_log( '[DEBUG] QuizAnalytics->isFirstQuiz(): ' . ( $analytics_demo->isFirstQuiz() ? 'true' : 'false' ) );
-    }
-
     // Determinar si es First o Final
     // Asegúrate de cargar la clase QuizAnalytics si aún no existe
     if ( ! class_exists('QuizAnalytics') ) {
@@ -632,11 +623,10 @@ function handle_enviar_correo_final_quiz() {
 	if ( ! class_exists( 'QuizAnalytics' ) ) {
 		require_once plugin_dir_path( __FILE__ ) . 'classes/class-quiz-analytics.php';
 	}
-	$analytics         = new QuizAnalytics( $quiz_id, $user_id );
-	$first_quiz_id     = $analytics->getFirstQuiz();
-	$first_quiz_title  = get_the_title( $first_quiz_id );
-	$first_perf        = $analytics->getFirstQuizPerformance();
-    error_log( print_r( $first_perf, true ) );
+        $analytics         = new QuizAnalytics( $quiz_id, $user_id );
+        $first_quiz_id     = $analytics->getFirstQuiz();
+        $first_quiz_title  = get_the_title( $first_quiz_id );
+        $first_perf        = $analytics->getFirstQuizPerformance();
 	$first_pct         = is_numeric( $first_perf['percentage'] ) ? (int) round( $first_perf['percentage'] ) : 0;
 	//$first_quiz_date   = isset( $first_perf['date'] ) && strtotime( $first_perf['date'] ) ? date_i18n( 'j \d\e F \d\e Y', strtotime( $first_perf['date'] ) ) : '';
     $first_ts         = $analytics->getFirstQuizTimestamp();

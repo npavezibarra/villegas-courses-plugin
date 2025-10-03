@@ -38,12 +38,11 @@ jQuery(document).on('learndash-quiz-finished', function () {
         if (isNaN(correctAnswers) || totalQuestions <= 0) return;
 
         var percentage = Math.round((correctAnswers / totalQuestions) * 100);
-        console.log('Intentando enviar correo Final Quiz con porcentaje:', percentage);
 
         // Función que revisa si el handler PHP ya encontrará el intento.
         function intentarEnviar(reintentoCount) {
             if (reintentoCount > 5) {
-                console.warn('No se encontró intento tras varios reintentos. Abortando envío.');
+                console.error('No se encontró intento tras varios reintentos. Abortando envío.');
                 return;
             }
 
@@ -54,9 +53,8 @@ jQuery(document).on('learndash-quiz-finished', function () {
                 nonce: finalQuizNonce
             }, function (response) {
                 if (response.success) {
-                    console.log('📩 FINAL QUIZ EMAIL response:', response);
+                    return;
                 } else if (response.data === 'Intento no encontrado') {
-                    console.log('Intento no encontrado aún. Reintentando en 500 ms…');
                     setTimeout(function() {
                         intentarEnviar(reintentoCount + 1);
                     }, 500);
