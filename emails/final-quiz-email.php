@@ -1,76 +1,65 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Resultado Final Quiz</title>
-</head>
-<body style="font-family: Arial, sans-serif; background-color: white; margin: 0; padding: 0;">
-  
-  <!-- Encabezado con Logo -->
-  <div style="text-align:center; max-width:500px; padding:20px 40px; margin:0px auto 0px auto; border:1px solid #dbdbdb; border-radius:8px 8px 0px 0px; background:white;">
-    <img src="http://elvillegas.cl/wp-content/uploads/2025/04/academiavillegaslogohorizontal.png" alt="Academia Villegas" style="max-width:300px; height:auto;">
-  </div>
+<?php
+if ( ! defined( 'ABSPATH' ) ) {
+    exit;
+}
 
-  <!-- Contenido principal -->
-  <div style="max-width:500px; margin:0 auto; background-color:#f4f4f4; padding:40px; border-radius:0px 0px 8px 8px; border:1px solid #dbdbdb;">
+/**
+ * Build Final Quiz email content.
+ *
+ * @param array  $quiz_data Payload from learndash_quiz_completed.
+ * @param object $user      WP_User object.
+ * @param array  $debug     Debug data from Villegas_Quiz_Emails::get_quiz_debug_data().
+ * @return array {subject, body}
+ */
+function villegas_get_final_quiz_email_content( $quiz_data, $user, $debug ) {
+    $subject = sprintf( __( 'Your Final Quiz results for %s', 'villegas-courses' ), $debug['course_title'] );
 
-    <!-- Saludo -->
-    <h2 style="color:#333; text-align:center; font-size:22px;">¡Hola <strong>{{user_name}}</strong>!</h2>
-    <p style="color:#555; text-align:center; font-size:16px; max-width:400px; margin:auto;">
-      Has completado el <strong>Final Quiz</strong> del curso <strong>{{quiz_title}}</strong> el día <strong>{{completion_date}}</strong>.
-    </p>
+    $first_percentage = intval( $debug['first_quiz_attempt'] );
+    $final_percentage = intval( $debug['final_quiz_attempt'] );
+    $delta            = $final_percentage - $first_percentage;
 
-    <!-- Final Quiz -->
-    <div style="margin-top:30px; padding:20px; background-color:white; border-radius:8px; border:1px solid #d5d5d5;">
-      <div style="font-weight:bold; font-size:16px; margin-bottom:5px;">{{quiz_title}}</div>
-      <div style="color:#888; font-size:14px; margin-bottom:10px;">{{completion_date}}</div>
-      <div style="background:#e9ecef; border-radius:15px; height:20px; overflow:hidden;">
-        <div style="{{final_bar_style}} height:100%; background:#ff9800;"></div>
-      </div>
-      <div style="text-align:right; font-size:20px; font-weight:bold; margin-top:10px;">{{quiz_percentage}}%</div>
-    </div>
+    if ( $delta > 0 ) {
+        $progress_msg = sprintf( __( 'Congratulations! You improved by %d%% compared to your First Quiz.', 'villegas-courses' ), $delta );
+    } elseif ( $delta === 0 ) {
+        $progress_msg = __( 'Your score remained the same as your First Quiz.', 'villegas-courses' );
+    } else {
+        $progress_msg = sprintf( __( 'Your score decreased by %d%% compared to your First Quiz.', 'villegas-courses' ), abs( $delta ) );
+    }
 
-    <!-- First Quiz -->
-    <div style="margin-top:20px; padding:20px; background-color:white; border-radius:8px; border:1px solid #d5d5d5;">
-      <div style="font-weight:bold; font-size:16px; margin-bottom:5px;">{{first_quiz_title}}</div>
-      <div style="color:#888; font-size:14px; margin-bottom:10px;">{{first_quiz_date}}</div>
-      <div style="background:#e9ecef; border-radius:15px; height:20px; overflow:hidden;">
-        <div style="{{first_bar_style}} height:100%; background:#ff9800;"></div>
-      </div>
-      <div style="text-align:right; font-size:20px; font-weight:bold; margin-top:10px;">{{first_quiz_percentage}}%</div>
-    </div>
+    ob_start();
+    ?>
+    <html>
+    <body style="font-family: Arial, sans-serif; background:#f9f9f9; padding:20px;">
+        <div style="max-width:600px; margin:auto; background:#fff; padding:20px; border-radius:8px;">
+            <h2 style="color:#333;"><?php echo esc_html( $debug['user_display_name'] ); ?>,</h2>
+            <p><?php printf( __( 'You just completed the Final Quiz of %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ); ?></p>
 
-    <!-- Comparativa -->
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:30px; background-color:white; border:1px solid #d5d5d5; border-radius:8px;">
-      <tr>
-        <td align="center" valign="top" style="padding:20px;">
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
-            <tr>
-              <!-- Variación conocimientos -->
-              <td width="50%" align="center" valign="top" style="padding:10px;">
-                <div style="font-size:16px; color:#666;">Variación conocimientos</div>
-                <div style="font-size:28px; font-weight:bold; color:#9fd99f;">
-                  {{knowledge_variation}}% <span style="font-size:20px;">{{variation_arrow}}</span>
-                </div>
-              </td>
+            <h3><?php esc_html_e( 'Your Results', 'villegas-courses' ); ?></h3>
+            <p><strong><?php esc_html_e( 'First Quiz:', 'villegas-courses' ); ?></strong>
+               <?php echo esc_html( $debug['first_quiz_attempt'] ); ?>
+               (<?php echo esc_html( $debug['first_quiz_date'] ); ?>)</p>
+            <p><strong><?php esc_html_e( 'Final Quiz:', 'villegas-courses' ); ?></strong>
+               <?php echo esc_html( $debug['final_quiz_attempt'] ); ?>
+               (<?php echo esc_html( $debug['final_quiz_date'] ); ?>)</p>
 
-              <!-- Días para completar -->
-              <td width="50%" align="center" valign="top" style="padding:10px;">
-                <div style="font-size:16px; color:#666;">Completaste el curso en</div>
-                <div style="font-size:28px; color:#333; font-weight:bold;">
-                  {{days_to_complete}} {{days_label}}
-                </div>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
+            <p style="margin-top:15px; font-size:16px; color:#006600;">
+               <?php echo esc_html( $progress_msg ); ?>
+            </p>
 
-    <!-- Mensaje de cierre -->
-    <p style="margin-top:30px; color:#555; text-align:center;">¡Felicitaciones por tu progreso!</p>
+            <div style="margin-top:20px; text-align:center;">
+                <a href="<?php echo esc_url( get_permalink( $debug['course_id_detected'] ) ); ?>"
+                   style="background:#000; color:#fff; padding:12px 20px; text-decoration:none; border-radius:6px;">
+                   <?php esc_html_e( 'Browse Courses', 'villegas-courses' ); ?>
+                </a>
+            </div>
+        </div>
+    </body>
+    </html>
+    <?php
+    $body = ob_get_clean();
 
-  </div>
-
-</body>
-</html>
+    return [
+        'subject' => $subject,
+        'body'    => $body,
+    ];
+}
