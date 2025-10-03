@@ -21,6 +21,11 @@ if ( ! class_exists( 'Politeia_Quiz_Stats' ) ) {
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-emails.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-handler.php';
 
+if ( is_admin() ) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-settings.php';
+    Villegas_Quiz_Email_Settings::init();
+}
+
 add_action( 'learndash_quiz_completed', [ 'Villegas_Quiz_Email_Handler', 'on_quiz_completed' ], 10, 2 );
 
 // Reemplazar la plantilla del curso de LearnDash
