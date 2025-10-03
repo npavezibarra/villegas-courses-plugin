@@ -1,5 +1,9 @@
 <!-- HEADER -->
 <?php
+if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
+}
+
 include plugin_dir_path(__FILE__) . 'template-parts/header.php';
 // Load the default Twenty Twenty-Four header template part
 echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
@@ -25,15 +29,9 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                         $course_id = get_the_ID(); // Get course ID
                         $user_id = get_current_user_id(); // Get logged-in user ID
 
-                        // Obtener el ID de la Primera Evaluación
-                        $first_quiz_id = get_post_meta($course_id, '_first_quiz_id', true);
-
-                        // Obtener el ID de la Evaluación Final (último quiz en el curso)
-                        $final_quiz_id = 0;
-                        $course_steps = learndash_course_get_steps_by_type($course_id, 'sfwd-quiz');
-                        if (!empty($course_steps)) {
-                            $final_quiz_id = end($course_steps); // Último quiz en el curso
-                        }
+                        // Obtener el ID de la Primera y Final Evaluación
+                        $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
+                        $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
 
                         // Valores por defecto
                         $first_quiz_score = 0;
@@ -113,22 +111,23 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                             <!-- Evaluaciones -->
                             <div class="course-post-evaluations">
                                 <!-- Prueba Inicial -->
+                                <?php $first_completed = $first_quiz_id ? villegas_is_quiz_completed( $first_quiz_id, $user_id ) : false; ?>
                                 <div class="evaluation-row">
                                     <?php if (!is_user_logged_in()) : ?>
-                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode(get_permalink($first_quiz_id)); ?>">Prueba Inicial</a>
+                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode($first_quiz_id ? get_permalink($first_quiz_id) : get_permalink($course_id)); ?>">Prueba Inicial</a>
                                     <?php else : ?>
-                                        <a class="evaluation-title" href="<?php echo get_permalink($first_quiz_id); ?>">Prueba Inicial</a>
+                                        <a class="evaluation-title" href="<?php echo $first_quiz_id ? get_permalink($first_quiz_id) : get_permalink($course_id); ?>">Prueba Inicial</a>
                                     <?php endif; ?>
                                     <div class="progress-bar" id="progress-first">
-                                        <div class="progress" style="width: <?php echo $first_quiz_score; ?>%;"></div>
+                                        <div class="progress" style="width: <?php echo $first_completed ? $first_quiz_score : 0; ?>%;"></div>
                                     </div>
-                                    <span class="evaluation-percentage"><?php echo $first_quiz_score; ?>%</span>
+                                    <span class="evaluation-percentage"><?php echo $first_completed ? $first_quiz_score : 0; ?>%</span>
                                 </div>
 
                                 <!-- Prueba Final -->
                                 <div class="evaluation-row">
                                     <?php if (!is_user_logged_in()) : ?>
-                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode(get_permalink($final_quiz_id)); ?>">Prueba Final</a>
+                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode($final_quiz_id ? get_permalink($final_quiz_id) : get_permalink($course_id)); ?>">Prueba Final</a>
                                     <?php elseif ($first_quiz_score === 0) : ?>
                                         <span class="evaluation-title" style="opacity: 0.5; cursor: not-allowed;">Prueba Final</span>
                                     <?php else : ?>
@@ -137,7 +136,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                                             $completed = function_exists('learndash_is_user_complete') 
                                                 ? learndash_is_user_complete($user_id, $course_id) 
                                                 : false;
-                                            $final_link = $completed ? get_permalink($final_quiz_id) : get_permalink($course_id);
+                                            $final_link = ($completed && $final_quiz_id) ? get_permalink($final_quiz_id) : get_permalink($course_id);
                                         ?>
                                         <a class="evaluation-title" href="<?php echo esc_url($final_link); ?>">Prueba Final</a>
                                     <?php endif; ?>

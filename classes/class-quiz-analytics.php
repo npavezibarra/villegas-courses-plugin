@@ -9,53 +9,20 @@ class QuizAnalytics {
     private $quiz_id;
     private $course_id;
     private $first_quiz_id;
+    private $final_quiz_id;
     private $user_id;
 
     public function __construct( $quiz_id, $user_id = null ) {
-        global $wpdb;
+        if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+            require_once __DIR__ . '/class-course-quiz-helper.php';
+        }
 
         $this->quiz_id = intval( $quiz_id );
         $this->user_id = $user_id ? intval( $user_id ) : get_current_user_id();
 
-        // --------------------------------------------------
-        // Step 1: Determinar el Course ID al que pertenece este quiz
-        // LearnDash guarda la lista de pasos de curso en postmeta "ld_course_steps"
-        // donde cada ID de paso aparece como "i:<quiz_id>;"
-        // --------------------------------------------------
-        $this->course_id = $wpdb->get_var(
-            $wpdb->prepare(
-                "
-                SELECT post_id
-                FROM {$wpdb->postmeta}
-                WHERE meta_key   = 'ld_course_steps'
-                  AND meta_value LIKE %s
-                LIMIT 1
-                ",
-                '%i:' . $this->quiz_id . ';%' 
-            )
-        );
-        $this->course_id = $this->course_id ? intval( $this->course_id ) : 0;
-
-        // --------------------------------------------------
-        // Step 2: Obtener el ID del Primer Quiz para ese curso (si existe)
-        // --------------------------------------------------
-        if ( $this->course_id ) {
-            $raw_first = $wpdb->get_var(
-                $wpdb->prepare(
-                    "
-                    SELECT meta_value
-                    FROM {$wpdb->postmeta}
-                    WHERE post_id  = %d
-                      AND meta_key = '_first_quiz_id'
-                    LIMIT 1
-                    ",
-                    $this->course_id
-                )
-            );
-            $this->first_quiz_id = $raw_first ? intval( $raw_first ) : 0;
-        } else {
-            $this->first_quiz_id = 0;
-        }
+        $this->course_id     = CourseQuizMetaHelper::getCourseFromQuiz( $this->quiz_id );
+        $this->first_quiz_id = $this->course_id ? CourseQuizMetaHelper::getFirstQuizId( $this->course_id ) : 0;
+        $this->final_quiz_id = $this->course_id ? CourseQuizMetaHelper::getFinalQuizId( $this->course_id ) : 0;
     }
 
     /**
@@ -75,28 +42,33 @@ class QuizAnalytics {
     }
 
     /**
+     * Retorna el ID del Quiz Final (postmeta "_final_quiz_id").
+     * Si no existe, retorna 0.
+     */
+    public function getFinalQuiz() {
+        return $this->final_quiz_id;
+    }
+
+    /**
      * Determina si este quiz es la Prueba Inicial (“First Quiz”).
-     * - Si no hay ningún "_first_quiz_id" definido (es 0), asumimos que
-     *   este quiz es el primero por defecto.
-     * - Si existe _first_quiz_id, comparamos con $this->quiz_id.
      */
     public function isFirstQuiz() {
-        if ( $this->first_quiz_id === 0 ) {
-            // No hay primer quiz definido, asumimos que éste es
-            return true;
+        if ( ! $this->course_id || ! $this->first_quiz_id ) {
+            return false;
         }
+
         return ( $this->quiz_id === $this->first_quiz_id );
     }
 
     /**
      * Determina si este quiz es la Prueba Final (“Final Quiz”).
-     * Es “Final Quiz” si pertenece a un curso y no es el Primer Quiz.
      */
     public function isFinalQuiz() {
-        if ( ! $this->course_id ) {
+        if ( ! $this->course_id || ! $this->final_quiz_id ) {
             return false;
         }
-        return ( $this->quiz_id !== $this->first_quiz_id );
+
+        return ( $this->quiz_id === $this->final_quiz_id );
     }
 
     /**
@@ -189,9 +161,9 @@ class QuizAnalytics {
     public function getFirstQuizTimestamp() {
         global $wpdb;
     
-        $first_quiz_id = $this->getFirstQuiz();          // ID correcto
+        $first_quiz_id = $this->getFirstQuiz();
         if ( ! $first_quiz_id ) {
-            return 0;                                    // No configurado
+            return 0;
         }
     
         // - Obtiene el último intento del usuario para ese quiz
@@ -248,7 +220,7 @@ class QuizAnalytics {
      * Solo aplica si isFinalQuiz() es verdadero.
      */
     public function getFinalQuizPerformance() {
-        if ( ! $this->isFinalQuiz() ) {
+        if ( ! $this->final_quiz_id ) {
             return [
                 'score'      => 0,
                 'percentage' => 'N/A',
@@ -256,7 +228,7 @@ class QuizAnalytics {
                 'date'       => 'No Attempts'
             ];
         }
-        return $this->getUserQuizPerformance( $this->quiz_id );
+        return $this->getUserQuizPerformance( $this->final_quiz_id );
     }
 
     /**
@@ -266,7 +238,7 @@ class QuizAnalytics {
     public function displayResults() {
         $course_display = $this->course_id ? esc_html( $this->course_id ) : "No Course";
         $first_display  = $this->first_quiz_id ? esc_html( $this->first_quiz_id ) : "No First Quiz";
-        $final_display  = $this->isFinalQuiz() ? esc_html( $this->quiz_id ) : "No Final Quiz";
+        $final_display  = $this->final_quiz_id ? esc_html( $this->final_quiz_id ) : "No Final Quiz";
 
         $first_perf = $this->getFirstQuizPerformance();
         $final_perf = $this->getFinalQuizPerformance();

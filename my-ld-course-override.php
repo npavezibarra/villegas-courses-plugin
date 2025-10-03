@@ -6,6 +6,10 @@
  * Author: Nicolás Pavez
  */
 
+if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
+}
+
 // Reemplazar la plantilla del curso de LearnDash
 function my_custom_ld_course_template( $template ) {
     if ( is_singular( 'sfwd-courses' ) ) {
@@ -166,8 +170,8 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     );
 
     $quiz_id      = get_the_ID();
-    $course_id    = learndash_get_course_id( $quiz_id );
-    $course_title = get_the_title( $course_id );
+    $course_id    = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    $course_title = $course_id ? get_the_title( $course_id ) : '';
 
     // -----------------------------------------------------------
     // DEBUG: Verificamos qué devuelve QuizAnalytics para este quiz
@@ -354,13 +358,8 @@ function enviar_correo_first_quiz_handler() {
     $user_name  = $user->display_name;
     $quiz_title = get_the_title($quiz_id);
 
-    // Obtener Course ID desde el First Quiz
-    $course_id = $wpdb->get_var($wpdb->prepare(
-        "SELECT post_id FROM {$wpdb->prefix}postmeta 
-         WHERE meta_key = '_first_quiz_id' AND meta_value = %d 
-         LIMIT 1",
-        $quiz_id
-    ));
+    // Obtener Course ID desde la metadata configurada
+    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
 
     // Verificar acceso al curso
     $tiene_acceso = $course_id ? sfwd_lms_has_access($course_id, $user_id) : false;
@@ -542,8 +541,8 @@ function handle_enviar_correo_final_quiz() {
 	$first_bar_style = $first_pct > 0 ? "width: {$first_pct}%; background-color: #ff9800;" : "width: 0%;" ;
 
 	// ---------- Preparar plantilla ----------
-	$course_id    = learndash_get_course_id( $quiz_id );
-	$course_title = get_the_title( $course_id );
+        $course_id    = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+        $course_title = $course_id ? get_the_title( $course_id ) : '';
 	$subject      = '¡Has completado el Final Quiz!';
 	$headers      = [ 'Content-Type: text/html; charset=UTF-8' ];
     $quiz_title   = get_the_title( $quiz_id );
