@@ -116,6 +116,7 @@ if ( $is_final_quiz ) {
     $cta_text = __( 'View course summary', 'villegas-courses' );
     $cta_url  = $course_url ? $course_url : home_url();
 }
+$show_loading_notice = ! $current_summary['has_attempt'];
 ?>
 <style>
 .politeia-quiz-results {
@@ -124,22 +125,6 @@ if ( $is_final_quiz ) {
     border-radius: 12px;
     padding: 24px;
     margin-bottom: 24px;
-}
-.politeia-quiz-header {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 12px;
-    align-items: center;
-}
-.politeia-quiz-header h3 {
-    margin: 0;
-    font-size: 20px;
-}
-.politeia-quiz-meta {
-    color: #728188;
-    font-size: 14px;
-    font-weight: 600;
 }
 .politeia-quiz-chart {
     margin: 30px auto;
@@ -155,6 +140,16 @@ if ( $is_final_quiz ) {
     color: #5f6b75;
     font-weight: 600;
     margin-top: 8px;
+}
+.politeia-loading-notice {
+    margin-top: 16px;
+    background: #fff4e6;
+    border: 1px solid #f5c48d;
+    color: #8a5200;
+    padding: 16px;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 600;
 }
 .politeia-cta-box {
     margin-top: 24px;
@@ -269,25 +264,7 @@ if ( $is_final_quiz ) {
 </div>
 
 <div style="display:none;" class="wpProQuiz_results">
-    <div id="politeia-loading-notice" class="politeia-alert" style="display:<?php echo $current_summary['has_attempt'] ? 'none' : 'block'; ?>;">
-        <p><?php esc_html_e( 'Estamos registrando tu último resultado. Actualizaremos esta vista en unos segundos.', 'villegas-courses' ); ?></p>
-    </div>
-
-    <div class="politeia-quiz-results" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>" style="<?php echo $current_summary['has_attempt'] ? '' : 'display:none;'; ?>">
-        <div class="politeia-quiz-header">
-            <div>
-                <h3><?php echo esc_html( get_the_title( $quiz_id ) ); ?></h3>
-                <div class="politeia-quiz-meta">
-                    <?php echo esc_html( $course_title ); ?> · <span id="politeia-quiz-date"><?php echo esc_html( $current_formatted ); ?></span>
-                </div>
-            </div>
-            <?php if ( $is_final_quiz && $first_summary['formatted_date'] ) : ?>
-                <div class="politeia-quiz-meta" style="text-align:right;">
-                    Prueba Inicial: <?php echo esc_html( $first_summary['formatted_date'] ); ?>
-                </div>
-            <?php endif; ?>
-        </div>
-
+    <div class="politeia-quiz-results" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>">
         <div class="politeia-quiz-chart">
             <div id="politeia-quiz-chart"></div>
         </div>
@@ -296,6 +273,14 @@ if ( $is_final_quiz ) {
             <span id="quiz-percentage">
                 <?php echo ! is_null( $current_percentage_value ) ? esc_html( $current_percentage_value ) : '0'; ?>%
             </span>
+        </div>
+
+        <div
+            id="politeia-loading-notice"
+            class="politeia-loading-notice"
+            <?php echo $show_loading_notice ? '' : 'style="display:none;"'; ?>
+        >
+            <?php esc_html_e( 'Estamos guardando tu resultado. Refresca la página si no aparece en unos minutos.', 'villegas-courses' ); ?>
         </div>
 
         <?php if ( $current_summary['has_attempt'] ) : ?>
@@ -410,7 +395,7 @@ if ( $is_final_quiz ) {
             </div>
         <?php endif; ?>
 
-        <div id="politeia-quiz-attempt" class="politeia-quiz-attempt">
+        <div id="politeia-quiz-attempt" class="politeia-quiz-attempt" style="display:none;">
             <h4>Datos del Intento</h4>
             <div class="politeia-comparison-grid">
                 <div class="politeia-comparison-card">
@@ -448,8 +433,7 @@ if ( $is_final_quiz ) {
         finalScore: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
         currentScore: <?php echo ! is_null( $current_percentage_value ) ? (int) $current_percentage_value : 'null'; ?>,
         currentAttemptTimestamp: <?php echo intval( $current_summary['timestamp'] ); ?>,
-        awaitingAttempt: <?php echo $current_summary['has_attempt'] ? 'false' : 'true'; ?>,
-        hideResultsWhilePending: <?php echo $current_summary['has_attempt'] ? 'false' : 'true'; ?>,
+        awaitingAttempt: false,
         nonce: (typeof quizData !== 'undefined' && quizData.activityNonce)
             ? quizData.activityNonce
             : (ajaxConfig.activityNonce || '')
@@ -458,33 +442,11 @@ if ( $is_final_quiz ) {
     const ajaxUrl = ajaxConfig.ajaxUrl || '';
     const defaultRetry = parseInt(ajaxConfig.retryAfter, 10) > 0 ? parseInt(ajaxConfig.retryAfter, 10) : 5;
 
+    const loadingNotice = document.getElementById('politeia-loading-notice');
+
     let chartInstance = null;
     const attemptBox = $('#politeia-quiz-attempt');
-    const loadingNotice = $('#politeia-loading-notice');
-    const resultsWrapper = $('.politeia-quiz-results');
-
-    const storage = (function(){
-        try {
-            return window.sessionStorage;
-        } catch (error) {
-            return null;
-        }
-    })();
-
-    const awaitingStorageKey = 'politeiaAwaitingAttempt_' + quizConfig.quizId + '_' + quizConfig.userId;
-
-    if (storage) {
-        const storedAwaiting = storage.getItem(awaitingStorageKey);
-        if (storedAwaiting) {
-            const storedTime = parseInt(storedAwaiting, 10);
-            if (!isNaN(storedTime) && (Date.now() - storedTime) < (5 * 60 * 1000)) {
-                quizConfig.awaitingAttempt = true;
-                quizConfig.hideResultsWhilePending = true;
-            } else {
-                storage.removeItem(awaitingStorageKey);
-            }
-        }
-    }
+    const loadingNotice = $('#politeia-generic-alert');
 
     function setAwaitingState(isAwaiting) {
         quizConfig.awaitingAttempt = !!isAwaiting;
@@ -497,21 +459,8 @@ if ( $is_final_quiz ) {
             if (attemptBox && attemptBox.length) {
                 attemptBox.stop(true, true).slideUp();
             }
-            if (resultsWrapper && resultsWrapper.length && quizConfig.hideResultsWhilePending) {
-                resultsWrapper.hide();
-            }
-        } else {
-            if (attemptBox && attemptBox.length) {
-                attemptBox.stop(true, true).slideDown();
-            }
-
-            if (loadingNotice && loadingNotice.length) {
-                loadingNotice.hide();
-            }
-
-            if (resultsWrapper && resultsWrapper.length) {
-                resultsWrapper.show();
-            }
+        } else if (attemptBox && attemptBox.length) {
+            attemptBox.stop(true, true).slideDown();
         }
     }
 
@@ -555,15 +504,17 @@ if ( $is_final_quiz ) {
             return;
         }
 
+        if (loadingNotice) {
+            loadingNotice.style.display = 'none';
+        }
+
+        const attemptBox = $('#politeia-quiz-attempt');
         const attemptPercentage = (typeof data.percentage === 'number') ? Math.round(data.percentage) : 0;
         const attemptScore = (typeof data.score === 'number') ? Math.round(data.score) : null;
         const attemptTimestamp = parseInt(data.timestamp, 10);
 
         if (!isNaN(attemptTimestamp) && attemptTimestamp > 0) {
             quizConfig.currentAttemptTimestamp = attemptTimestamp;
-            if (storage) {
-                storage.removeItem(awaitingStorageKey);
-            }
         }
 
         $('#politeia-attempt-percentage').text(attemptPercentage + '%');
@@ -641,7 +592,6 @@ if ( $is_final_quiz ) {
 
         quizConfig.currentScore = attemptPercentage;
 
-        quizConfig.hideResultsWhilePending = false;
         setAwaitingState(false);
 
         if (chartInstance) {
@@ -696,16 +646,12 @@ if ( $is_final_quiz ) {
                 const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
 
                 if (payload.status === 'pending') {
-                    queueRetry(retriesLeft - 1, waitSeconds);
-                    return;
-                }
-
-                if (payload.status === 'ready') {
-                    const responseTimestamp = parseInt(payload.timestamp, 10) || 0;
-
-                    if (!responseTimestamp || (lastTimestamp && responseTimestamp <= lastTimestamp)) {
-                        queueRetry(retriesLeft - 1, waitSeconds);
-                        return;
+                    if (loadingNotice) {
+                        loadingNotice.style.display = '';
+                    }
+                    if (retries > 0) {
+                        const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
+                        setTimeout(function(){ pollLatestAttempt(retries - 1); }, waitSeconds * 1000);
                     }
 
                     updateAttemptUI({
@@ -713,8 +659,6 @@ if ( $is_final_quiz ) {
                         formatted_date: payload.formatted_date,
                         final_percentage: payload.final_percentage,
                         first_percentage: payload.first_percentage,
-                        progress_delta: (typeof payload.progress_delta === 'number') ? payload.progress_delta : null,
-                        days_elapsed: (typeof payload.days_elapsed === 'number') ? payload.days_elapsed : null,
                         score: (typeof payload.score === 'number') ? payload.score : null,
                         timestamp: responseTimestamp
                     });
@@ -748,11 +692,11 @@ if ( $is_final_quiz ) {
                 formatted_date: <?php echo wp_json_encode( $current_summary['formatted_date'] ); ?>,
                 final_percentage: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
                 first_percentage: <?php echo ! is_null( $first_percentage_value ) ? (int) $first_percentage_value : 'null'; ?>,
-                progress_delta: <?php echo is_null( $progress_delta ) ? 'null' : intval( $progress_delta ); ?>,
-                days_elapsed: <?php echo is_null( $days_elapsed ) ? 'null' : intval( $days_elapsed ); ?>,
                 score: <?php echo intval( $current_summary['score'] ); ?>,
                 timestamp: <?php echo intval( $current_summary['timestamp'] ); ?>
             });
+        } else {
+            pollLatestAttempt(6);
         }
 
         if (quizConfig.awaitingAttempt) {
@@ -763,10 +707,8 @@ if ( $is_final_quiz ) {
     });
 
     $(document).on('learndash-quiz-finished', function(){
-        quizConfig.hideResultsWhilePending = true;
-        setAwaitingState(true);
-        if (storage) {
-            storage.setItem(awaitingStorageKey, String(Date.now()));
+        if (loadingNotice) {
+            loadingNotice.style.display = '';
         }
         pollLatestAttempt(6);
     });
