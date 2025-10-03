@@ -432,6 +432,8 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         firstScore: <?php echo ! is_null( $first_percentage_value ) ? (int) $first_percentage_value : 'null'; ?>,
         finalScore: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
         currentScore: <?php echo ! is_null( $current_percentage_value ) ? (int) $current_percentage_value : 'null'; ?>,
+        currentAttemptTimestamp: <?php echo intval( $current_summary['timestamp'] ); ?>,
+        awaitingAttempt: false,
         nonce: (typeof quizData !== 'undefined' && quizData.activityNonce)
             ? quizData.activityNonce
             : (ajaxConfig.activityNonce || '')
@@ -443,6 +445,24 @@ $show_loading_notice = ! $current_summary['has_attempt'];
     const loadingNotice = document.getElementById('politeia-loading-notice');
 
     let chartInstance = null;
+    const attemptBox = $('#politeia-quiz-attempt');
+    const loadingNotice = $('#politeia-generic-alert');
+
+    function setAwaitingState(isAwaiting) {
+        quizConfig.awaitingAttempt = !!isAwaiting;
+
+        if (quizConfig.awaitingAttempt) {
+            if (loadingNotice && loadingNotice.length) {
+                loadingNotice.show();
+            }
+
+            if (attemptBox && attemptBox.length) {
+                attemptBox.stop(true, true).slideUp();
+            }
+        } else if (attemptBox && attemptBox.length) {
+            attemptBox.stop(true, true).slideDown();
+        }
+    }
 
     function renderChart(series, labels) {
         const chartEl = document.querySelector('#politeia-quiz-chart');
@@ -491,6 +511,11 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         const attemptBox = $('#politeia-quiz-attempt');
         const attemptPercentage = (typeof data.percentage === 'number') ? Math.round(data.percentage) : 0;
         const attemptScore = (typeof data.score === 'number') ? Math.round(data.score) : null;
+        const attemptTimestamp = parseInt(data.timestamp, 10);
+
+        if (!isNaN(attemptTimestamp) && attemptTimestamp > 0) {
+            quizConfig.currentAttemptTimestamp = attemptTimestamp;
+        }
 
         $('#politeia-attempt-percentage').text(attemptPercentage + '%');
         $('#politeia-attempt-date').text(data.formatted_date || '--');
@@ -537,9 +562,7 @@ $show_loading_notice = ! $current_summary['has_attempt'];
 
         quizConfig.currentScore = attemptPercentage;
 
-        if (attemptBox.length) {
-            attemptBox.slideDown();
-        }
+        setAwaitingState(false);
 
         if (chartInstance) {
             const finalSeriesValue = quizConfig.isFinalQuiz
@@ -559,19 +582,38 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         }
     }
 
+    function queueRetry(retriesLeft, waitSeconds) {
+        if (retriesLeft <= 0) {
+            return;
+        }
+
+        setTimeout(function(){ pollLatestAttempt(retriesLeft); }, waitSeconds * 1000);
+    }
+
     function pollLatestAttempt(retries) {
         if (!quizConfig.nonce || !ajaxUrl) {
             return;
         }
 
-        $.post(ajaxUrl, {
+        const retriesLeft = typeof retries === 'number' ? retries : 0;
+        const lastTimestamp = parseInt(quizConfig.currentAttemptTimestamp, 10) || 0;
+
+        const requestData = {
             action: 'get_latest_quiz_activity',
             quiz_id: quizConfig.quizId,
             user_id: quizConfig.userId,
-            nonce: quizConfig.nonce
-        }).done(function(response){
+            nonce: quizConfig.nonce,
+            last_timestamp: lastTimestamp
+        };
+
+        if (quizConfig.awaitingAttempt) {
+            requestData.awaiting_attempt = '1';
+        }
+
+        $.post(ajaxUrl, requestData).done(function(response){
             if (response && response.success) {
                 const payload = response.data || {};
+                const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
 
                 if (payload.status === 'pending') {
                     if (loadingNotice) {
@@ -581,23 +623,24 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                         const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
                         setTimeout(function(){ pollLatestAttempt(retries - 1); }, waitSeconds * 1000);
                     }
+
+                    updateAttemptUI({
+                        percentage: (typeof payload.percentage_rounded === 'number') ? payload.percentage_rounded : payload.percentage,
+                        formatted_date: payload.formatted_date,
+                        final_percentage: payload.final_percentage,
+                        first_percentage: payload.first_percentage,
+                        score: (typeof payload.score === 'number') ? payload.score : null,
+                        timestamp: responseTimestamp
+                    });
                     return;
                 }
 
-                updateAttemptUI({
-                    percentage: (typeof payload.percentage_rounded === 'number') ? payload.percentage_rounded : payload.percentage,
-                    formatted_date: payload.formatted_date,
-                    final_percentage: payload.final_percentage,
-                    first_percentage: payload.first_percentage,
-                    score: (typeof payload.score === 'number') ? payload.score : null
-                });
-            } else if (retries > 0) {
-                setTimeout(function(){ pollLatestAttempt(retries - 1); }, defaultRetry * 1000);
+                queueRetry(retriesLeft - 1, waitSeconds);
+            } else {
+                queueRetry(retriesLeft - 1, defaultRetry);
             }
         }).fail(function(){
-            if (retries > 0) {
-                setTimeout(function(){ pollLatestAttempt(retries - 1); }, defaultRetry * 1000);
-            }
+            queueRetry(retriesLeft - 1, defaultRetry);
         });
     }
 
@@ -619,7 +662,8 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 formatted_date: <?php echo wp_json_encode( $current_summary['formatted_date'] ); ?>,
                 final_percentage: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
                 first_percentage: <?php echo ! is_null( $first_percentage_value ) ? (int) $first_percentage_value : 'null'; ?>,
-                score: <?php echo intval( $current_summary['score'] ); ?>
+                score: <?php echo intval( $current_summary['score'] ); ?>,
+                timestamp: <?php echo intval( $current_summary['timestamp'] ); ?>
             });
         } else {
             pollLatestAttempt(6);

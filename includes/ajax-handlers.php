@@ -16,9 +16,10 @@ function politeia_get_latest_quiz_activity() {
         wp_send_json_error( [ 'message' => esc_html__( 'No autorizado.', 'villegas-courses' ) ], 403 );
     }
 
-    $quiz_id       = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
+    $quiz_id        = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
     $requested_user = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
-    $current_user  = get_current_user_id();
+    $current_user   = get_current_user_id();
+    $last_timestamp = isset( $_POST['last_timestamp'] ) ? intval( $_POST['last_timestamp'] ) : 0;
 
     if ( ! $quiz_id ) {
         wp_send_json_error( [ 'message' => esc_html__( 'Faltan datos del cuestionario.', 'villegas-courses' ) ], 400 );
@@ -32,6 +33,14 @@ function politeia_get_latest_quiz_activity() {
 
     $cache_key = sprintf( 'villegas_quiz_activity_%d_%d', $user_id, $quiz_id );
     $cached    = get_transient( $cache_key );
+
+    if ( false !== $cached ) {
+        $cached_timestamp = isset( $cached['timestamp'] ) ? intval( $cached['timestamp'] ) : 0;
+
+        if ( $last_timestamp && $cached_timestamp && $cached_timestamp <= $last_timestamp ) {
+            $cached = false;
+        }
+    }
 
     if ( false !== $cached ) {
         wp_send_json_success( $cached );
@@ -48,6 +57,17 @@ function politeia_get_latest_quiz_activity() {
         ];
 
         set_transient( $cache_key, $pending, $retry_seconds );
+
+        wp_send_json_success( $pending );
+    }
+
+    $current_timestamp = intval( $summary['timestamp'] );
+
+    if ( $last_timestamp && $current_timestamp && $current_timestamp <= $last_timestamp ) {
+        $pending = [
+            'status'      => 'pending',
+            'retry_after' => $retry_seconds,
+        ];
 
         wp_send_json_success( $pending );
     }
