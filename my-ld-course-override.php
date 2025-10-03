@@ -18,6 +18,11 @@ if ( ! class_exists( 'Politeia_Quiz_Stats' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-quiz-stats.php';
 }
 
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-emails.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-handler.php';
+
+add_action( 'learndash_quiz_completed', [ 'Villegas_Quiz_Email_Handler', 'on_quiz_completed' ], 10, 2 );
+
 // Reemplazar la plantilla del curso de LearnDash
 function my_custom_ld_course_template( $template ) {
     if ( is_singular( 'sfwd-courses' ) ) {
