@@ -96,11 +96,13 @@ class QuizAnalytics {
 
         if ( ! $activity_id ) {
             return [
-                'score'      => 0,
-                'percentage' => 'N/A',
-                'attempts'   => 0,
-                'date'       => 'No Attempts',
-                'timestamp'  => 0,
+                'score'       => 0,
+                'percentage'  => 'N/A',
+                'attempts'    => 0,
+                'date'        => 'No Attempts',
+                'timestamp'   => 0,
+                'has_attempt' => false,
+                'activity_id' => 0,
             ];
         }
 
@@ -153,7 +155,7 @@ class QuizAnalytics {
             'attempts'    => 1,
             'date'        => $attempt_date,
             'timestamp'   => $timestamp,
-            'has_attempt' => $timestamp > 0,
+            'has_attempt' => ( $timestamp > 0 ),
             'activity_id' => $activity_id,
         ];
     }

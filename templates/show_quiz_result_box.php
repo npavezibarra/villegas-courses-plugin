@@ -32,16 +32,17 @@ $first_quiz_id   = $stats->get_first_quiz_id();
 $final_quiz_id   = $stats->get_final_quiz_id();
 
 $current_summary = is_array( $latest_summary ) ? $latest_summary : [];
-$current_summary = wp_parse_args(
-    $current_summary,
-    [
-        'has_attempt'        => false,
-        'timestamp'          => 0,
-        'formatted_date'     => '',
-        'score'              => null,
-        'percentage_rounded' => null,
-    ]
-);
+    $current_summary = wp_parse_args(
+        $current_summary,
+        [
+            'has_attempt'        => false,
+            'timestamp'          => 0,
+            'formatted_date'     => '',
+            'score'              => null,
+            'percentage_rounded' => null,
+            'activity_id'        => 0,
+        ]
+    );
 
 $latest_activity_id = 0;
 
@@ -78,6 +79,7 @@ if ( $user_id && $quiz_id ) {
             $current_summary['score']              = null;
             $current_summary['percentage']         = null;
             $current_summary['percentage_rounded'] = null;
+            $current_summary['activity_id']        = $latest_activity_id;
 
             error_log( sprintf( '[QuizTemplate] User %d, Quiz %d, Activity %d, Pending state triggered', $user_id, $quiz_id, $latest_activity_id ) );
         }
