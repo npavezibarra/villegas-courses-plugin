@@ -19,7 +19,9 @@ function politeia_get_latest_quiz_activity() {
     $quiz_id        = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
     $requested_user = isset( $_POST['user_id'] ) ? absint( $_POST['user_id'] ) : 0;
     $current_user   = get_current_user_id();
-    $last_timestamp = isset( $_POST['last_timestamp'] ) ? intval( $_POST['last_timestamp'] ) : 0;
+    $last_timestamp    = isset( $_POST['last_timestamp'] ) ? intval( $_POST['last_timestamp'] ) : 0;
+    $last_activity_id  = isset( $_POST['last_activity_id'] ) ? intval( $_POST['last_activity_id'] ) : 0;
+    $awaiting_attempt  = isset( $_POST['awaiting_attempt'] ) && '1' === $_POST['awaiting_attempt'];
 
     if ( ! $quiz_id ) {
         wp_send_json_error( [ 'message' => esc_html__( 'Faltan datos del cuestionario.', 'villegas-courses' ) ], 400 );
@@ -35,9 +37,13 @@ function politeia_get_latest_quiz_activity() {
     $cached    = get_transient( $cache_key );
 
     if ( false !== $cached ) {
-        $cached_timestamp = isset( $cached['timestamp'] ) ? intval( $cached['timestamp'] ) : 0;
+        $cached_timestamp   = isset( $cached['timestamp'] ) ? intval( $cached['timestamp'] ) : 0;
+        $cached_activity_id = isset( $cached['activity_id'] ) ? intval( $cached['activity_id'] ) : 0;
 
-        if ( $last_timestamp && $cached_timestamp && $cached_timestamp <= $last_timestamp ) {
+        $is_stale_timestamp = $last_timestamp && $cached_timestamp && $cached_timestamp <= $last_timestamp;
+        $is_stale_activity  = $last_activity_id && $cached_activity_id && $cached_activity_id <= $last_activity_id;
+
+        if ( $is_stale_timestamp || $is_stale_activity ) {
             $cached = false;
         }
     }
@@ -62,8 +68,24 @@ function politeia_get_latest_quiz_activity() {
     }
 
     $current_timestamp = intval( $summary['timestamp'] );
+    $current_activity  = intval( $summary['activity_id'] );
 
-    if ( $last_timestamp && $current_timestamp && $current_timestamp <= $last_timestamp ) {
+    $no_new_timestamp = $last_timestamp && $current_timestamp && $current_timestamp <= $last_timestamp;
+    $no_new_activity  = $last_activity_id && $current_activity && $current_activity <= $last_activity_id;
+
+    $should_wait = false;
+
+    if ( $awaiting_attempt ) {
+        if ( $last_activity_id ) {
+            $should_wait = $no_new_activity;
+        } elseif ( $last_timestamp ) {
+            $should_wait = $no_new_timestamp || $current_activity <= 0;
+        } else {
+            $should_wait = $current_activity <= 0;
+        }
+    }
+
+    if ( $awaiting_attempt && $should_wait ) {
         $pending = [
             'status'      => 'pending',
             'retry_after' => $retry_seconds,
@@ -96,6 +118,7 @@ function politeia_get_latest_quiz_activity() {
         'score'              => intval( $summary['score'] ),
         'timestamp'          => intval( $summary['timestamp'] ),
         'formatted_date'     => $summary['formatted_date'],
+        'activity_id'        => $current_activity,
         'course_id'          => $course_id ? intval( $course_id ) : 0,
         'is_first_quiz'      => (bool) $is_first,
         'is_final_quiz'      => (bool) $is_final,
@@ -145,6 +168,7 @@ function politeia_extract_quiz_attempt_summary( $user_id, $quiz_id ) {
         'percentage'     => null,
         'score'          => 0,
         'timestamp'      => 0,
+        'activity_id'    => 0,
         'formatted_date' => '',
     ];
 
@@ -188,11 +212,32 @@ function politeia_extract_quiz_attempt_summary( $user_id, $quiz_id ) {
 
     $timestamp = isset( $latest_attempt['time'] ) ? intval( $latest_attempt['time'] ) : 0;
 
+    global $wpdb;
+
+    $activity_id = 0;
+
+    if ( $timestamp > 0 ) {
+        $activity_id = intval(
+            $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT activity_id
+                     FROM {$wpdb->prefix}learndash_user_activity
+                     WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'
+                     ORDER BY activity_updated DESC, activity_id DESC
+                     LIMIT 1",
+                    $user_id,
+                    $quiz_id
+                )
+            )
+        );
+    }
+
     return [
         'has_attempt'    => $timestamp > 0,
         'percentage'     => $percentage,
         'score'          => isset( $latest_attempt['score'] ) ? intval( $latest_attempt['score'] ) : 0,
         'timestamp'      => $timestamp,
+        'activity_id'    => $activity_id,
         'formatted_date' => $timestamp ? esc_html( date_i18n( 'j \d\e F \d\e Y', $timestamp ) ) : '',
     ];
 }

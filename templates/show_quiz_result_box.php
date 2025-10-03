@@ -671,11 +671,11 @@ $show_loading_notice = ! $current_has_attempt;
         $('#politeia-attempt-date').text(data.formatted_date || '--');
 
         let normalizedActivityId = null;
-        if (typeof data.activity_id === 'number') {
+        if (typeof data.activity_id === 'number' && data.activity_id > 0) {
             normalizedActivityId = data.activity_id;
         } else if (typeof data.activity_id === 'string' && data.activity_id) {
             const parsedId = parseInt(data.activity_id, 10);
-            if (!Number.isNaN(parsedId)) {
+            if (!Number.isNaN(parsedId) && parsedId > 0) {
                 normalizedActivityId = parsedId;
             }
         }
@@ -750,7 +750,8 @@ $show_loading_notice = ! $current_has_attempt;
             quiz_id: quizConfig.quizId,
             user_id: quizConfig.userId,
             nonce: quizConfig.nonce,
-            last_timestamp: lastTimestamp
+            last_timestamp: lastTimestamp,
+            last_activity_id: parseInt(quizConfig.currentActivityId, 10) || 0
         };
 
         if (quizConfig.awaitingAttempt) {
