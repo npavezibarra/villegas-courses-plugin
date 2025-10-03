@@ -1,4 +1,8 @@
 <?php
+
+if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
+}
 // Shortcode to display course name, First Quiz status, number of attempts, and attempt percentages
 function shortcode_display_course_and_quiz_status($atts) {
     $atts = shortcode_atts(
@@ -16,7 +20,7 @@ function shortcode_display_course_and_quiz_status($atts) {
     }
 
     // Retrieve the First Quiz ID
-    $first_quiz_id   = get_post_meta($course_id, '_first_quiz_id', true);
+    $first_quiz_id   = CourseQuizMetaHelper::getFirstQuizId( $course_id );
     $has_first_quiz  = $first_quiz_id ? 'Yes' : 'No';
 
     $user_id          = get_current_user_id();
@@ -108,28 +112,8 @@ function shortcode_display_course_and_final_quiz_status($atts) {
         return "Course not found.";
     }
 
-    // Retrieve course steps meta
-    $course_steps = get_post_meta($course_id, 'ld_course_steps', true);
-    $final_quiz_exists = 'No';
-    $final_quiz_id     = null;
-
-    // Convert steps to array (in case it's serialized)
-    if (!empty($course_steps) && !is_array($course_steps)) {
-        $course_steps = @unserialize($course_steps);
-    }
-
-    // Find the "final" quiz in the course steps
-    if (!empty($course_steps['steps']) && is_array($course_steps['steps'])) {
-        foreach ($course_steps['steps'] as $step) {
-            if (!empty($step['sfwd-quiz']) && is_array($step['sfwd-quiz'])) {
-                foreach ($step['sfwd-quiz'] as $quiz_id => $quiz_data) {
-                    $final_quiz_exists = 'Yes';
-                    $final_quiz_id     = $quiz_id;
-                    break 2;  // Exit both loops when found
-                }
-            }
-        }
-    }
+    $final_quiz_id     = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+    $final_quiz_exists = $final_quiz_id ? 'Yes' : 'No';
 
     $user_id = get_current_user_id();
     global $wpdb;

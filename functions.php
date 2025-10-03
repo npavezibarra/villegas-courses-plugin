@@ -1,5 +1,9 @@
 <?php
 
+if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
+}
+
 function allow_pending_role_users_access_quiz( $has_access, $post_id, $user_id ) {
     // Get the user's role(s)
     $user = get_userdata( $user_id );
@@ -85,12 +89,8 @@ function villegas_show_resultados_button($course_id, $user_id) {
     if (!$course_id || !$user_id) return;
 
     // Obtener IDs de quizzes
-    $first_quiz_id = get_post_meta($course_id, '_first_quiz_id', true);
-    $final_quiz_id = 0;
-    $quiz_steps = learndash_course_get_steps_by_type($course_id, 'sfwd-quiz');
-    if (!empty($quiz_steps)) {
-        $final_quiz_id = end($quiz_steps);
-    }
+    $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
+    $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
 
     if (!$first_quiz_id || !$final_quiz_id) return;
 
@@ -138,18 +138,16 @@ function villegas_inyectar_quiz_data_footer() {
     global $post;
 
     $quiz_id = $post->ID;
-    $course_id = learndash_get_course_id($quiz_id);
-    $course_title = get_the_title($course_id);
+    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    $course_title = $course_id ? get_the_title($course_id) : '';
     $current_user_id = get_current_user_id(); // <-- Obtener el ID del usuario actual
 
-    // Obtener la categoría de evaluación (taxonomía personalizada de LearnDash)
-    $terms = wp_get_post_terms($quiz_id, 'ld_quiz_category');
-    $type = 'final';
-
-    foreach ($terms as $term) {
-        if (strtolower($term->name) === 'primera') {
+    $type = 'unknown';
+    if ( $course_id ) {
+        if ( $quiz_id === CourseQuizMetaHelper::getFirstQuizId( $course_id ) ) {
             $type = 'first';
-            break;
+        } elseif ( $quiz_id === CourseQuizMetaHelper::getFinalQuizId( $course_id ) ) {
+            $type = 'final';
         }
     }
 
@@ -229,50 +227,26 @@ function villegas_mensaje_personalizado_intentos($quiz_id, $ignored, $user_id) {
     global $wpdb;
 
     // Obtener Course ID desde el metacampo _first_quiz_id (solo funciona si el quiz es First)
-    $course_id = $wpdb->get_var(
-        $wpdb->prepare(
-            "SELECT post_id
-             FROM {$wpdb->postmeta}
-             WHERE meta_key = '_first_quiz_id'
-               AND meta_value = %d
-             LIMIT 1",
-            $quiz_id
-        )
-    );
-    $course_id = $course_id ? intval($course_id) : 0;
-    
-    // Obtener ID del First Quiz (ya lo tenemos)
-    $first_quiz_id = $quiz_id;
-    
-    // Inicializar valores por defecto
-    $quiz_final_id = 0;
+    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    $first_quiz_id = $course_id ? CourseQuizMetaHelper::getFirstQuizId( $course_id ) : 0;
+
+    if ( ! $course_id || $quiz_id !== $first_quiz_id ) {
+        return;
+    }
+
+    $quiz_final_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
     $quiz_final_nombre = 'Prueba Final';
-    
-    // Buscar otros quizzes del curso
-    if ($course_id) {
-        $quiz_steps = learndash_course_get_steps_by_type($course_id, 'sfwd-quiz');
-    
-        // Filtrar para encontrar el quiz que no es el primero
-        $filtered = array_filter($quiz_steps, function($id) use ($first_quiz_id) {
-            return intval($id) !== intval($first_quiz_id);
-        });
-    
-        if (!empty($filtered)) {
-            $quiz_final_id = array_values($filtered)[0];
-            $quiz_final_nombre = get_the_title($quiz_final_id);
-        }
+
+    if ( $quiz_final_id ) {
+        $quiz_final_nombre = get_the_title( $quiz_final_id );
     }
     
     /* DEBUG VISUAL
     //echo '<div style="background: #f3f3f3; padding: 10px; font-size: 14px; border: 1px solid #ccc; margin: 20px 0;">';
     echo '<strong>[DEBUG]</strong><br>';
     echo 'Quiz actual ID: ' . esc_html($quiz_id) . '<br>';
-    echo 'Course ID (vía _first_quiz_id): ' . esc_html($course_id) . '<br>';
+    echo 'Course ID detectado: ' . esc_html($course_id) . '<br>';
     echo 'First Quiz ID: ' . esc_html($first_quiz_id) . '<br>';
-    
-    $quiz_steps = learndash_course_get_steps_by_type($course_id, 'sfwd-quiz');
-    echo 'Quizzes del curso (builder): ' . implode(', ', array_map('intval', $quiz_steps)) . '<br>';
-    
     echo 'Final Quiz ID detectado: ' . esc_html($quiz_final_id) . '<br>';
     echo 'Final Quiz Nombre: ' . esc_html($quiz_final_nombre) . '<br>';
     echo '</div>'; */

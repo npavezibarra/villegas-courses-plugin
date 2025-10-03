@@ -1,4 +1,8 @@
 <?php
+
+if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
+}
 /**
  * Shortcode: [cursos_finalizados]
  * Muestra los cursos en los que el usuario está inscrito, con estado de quizzes y estadísticas.
@@ -49,14 +53,14 @@ function villegas_shortcode_cursos_finalizados() {
         echo '<hr>';
 
         // Obtener IDs de quizzes
-        $first_quiz_id = get_post_meta($course_id, '_first_quiz_id', true);
-        $quiz_steps = learndash_course_get_steps_by_type($course_id, 'sfwd-quiz');
-        $final_quiz_id = !empty($quiz_steps) ? end($quiz_steps) : 0;
+        $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
+        $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
 
         // === PRUEBA INICIAL ===
         echo '<div class="quiz-row-inicial">';
         echo '<div><div class="quiz-label">Prueba Inicial</div>';
-        if (villegas_is_quiz_completed($first_quiz_id, $user_id)) {
+        $first_completed = $first_quiz_id ? villegas_is_quiz_completed($first_quiz_id, $user_id) : false;
+        if ($first_completed) {
             $date = get_quiz_completion_date($first_quiz_id, $user_id);
             echo '<div class="quiz-date">' . esc_html($date) . '</div>';
         } else {
@@ -64,10 +68,11 @@ function villegas_shortcode_cursos_finalizados() {
         }
         echo '</div>';
 
-        if (villegas_is_quiz_completed($first_quiz_id, $user_id)) {
+        if ($first_completed) {
             echo villegas_render_quiz_result($first_quiz_id, $user_id);
         } else {
-            echo '<a class="quiz-status-link" style="font-size:11px; letter-spacing: 4px;" href="' . esc_url(get_permalink($first_quiz_id)) . '">NO RENDIDA</a>';
+            $first_quiz_link = $first_quiz_id ? get_permalink($first_quiz_id) : get_permalink($course_id);
+            echo '<a class="quiz-status-link" style="font-size:11px; letter-spacing: 4px;" href="' . esc_url($first_quiz_link) . '">NO RENDIDA</a>';
             echo '<span class="quiz-percentage">–</span>';
         }
         echo '</div>';

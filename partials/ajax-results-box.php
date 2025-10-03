@@ -3,6 +3,10 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
+}
+
 $course_id = intval( $_POST['course_id'] ?? 0 );
 $user_id   = get_current_user_id();
 
@@ -83,9 +87,8 @@ function villegas_build_quiz_data( $wpdb, $attempt ) {
 // Datos del curso / quizzes
 // -----------------------------------------------------------------------------
 $course_title   = get_the_title( $course_id );
-$first_quiz_id  = intval( get_post_meta( $course_id, '_first_quiz_id', true ) );
-$quiz_steps     = learndash_course_get_steps_by_type( $course_id, 'sfwd-quiz' );
-$final_quiz_id  = ! empty( $quiz_steps ) ? end( $quiz_steps ) : 0;
+$first_quiz_id  = CourseQuizMetaHelper::getFirstQuizId( $course_id );
+$final_quiz_id  = CourseQuizMetaHelper::getFinalQuizId( $course_id );
 
 $first_data = villegas_build_quiz_data(
     $wpdb,
