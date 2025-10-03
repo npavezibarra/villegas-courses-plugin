@@ -259,10 +259,13 @@ function politeia_poll_new_attempt() {
     );
 
     if ( ! $attempt ) {
+        $status           = 'waiting_new_attempt';
+        $log_activity_id  = 'none';
+        error_log( sprintf( '[CustomPoll] Baseline: %d | Found activity_id: %s | Status: %s', $baseline, $log_activity_id, $status ) );
         error_log( "[CustomPoll] No new attempt found > $baseline for user $user_id quiz $quiz_id" );
         wp_send_json_success(
             [
-                'status'      => 'waiting_new_attempt',
+                'status'      => $status,
                 'retry_after' => 2,
             ]
         );
@@ -275,20 +278,24 @@ function politeia_poll_new_attempt() {
         : null;
 
     if ( null === $percentage ) {
+        $status = 'pending';
+        error_log( sprintf( '[CustomPoll] Baseline: %d | Found activity_id: %d | Status: %s', $baseline, $activity_id, $status ) );
         error_log( "[CustomPoll] Attempt $activity_id exists but metadata incomplete." );
         wp_send_json_success(
             [
-                'status'      => 'pending',
+                'status'      => $status,
                 'activity_id' => $activity_id,
                 'retry_after' => 2,
             ]
         );
     }
 
+    $status = 'ready';
+    error_log( sprintf( '[CustomPoll] Baseline: %d | Found activity_id: %d | Status: %s', $baseline, $activity_id, $status ) );
     error_log( "[CustomPoll] Attempt $activity_id ready with percentage $percentage" );
     wp_send_json_success(
         [
-            'status'      => 'ready',
+            'status'      => $status,
             'activity_id' => $activity_id,
             'percentage'  => $percentage,
         ]

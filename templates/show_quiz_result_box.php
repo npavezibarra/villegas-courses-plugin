@@ -497,6 +497,10 @@ if ( $latest_activity_pending ) {
 </div>
 
 <script>
+window.politeiaBaselineId = <?php echo intval( $latest_activity_id ); ?>;
+</script>
+
+<script>
 (function($){
     const ajaxConfig = window.villegasAjax || {};
     const quizConfig = {

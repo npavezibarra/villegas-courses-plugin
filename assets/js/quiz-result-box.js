@@ -6,7 +6,7 @@
         return;
     }
 
-    const baselineId = Number(quizConfig.currentActivityId) || 0;
+    const baselineId = Number(window.politeiaBaselineId) || 0;
 
     function pollNewAttempt(){
         $.post(ajaxConfig.ajaxUrl, {
@@ -41,7 +41,7 @@
         });
     }
 
-    $(document).on('learndash-quiz-finished', function(){
+    $(document).ready(function(){
         pollNewAttempt();
     });
 })(jQuery);
