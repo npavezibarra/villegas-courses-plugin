@@ -84,10 +84,116 @@ function villegas_enqueue_profile_picture_script() {
 }
 
 /* AJAX PARA RESULTADOS QUIZ */
-add_action('wp_ajax_mostrar_resultados_curso', 'villegas_ajax_resultados_curso');
+add_action( 'wp_ajax_mostrar_resultados_curso', 'villegas_ajax_resultados_curso' );
 function villegas_ajax_resultados_curso() {
-    include plugin_dir_path(__FILE__) . 'partials/ajax-results-box.php';
-    wp_die(); // importante
+    if ( ! is_user_logged_in() ) {
+        wp_send_json_error( [ 'message' => __( 'Debes iniciar sesión para ver los resultados.', 'villegas-courses' ) ], 401 );
+    }
+
+    $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
+    if ( ! wp_verify_nonce( $nonce, 'mostrar_resultados_curso' ) ) {
+        wp_send_json_error( [ 'message' => __( 'Solicitud inválida. Actualiza la página e inténtalo nuevamente.', 'villegas-courses' ) ], 403 );
+    }
+
+    $course_id = isset( $_POST['course_id'] ) ? absint( $_POST['course_id'] ) : 0;
+    if ( ! $course_id ) {
+        wp_send_json_error( [ 'message' => __( 'Curso inválido.', 'villegas-courses' ) ], 400 );
+    }
+
+    $user_id = get_current_user_id();
+
+    $first_quiz_id = PoliteiaCourse::getFirstQuizId( $course_id );
+    $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
+
+    if ( ! $first_quiz_id && ! $final_quiz_id ) {
+        wp_send_json_error( [ 'message' => __( 'Este curso no tiene cuestionarios configurados.', 'villegas-courses' ) ] );
+    }
+
+    $reference_quiz_id = $final_quiz_id ? $final_quiz_id : $first_quiz_id;
+
+    if ( ! $reference_quiz_id ) {
+        wp_send_json_error( [ 'message' => __( 'No se pudo determinar un cuestionario de referencia.', 'villegas-courses' ) ] );
+    }
+
+    $stats = new Politeia_Quiz_Stats( $reference_quiz_id, $user_id );
+
+    $first_summary = [
+        'quiz_id'            => $first_quiz_id,
+        'has_attempt'        => false,
+        'percentage_rounded' => null,
+        'score'              => 0,
+        'formatted_date'     => null,
+        'timestamp'          => 0,
+    ];
+
+    if ( $first_quiz_id ) {
+        $first_summary = $stats->get_quiz_summary( $first_quiz_id );
+    }
+
+    $final_summary = [
+        'quiz_id'            => $final_quiz_id,
+        'has_attempt'        => false,
+        'percentage_rounded' => null,
+        'score'              => 0,
+        'formatted_date'     => null,
+        'timestamp'          => 0,
+    ];
+
+    if ( $final_quiz_id ) {
+        $final_summary = $stats->get_quiz_summary( $final_quiz_id );
+    }
+
+    $delta        = null;
+    $days_elapsed = null;
+
+    $first_numeric = is_numeric( $first_summary['percentage_rounded'] );
+    $final_numeric = is_numeric( $final_summary['percentage_rounded'] );
+
+    if ( $first_summary['has_attempt'] && $final_summary['has_attempt'] && $first_numeric && $final_numeric ) {
+        $delta = intval( $final_summary['percentage_rounded'] ) - intval( $first_summary['percentage_rounded'] );
+
+        if ( $final_summary['timestamp'] && $first_summary['timestamp'] && $final_summary['timestamp'] >= $first_summary['timestamp'] ) {
+            $days_elapsed = max( 1, floor( ( $final_summary['timestamp'] - $first_summary['timestamp'] ) / DAY_IN_SECONDS ) );
+        }
+    }
+
+    $results = [
+        'course'  => [
+            'id'    => $course_id,
+            'title' => get_the_title( $course_id ),
+        ],
+        'first'   => [
+            'quiz_id'        => $first_quiz_id,
+            'has_attempt'    => (bool) $first_summary['has_attempt'],
+            'score'          => intval( $first_summary['score'] ),
+            'percentage'     => $first_numeric ? intval( $first_summary['percentage_rounded'] ) : null,
+            'formatted_date' => $first_summary['formatted_date'],
+        ],
+        'final'   => [
+            'quiz_id'        => $final_quiz_id,
+            'has_attempt'    => (bool) $final_summary['has_attempt'],
+            'score'          => intval( $final_summary['score'] ),
+            'percentage'     => $final_numeric ? intval( $final_summary['percentage_rounded'] ) : null,
+            'formatted_date' => $final_summary['formatted_date'],
+        ],
+        'metrics' => [
+            'delta'        => $delta,
+            'days_elapsed' => $days_elapsed,
+        ],
+    ];
+
+    $modal_data = $results;
+
+    ob_start();
+    include plugin_dir_path( __FILE__ ) . 'partials/ajax-results-box.php';
+    $html = trim( ob_get_clean() );
+
+    wp_send_json_success(
+        [
+            'html'    => $html,
+            'results' => $results,
+        ]
+    );
 }
 
 function enqueue_my_account_script() {
@@ -100,9 +206,14 @@ function enqueue_my_account_script() {
             true
         );
 
-        wp_localize_script('my-account-script', 'ajax_object', [
-            'ajaxurl' => admin_url('admin-ajax.php')
-        ]);
+        wp_localize_script(
+            'my-account-script',
+            'ajax_object',
+            [
+                'ajaxurl'      => admin_url( 'admin-ajax.php' ),
+                'resultsNonce' => wp_create_nonce( 'mostrar_resultados_curso' ),
+            ]
+        );
     }
 }
 add_action('wp_enqueue_scripts', 'enqueue_my_account_script');

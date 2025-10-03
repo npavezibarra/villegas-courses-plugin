@@ -4,6 +4,10 @@ if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
 }
 
+if ( ! class_exists( 'PoliteiaCourse' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-course.php';
+}
+
 function allow_pending_role_users_access_quiz( $has_access, $post_id, $user_id ) {
     // Get the user's role(s)
     $user = get_userdata( $user_id );
@@ -89,8 +93,8 @@ function villegas_show_resultados_button($course_id, $user_id) {
     if (!$course_id || !$user_id) return;
 
     // Obtener IDs de quizzes
-    $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
-    $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+    $first_quiz_id = PoliteiaCourse::getFirstQuizId( $course_id );
+    $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
 
     if (!$first_quiz_id || !$final_quiz_id) return;
 
@@ -122,11 +126,19 @@ function villegas_show_resultados_button($course_id, $user_id) {
     }
 }
 
-add_action('wp_enqueue_scripts', function() {
-    wp_localize_script('custom-quiz-message', 'ajax_object', array(
-        'ajaxurl' => admin_url('admin-ajax.php')
-    ));
-});
+add_action(
+    'wp_enqueue_scripts',
+    function() {
+        wp_localize_script(
+            'custom-quiz-message',
+            'ajax_object',
+            [
+                'ajaxurl'      => admin_url( 'admin-ajax.php' ),
+                'resultsNonce' => wp_create_nonce( 'mostrar_resultados_curso' ),
+            ]
+        );
+    }
+);
 
 /* INYECTAR EVALUACON CATEGORIAS A QUIZ (PRimera o Final) */
 
@@ -138,15 +150,15 @@ function villegas_inyectar_quiz_data_footer() {
     global $post;
 
     $quiz_id = $post->ID;
-    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    $course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
     $course_title = $course_id ? get_the_title($course_id) : '';
     $current_user_id = get_current_user_id(); // <-- Obtener el ID del usuario actual
 
     $type = 'unknown';
     if ( $course_id ) {
-        if ( $quiz_id === CourseQuizMetaHelper::getFirstQuizId( $course_id ) ) {
+        if ( $quiz_id === PoliteiaCourse::getFirstQuizId( $course_id ) ) {
             $type = 'first';
-        } elseif ( $quiz_id === CourseQuizMetaHelper::getFinalQuizId( $course_id ) ) {
+        } elseif ( $quiz_id === PoliteiaCourse::getFinalQuizId( $course_id ) ) {
             $type = 'final';
         }
     }
@@ -227,14 +239,14 @@ function villegas_mensaje_personalizado_intentos($quiz_id, $ignored, $user_id) {
     global $wpdb;
 
     // Obtener Course ID desde el metacampo _first_quiz_id (solo funciona si el quiz es First)
-    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
-    $first_quiz_id = $course_id ? CourseQuizMetaHelper::getFirstQuizId( $course_id ) : 0;
+    $course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
+    $first_quiz_id = $course_id ? PoliteiaCourse::getFirstQuizId( $course_id ) : 0;
 
     if ( ! $course_id || $quiz_id !== $first_quiz_id ) {
         return;
     }
 
-    $quiz_final_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+    $quiz_final_id = PoliteiaCourse::getFinalQuizId( $course_id );
     $quiz_final_nombre = 'Prueba Final';
 
     if ( $quiz_final_id ) {
@@ -425,13 +437,13 @@ function isFinalQuizAccessible( $quiz_id, $user_id ) {
         return false;
     }
 
-    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    $course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
 
     if ( ! $course_id ) {
         return true;
     }
 
-    $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+    $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
 
     if ( ! $final_quiz_id || intval( $final_quiz_id ) !== $quiz_id ) {
         return true;
@@ -469,14 +481,14 @@ function villegas_enforce_quiz_access_control() {
     }
 
     $quiz_id   = intval( $post->ID );
-    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    $course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
 
     if ( ! $course_id ) {
         return;
     }
 
-    $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
-    $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+    $first_quiz_id = PoliteiaCourse::getFirstQuizId( $course_id );
+    $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
 
     if ( $first_quiz_id && $quiz_id === intval( $first_quiz_id ) ) {
         if ( is_user_logged_in() ) {

@@ -101,15 +101,36 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(ajax_object.ajaxurl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'action=mostrar_resultados_curso&course_id=' + encodeURIComponent(cursoId)
+                body: new URLSearchParams({
+                    action: 'mostrar_resultados_curso',
+                    course_id: cursoId,
+                    nonce: ajax_object.resultsNonce || ''
+                })
             })
-            .then(response => response.text())
-            .then(html => {
+            .then(response => response.json())
+            .then(payload => {
+                const success = payload && payload.success;
+                const data = (payload && payload.data) ? payload.data : {};
+                const html = success && data.html ? data.html : '<p>No se pudieron cargar los resultados del curso.</p>';
+
                 modal.innerHTML = `
                     <button id="cerrar-resultados" style="position: absolute; top: 10px; right: 10px; background-color: #ccc; border: none; border-radius: 50%; width: 32px; height: 32px; font-weight: bold; font-size: 16px; cursor: pointer; line-height: 30px;">×</button>
                     ` + html;
                     modal.classList.add('visible');
                     overlay.classList.add('visible');
+
+                document.getElementById('cerrar-resultados')?.addEventListener('click', () => {
+                    modal.classList.remove('visible');
+                    overlay.classList.remove('visible');
+                });
+            })
+            .catch(() => {
+                modal.innerHTML = `
+                    <button id="cerrar-resultados" style="position: absolute; top: 10px; right: 10px; background-color: #ccc; border: none; border-radius: 50%; width: 32px; height: 32px; font-weight: bold; font-size: 16px; cursor: pointer; line-height: 30px;">×</button>
+                    <p>No se pudieron obtener los resultados en este momento. Inténtalo nuevamente más tarde.</p>
+                `;
+                modal.classList.add('visible');
+                overlay.classList.add('visible');
 
                 document.getElementById('cerrar-resultados')?.addEventListener('click', () => {
                     modal.classList.remove('visible');
