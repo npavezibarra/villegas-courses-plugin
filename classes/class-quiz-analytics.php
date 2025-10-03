@@ -78,7 +78,6 @@ class QuizAnalytics {
     private function getUserQuizPerformance( $quiz_id ) {
         global $wpdb;
 
-        // Buscar el intento más reciente (activity_id) para este usuario y quiz
         $activity_id = $wpdb->get_var(
             $wpdb->prepare(
                 "
@@ -100,11 +99,11 @@ class QuizAnalytics {
                 'score'      => 0,
                 'percentage' => 'N/A',
                 'attempts'   => 0,
-                'date'       => 'No Attempts'
+                'date'       => 'No Attempts',
+                'timestamp'  => 0,
             ];
         }
 
-        // Obtener puntuación (score)
         $score = $wpdb->get_var(
             $wpdb->prepare(
                 "
@@ -119,7 +118,6 @@ class QuizAnalytics {
         );
         $score = $score !== null ? intval( $score ) : 0;
 
-        // Obtener porcentaje (percentage)
         $percentage = $wpdb->get_var(
             $wpdb->prepare(
                 "
@@ -134,7 +132,6 @@ class QuizAnalytics {
         );
         $percentage = $percentage !== null ? floatval( $percentage ) : 'N/A';
 
-        // Obtener timestamp del último intento
         $latest_attempt_ts = $wpdb->get_var(
             $wpdb->prepare(
                 "
@@ -146,6 +143,7 @@ class QuizAnalytics {
                 $activity_id
             )
         );
+
         $attempt_date = ( $latest_attempt_ts && intval( $latest_attempt_ts ) > 0 )
             ? date_i18n( 'j \d\e F \d\e Y', intval( $latest_attempt_ts ) )
             : 'No Attempts';
@@ -154,8 +152,28 @@ class QuizAnalytics {
             'score'      => $score,
             'percentage' => $percentage,
             'attempts'   => 1,
-            'date'       => $attempt_date
+            'date'       => $attempt_date,
+            'timestamp'  => intval( $latest_attempt_ts ),
         ];
+    }
+
+    /**
+     * Retrieve performance information for any quiz ID.
+     */
+    public function getQuizPerformance( $quiz_id = null ) {
+        $quiz_id = $quiz_id ? intval( $quiz_id ) : $this->quiz_id;
+
+        if ( ! $quiz_id ) {
+            return [
+                'score'      => 0,
+                'percentage' => 'N/A',
+                'attempts'   => 0,
+                'date'       => 'No Attempts',
+                'timestamp'  => 0,
+            ];
+        }
+
+        return $this->getUserQuizPerformance( $quiz_id );
     }
 
     public function getFirstQuizTimestamp() {
@@ -209,7 +227,8 @@ class QuizAnalytics {
                 'score'      => 0,
                 'percentage' => 'N/A',
                 'attempts'   => 0,
-                'date'       => 'No Attempts'
+                'date'       => 'No Attempts',
+                'timestamp'  => 0,
             ];
         }
         return $this->getUserQuizPerformance( $this->first_quiz_id );
@@ -225,7 +244,8 @@ class QuizAnalytics {
                 'score'      => 0,
                 'percentage' => 'N/A',
                 'attempts'   => 0,
-                'date'       => 'No Attempts'
+                'date'       => 'No Attempts',
+                'timestamp'  => 0,
             ];
         }
         return $this->getUserQuizPerformance( $this->final_quiz_id );

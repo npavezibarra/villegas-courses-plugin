@@ -10,6 +10,14 @@ if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
 }
 
+if ( ! class_exists( 'PoliteiaCourse' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-course.php';
+}
+
+if ( ! class_exists( 'Politeia_Quiz_Stats' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-quiz-stats.php';
+}
+
 // Reemplazar la plantilla del curso de LearnDash
 function my_custom_ld_course_template( $template ) {
     if ( is_singular( 'sfwd-courses' ) ) {
@@ -170,7 +178,7 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     );
 
     $quiz_id      = get_the_ID();
-    $course_id    = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    $course_id    = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
     $course_title = $course_id ? get_the_title( $course_id ) : '';
 
     // -----------------------------------------------------------
@@ -197,17 +205,18 @@ if ( is_singular( 'sfwd-quiz' ) ) {
 
 
     $quiz_description_raw = get_post_field('post_content', $quiz_id);
-$quiz_description = $quiz_description_raw ? apply_filters('the_content', do_blocks($quiz_description_raw)) : '';
+    $quiz_description = $quiz_description_raw ? apply_filters('the_content', do_blocks($quiz_description_raw)) : '';
 
-wp_localize_script( 'custom-quiz-message', 'quizData', [
-    'quizId'          => $quiz_id,
-    'userId'          => get_current_user_id(),
-    'courseName'      => $course_title,
-    'type'            => $type,
-    'description'     => $quiz_description,
-    'firstQuizNonce'  => $first_quiz_nonce,
-    'finalQuizNonce'  => $final_quiz_nonce,
-] );
+    wp_localize_script( 'custom-quiz-message', 'quizData', [
+        'quizId'          => $quiz_id,
+        'userId'          => get_current_user_id(),
+        'courseName'      => $course_title,
+        'type'            => $type,
+        'description'     => $quiz_description,
+        'firstQuizNonce'  => $first_quiz_nonce,
+        'finalQuizNonce'  => $final_quiz_nonce,
+        'activityNonce'   => wp_create_nonce( 'politeia_quiz_activity' ),
+    ] );
 
 
     // ajax_object.ajaxurl → para la llamada POST
@@ -359,7 +368,7 @@ function enviar_correo_first_quiz_handler() {
     $quiz_title = get_the_title($quiz_id);
 
     // Obtener Course ID desde la metadata configurada
-    $course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    $course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
 
     // Verificar acceso al curso
     $tiene_acceso = $course_id ? sfwd_lms_has_access($course_id, $user_id) : false;
@@ -541,7 +550,7 @@ function handle_enviar_correo_final_quiz() {
 	$first_bar_style = $first_pct > 0 ? "width: {$first_pct}%; background-color: #ff9800;" : "width: 0%;" ;
 
 	// ---------- Preparar plantilla ----------
-        $course_id    = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+        $course_id    = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
         $course_title = $course_id ? get_the_title( $course_id ) : '';
 	$subject      = '¡Has completado el Final Quiz!';
 	$headers      = [ 'Content-Type: text/html; charset=UTF-8' ];

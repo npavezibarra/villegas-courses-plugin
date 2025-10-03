@@ -3,8 +3,8 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
-    require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
+if ( ! class_exists( 'PoliteiaCourse' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . '../classes/class-politeia-course.php';
 }
 
 $course_id = intval( $_POST['course_id'] ?? 0 );
@@ -87,8 +87,8 @@ function villegas_build_quiz_data( $wpdb, $attempt ) {
 // Datos del curso / quizzes
 // -----------------------------------------------------------------------------
 $course_title   = get_the_title( $course_id );
-$first_quiz_id  = CourseQuizMetaHelper::getFirstQuizId( $course_id );
-$final_quiz_id  = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+$first_quiz_id  = PoliteiaCourse::getFirstQuizId( $course_id );
+$final_quiz_id  = PoliteiaCourse::getFinalQuizId( $course_id );
 
 $first_data = villegas_build_quiz_data(
     $wpdb,
