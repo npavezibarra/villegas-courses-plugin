@@ -1,16 +1,10 @@
 <?php
 function handle_registration() {
     if ($_SERVER['REQUEST_METHOD'] == 'POST' && isset($_POST['action']) && $_POST['action'] === 'register') {
-        error_log("Registration form submitted");
         $first_name = sanitize_text_field($_POST['first_name']);
         $last_name = sanitize_text_field($_POST['last_name']);
         $email = sanitize_email($_POST['email']);
         $password = $_POST['password'];
-
-        error_log("First name: $first_name");
-        error_log("Last name: $last_name");
-        error_log("Email: $email");
-        error_log("Password: " . (!empty($password) ? 'Received' : 'Missing'));
         
         // Generate a unique username based on first and last name
         $username = sanitize_user($first_name . $last_name);
@@ -28,13 +22,6 @@ function handle_registration() {
         );
 
         $user_id = wp_insert_user($userdata);
-
-        if (is_wp_error($user_id)) {
-            $error_message = 'Error al registrar el usuario.';
-            error_log("User creation failed: " . $user_id->get_error_message());
-        } else {
-            error_log("User created successfully with ID: $user_id");
-        }
 
         if (!is_wp_error($user_id)) {
             // Generate confirmation code

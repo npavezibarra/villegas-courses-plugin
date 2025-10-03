@@ -5,6 +5,7 @@ jQuery(document).ready(function($) {
     const securityNonce = (typeof villegasQuizStyleData !== 'undefined' && villegasQuizStyleData.security)
         ? villegasQuizStyleData.security
         : '';
+    const speak = (window.wp && wp.a11y && typeof wp.a11y.speak === 'function') ? wp.a11y.speak : null;
 
     $('.select-image-button').click(function(e) {
         e.preventDefault();
@@ -32,10 +33,12 @@ jQuery(document).ready(function($) {
                 image_id: attachment.id,
                 security: securityNonce
             }, function(response) {
-                if (response.success) {
-                    console.log('Imagen guardada');
-                } else {
-                    console.log('Error al guardar la imagen');
+                if (speak) {
+                    if (response.success) {
+                        speak('Imagen de estilo guardada.');
+                    } else {
+                        speak('No fue posible guardar la imagen de estilo.');
+                    }
                 }
             });
         });

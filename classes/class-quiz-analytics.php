@@ -208,9 +208,6 @@ class QuizAnalytics {
             $timestamp = (int) $row->activity_started;   // Fallback
         }
     
-        // -- DEBUG (puedes quitarlo luego)
-        error_log( '[QuizAnalytics] FirstQuiz TS = ' . $timestamp );
-    
         return $timestamp;
     }
     

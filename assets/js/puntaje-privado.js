@@ -15,13 +15,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        console.log('Enviando AJAX:', {
-            action: 'guardar_privacidad_puntaje',
-            user_id: userId,
-            puntaje_privado: isPrivate ? '1' : '0',
-            nonce: nonce
-        });
-
         fetch(ajaxUrl, {
             method: 'POST',
             credentials: 'same-origin',
@@ -35,9 +28,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .then(res => res.json())
         .then(data => {
-            if (data.success) {
-                console.log('✔ Preferencia guardada');
-            } else {
+            if (!data.success) {
                 console.error('❌ Error al guardar preferencia', data);
             }
         })

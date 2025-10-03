@@ -216,7 +216,4 @@ function mostrar_comprar_stats() {
     <?php
 }
 
-if (defined('WP_DEBUG') && WP_DEBUG && headers_sent($file, $line)) {
-    error_log(sprintf('Headers already sent in %s on line %d', $file, $line));
-}
 ?>
