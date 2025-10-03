@@ -35,20 +35,28 @@ class Villegas_Quiz_Email_Handler {
         // Send the email
         if ( is_array( $email_content ) && ! empty( $email_content['subject'] ) && ! empty( $email_content['body'] ) ) {
             // Decide recipients
-            $default_recipients = [ $user->user_email ];
-            $admin_email        = get_option( 'admin_email' );
+            $send_to_student = get_option( 'villegas_quiz_email_send_to_student', 1 );
+            $send_to_admin   = apply_filters( 'villegas_quiz_email_include_admin', get_option( 'villegas_quiz_email_send_to_admin', 1 ), $debug );
+            $custom_prefix   = get_option( 'villegas_quiz_email_custom_subject', '' );
 
-            // Optionally include admin in CC
-            $include_admin = apply_filters( 'villegas_quiz_email_include_admin', true, $debug );
-            if ( $include_admin && $admin_email ) {
-                $default_recipients[] = $admin_email;
+            $recipients = [];
+
+            if ( $send_to_student && ! empty( $user->user_email ) ) {
+                $recipients[] = $user->user_email;
+            }
+
+            if ( $send_to_admin ) {
+                $admin_email = get_option( 'admin_email' );
+                if ( $admin_email ) {
+                    $recipients[] = $admin_email;
+                }
             }
 
             // Allow full customization of recipients
-            $recipients = apply_filters( 'villegas_quiz_email_recipients', $default_recipients, $debug );
+            $recipients = apply_filters( 'villegas_quiz_email_recipients', $recipients, $debug );
 
             // Subject and body can also be filtered
-            $subject = apply_filters( 'villegas_quiz_email_subject', $email_content['subject'], $debug );
+            $subject = apply_filters( 'villegas_quiz_email_subject', ( $custom_prefix ? $custom_prefix . ' ' : '' ) . $email_content['subject'], $debug );
             $body    = apply_filters( 'villegas_quiz_email_body', $email_content['body'], $debug );
 
             $headers = [ 'Content-Type: text/html; charset=UTF-8' ];
