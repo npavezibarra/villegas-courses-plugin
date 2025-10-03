@@ -125,4 +125,18 @@ class Villegas_Quiz_Emails {
             'ld_percentage_hook' => $quiz_data['percentage'],
         ];
     }
+
+    public static function replace_placeholders( $template, $debug ) {
+        $replacements = [
+            '{user_name}'      => isset( $debug['user_display_name'] ) ? esc_html( $debug['user_display_name'] ) : '',
+            '{quiz_title}'     => isset( $debug['quiz_title'] ) ? esc_html( $debug['quiz_title'] ) : '',
+            '{course_title}'   => isset( $debug['course_title'] ) ? esc_html( $debug['course_title'] ) : '',
+            '{first_score}'    => isset( $debug['first_quiz_attempt'] ) ? esc_html( $debug['first_quiz_attempt'] ) : '',
+            '{final_score}'    => isset( $debug['final_quiz_attempt'] ) ? esc_html( $debug['final_quiz_attempt'] ) : '',
+            '{progress_delta}' => isset( $debug['progress_delta'] ) ? esc_html( $debug['progress_delta'] ) . '%' : '',
+            '{quiz_date}'      => esc_html( date_i18n( get_option( 'date_format' ), current_time( 'timestamp' ) ) ),
+        ];
+
+        return strtr( $template, $replacements );
+    }
 }
