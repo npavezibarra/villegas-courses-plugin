@@ -482,6 +482,7 @@ $show_loading_notice = ! $current_has_attempt;
         finalScore: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
         currentScore: <?php echo ! is_null( $current_percentage_value ) ? (int) $current_percentage_value : 'null'; ?>,
         currentAttemptTimestamp: <?php echo $current_timestamp; ?>,
+        currentActivityId: <?php echo $latest_activity_id > 0 ? (int) $latest_activity_id : 'null'; ?>,
         awaitingAttempt: <?php echo $show_loading_notice ? 'true' : 'false'; ?>,
         nonce: (typeof quizData !== 'undefined' && quizData.activityNonce)
             ? quizData.activityNonce
@@ -678,6 +679,10 @@ $show_loading_notice = ! $current_has_attempt;
                 normalizedActivityId = parsedId;
             }
         }
+
+        if (normalizedActivityId !== null) {
+            quizConfig.currentActivityId = normalizedActivityId;
+        }
         updateActivityIdElements(normalizedActivityId);
 
         updateScoreDetail(attemptScore);
@@ -763,6 +768,22 @@ $show_loading_notice = ! $current_has_attempt;
                     return;
                 }
 
+                const payloadTimestamp = parseInt(payload.timestamp, 10);
+                const payloadActivityId = parseInt(payload.activity_id, 10);
+                const knownTimestamp = parseInt(quizConfig.currentAttemptTimestamp, 10) || 0;
+                const knownActivityId = parseInt(quizConfig.currentActivityId, 10) || 0;
+
+                const normalizedTimestamp = !Number.isNaN(payloadTimestamp) && payloadTimestamp > 0 ? payloadTimestamp : 0;
+                const normalizedActivityId = !Number.isNaN(payloadActivityId) && payloadActivityId > 0 ? payloadActivityId : 0;
+
+                const hasNewTimestamp = normalizedTimestamp > knownTimestamp;
+                const hasNewActivity = normalizedActivityId > 0 && normalizedActivityId > knownActivityId;
+
+                if (quizConfig.awaitingAttempt && !hasNewTimestamp && !hasNewActivity) {
+                    queueRetry(nextRetries, waitSeconds);
+                    return;
+                }
+
                 updateAttemptUI({
                     percentage: typeof payload.percentage === 'number' ? payload.percentage : payload.percentage_rounded,
                     percentage_rounded: payload.percentage_rounded,
@@ -772,8 +793,8 @@ $show_loading_notice = ! $current_has_attempt;
                     progress_delta: payload.progress_delta,
                     days_elapsed: payload.days_elapsed,
                     score: typeof payload.score === 'number' ? payload.score : null,
-                    timestamp: payload.timestamp,
-                    activity_id: payload.activity_id
+                    timestamp: normalizedTimestamp || null,
+                    activity_id: normalizedActivityId || null
                 });
                 return;
             }
