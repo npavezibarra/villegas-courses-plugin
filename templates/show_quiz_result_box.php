@@ -435,6 +435,7 @@ if ( $is_final_quiz ) {
 
 <script>
 (function($){
+    const ajaxConfig = window.villegasAjax || {};
     const quizConfig = {
         quizId: <?php echo (int) $quiz_id; ?>,
         userId: <?php echo (int) $user_id; ?>,
@@ -442,8 +443,13 @@ if ( $is_final_quiz ) {
         firstScore: <?php echo ! is_null( $first_percentage_value ) ? (int) $first_percentage_value : 'null'; ?>,
         finalScore: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
         currentScore: <?php echo ! is_null( $current_percentage_value ) ? (int) $current_percentage_value : 'null'; ?>,
-        nonce: (typeof quizData !== 'undefined' && quizData.activityNonce) ? quizData.activityNonce : ''
+        nonce: (typeof quizData !== 'undefined' && quizData.activityNonce)
+            ? quizData.activityNonce
+            : (ajaxConfig.activityNonce || '')
     };
+
+    const ajaxUrl = ajaxConfig.ajaxUrl || '';
+    const defaultRetry = parseInt(ajaxConfig.retryAfter, 10) > 0 ? parseInt(ajaxConfig.retryAfter, 10) : 5;
 
     let chartInstance = null;
 
@@ -559,11 +565,11 @@ if ( $is_final_quiz ) {
     }
 
     function pollLatestAttempt(retries) {
-        if (!quizConfig.nonce) {
+        if (!quizConfig.nonce || !ajaxUrl) {
             return;
         }
 
-        $.post(ajax_object.ajaxurl, {
+        $.post(ajaxUrl, {
             action: 'get_latest_quiz_activity',
             quiz_id: quizConfig.quizId,
             user_id: quizConfig.userId,
@@ -571,6 +577,15 @@ if ( $is_final_quiz ) {
         }).done(function(response){
             if (response && response.success) {
                 const payload = response.data || {};
+
+                if (payload.status === 'pending') {
+                    if (retries > 0) {
+                        const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
+                        setTimeout(function(){ pollLatestAttempt(retries - 1); }, waitSeconds * 1000);
+                    }
+                    return;
+                }
+
                 updateAttemptUI({
                     percentage: (typeof payload.percentage_rounded === 'number') ? payload.percentage_rounded : payload.percentage,
                     formatted_date: payload.formatted_date,
@@ -579,11 +594,11 @@ if ( $is_final_quiz ) {
                     score: (typeof payload.score === 'number') ? payload.score : null
                 });
             } else if (retries > 0) {
-                setTimeout(function(){ pollLatestAttempt(retries - 1); }, 1500);
+                setTimeout(function(){ pollLatestAttempt(retries - 1); }, defaultRetry * 1000);
             }
         }).fail(function(){
             if (retries > 0) {
-                setTimeout(function(){ pollLatestAttempt(retries - 1); }, 1500);
+                setTimeout(function(){ pollLatestAttempt(retries - 1); }, defaultRetry * 1000);
             }
         });
     }

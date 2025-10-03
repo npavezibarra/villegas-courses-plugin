@@ -25,9 +25,11 @@ document.addEventListener("DOMContentLoaded", function () {
 jQuery(document).on('learndash-quiz-finished', function () {
     if (typeof quizData !== 'undefined' && quizData.type === 'final') {
         var finalQuizNonce = quizData.finalQuizNonce || '';
+        var ajaxConfig = window.villegasAjax || {};
+        var ajaxUrl = ajaxConfig.ajaxUrl || '';
 
-        if (!finalQuizNonce) {
-            console.error('No se encontró nonce para el Final Quiz. Abortando envío.');
+        if (!finalQuizNonce || !ajaxUrl) {
+            console.error('Faltan datos para enviar el correo del Final Quiz. Abortando envío.');
             return;
         }
 
@@ -45,7 +47,7 @@ jQuery(document).on('learndash-quiz-finished', function () {
                 return;
             }
 
-            jQuery.post(ajax_object.ajaxurl, {
+            jQuery.post(ajaxUrl, {
                 action: 'enviar_correo_final_quiz',
                 quiz_id: quizData.quizId,
                 quiz_percentage: percentage,

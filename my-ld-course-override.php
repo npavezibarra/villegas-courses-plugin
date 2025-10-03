@@ -90,6 +90,10 @@ function villegas_ajax_resultados_curso() {
         wp_send_json_error( [ 'message' => __( 'Debes iniciar sesión para ver los resultados.', 'villegas-courses' ) ], 401 );
     }
 
+    if ( ! current_user_can( 'read' ) ) {
+        wp_send_json_error( [ 'message' => __( 'No tienes permisos para ver estos resultados.', 'villegas-courses' ) ], 403 );
+    }
+
     $nonce = isset( $_POST['nonce'] ) ? sanitize_text_field( wp_unslash( $_POST['nonce'] ) ) : '';
     if ( ! wp_verify_nonce( $nonce, 'mostrar_resultados_curso' ) ) {
         wp_send_json_error( [ 'message' => __( 'Solicitud inválida. Actualiza la página e inténtalo nuevamente.', 'villegas-courses' ) ], 403 );
@@ -101,6 +105,10 @@ function villegas_ajax_resultados_curso() {
     }
 
     $user_id = get_current_user_id();
+
+    if ( function_exists( 'villegas_user_has_course_access' ) && ! villegas_user_has_course_access( $course_id, $user_id ) ) {
+        wp_send_json_error( [ 'message' => __( 'No cuentas con acceso a este curso.', 'villegas-courses' ) ], 403 );
+    }
 
     $first_quiz_id = PoliteiaCourse::getFirstQuizId( $course_id );
     $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
@@ -159,22 +167,22 @@ function villegas_ajax_resultados_curso() {
 
     $results = [
         'course'  => [
-            'id'    => $course_id,
-            'title' => get_the_title( $course_id ),
+            'id'    => (int) $course_id,
+            'title' => sanitize_text_field( get_the_title( $course_id ) ),
         ],
         'first'   => [
             'quiz_id'        => $first_quiz_id,
             'has_attempt'    => (bool) $first_summary['has_attempt'],
             'score'          => intval( $first_summary['score'] ),
             'percentage'     => $first_numeric ? intval( $first_summary['percentage_rounded'] ) : null,
-            'formatted_date' => $first_summary['formatted_date'],
+            'formatted_date' => $first_summary['formatted_date'] ? sanitize_text_field( $first_summary['formatted_date'] ) : null,
         ],
         'final'   => [
             'quiz_id'        => $final_quiz_id,
             'has_attempt'    => (bool) $final_summary['has_attempt'],
             'score'          => intval( $final_summary['score'] ),
             'percentage'     => $final_numeric ? intval( $final_summary['percentage_rounded'] ) : null,
-            'formatted_date' => $final_summary['formatted_date'],
+            'formatted_date' => $final_summary['formatted_date'] ? sanitize_text_field( $final_summary['formatted_date'] ) : null,
         ],
         'metrics' => [
             'delta'        => $delta,
@@ -186,7 +194,10 @@ function villegas_ajax_resultados_curso() {
 
     ob_start();
     include plugin_dir_path( __FILE__ ) . 'partials/ajax-results-box.php';
-    $html = trim( ob_get_clean() );
+    $raw_html     = trim( ob_get_clean() );
+    $allowed_html = wp_kses_allowed_html( 'post' );
+    $allowed_html['style'] = [ 'type' => true ];
+    $html = wp_kses( $raw_html, $allowed_html );
 
     wp_send_json_success(
         [
@@ -206,14 +217,6 @@ function enqueue_my_account_script() {
             true
         );
 
-        wp_localize_script(
-            'my-account-script',
-            'ajax_object',
-            [
-                'ajaxurl'      => admin_url( 'admin-ajax.php' ),
-                'resultsNonce' => wp_create_nonce( 'mostrar_resultados_curso' ),
-            ]
-        );
     }
 }
 add_action('wp_enqueue_scripts', 'enqueue_my_account_script');
@@ -330,10 +333,6 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     ] );
 
 
-    // ajax_object.ajaxurl → para la llamada POST
-    wp_localize_script( 'custom-quiz-message', 'ajax_object', [
-        'ajaxurl' => admin_url( 'admin-ajax.php' ),
-    ] );
 }
 
     // Check if it's a lesson page
@@ -717,11 +716,6 @@ function villegas_enqueue_puntaje_privado_script() {
             true
         );
 
-        wp_localize_script('puntaje-privado', 'puntajePrivadoData', [
-            'ajaxurl' => admin_url('admin-ajax.php'),
-            'userId'  => get_current_user_id(),
-            'security' => wp_create_nonce('guardar_privacidad_puntaje'),
-        ]);
     }
 }
 
@@ -730,19 +724,23 @@ function villegas_enqueue_puntaje_privado_script() {
 add_action('wp_ajax_guardar_privacidad_puntaje', 'villegas_guardar_privacidad_puntaje');
 
 function villegas_guardar_privacidad_puntaje() {
-    check_ajax_referer('guardar_privacidad_puntaje', 'security');
+    if ( ! check_ajax_referer( 'guardar_privacidad_puntaje', 'nonce', false ) ) {
+        wp_send_json_error( __( 'Solicitud no válida.', 'villegas-courses' ), 403 );
+    }
+
+    if ( ! is_user_logged_in() || ! current_user_can( 'read' ) ) {
+        wp_send_json_error( __( 'No tienes permisos para actualizar esta preferencia.', 'villegas-courses' ), 403 );
+    }
 
     $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
     $puntaje_privado = isset($_POST['puntaje_privado']) && $_POST['puntaje_privado'] === '1';
 
     if (!$user_id || get_current_user_id() !== $user_id) {
-        wp_send_json_error('Usuario inválido');
-        wp_die();
+        wp_send_json_error( __( 'Usuario inválido.', 'villegas-courses' ), 403 );
     }
 
     update_user_meta($user_id, 'puntaje_privado', $puntaje_privado ? '1' : '0');
-    wp_send_json_success('Preferencia guardada');
-    wp_die();
+    wp_send_json_success( __( 'Preferencia guardada.', 'villegas-courses' ) );
 }
 
 

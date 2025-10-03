@@ -97,14 +97,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.classList.contains('ver-resultados-btn')) {
             e.preventDefault();
             const cursoId = e.target.dataset.courseId;
+            const ajaxConfig = window.villegasAjax || {};
+            const ajaxUrl = ajaxConfig.ajaxUrl || '';
+            const nonce = ajaxConfig.resultsNonce || '';
 
-            fetch(ajax_object.ajaxurl, {
+            if (!ajaxUrl || !nonce) {
+                console.error('No hay configuración AJAX disponible para cargar los resultados.');
+                return;
+            }
+
+            fetch(ajaxUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: new URLSearchParams({
                     action: 'mostrar_resultados_curso',
                     course_id: cursoId,
-                    nonce: ajax_object.resultsNonce || ''
+                    nonce: nonce
                 })
             })
             .then(response => response.json())
