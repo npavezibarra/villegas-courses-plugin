@@ -155,12 +155,13 @@ function politeia_get_latest_quiz_activity() {
     wp_send_json_success( $response );
 }
 add_action( 'wp_ajax_get_latest_quiz_activity', 'politeia_get_latest_quiz_activity' );
+add_action( 'wp_ajax_villegas_get_latest_quiz_result', 'politeia_get_latest_quiz_activity' );
 
 // Backwards compatibility: keep previous hook name but delegate to the new handler.
-function get_latest_quiz_score() {
+function politeia_get_latest_quiz_score_legacy() {
     politeia_get_latest_quiz_activity();
 }
-add_action( 'wp_ajax_get_latest_quiz_score', 'get_latest_quiz_score' );
+add_action( 'wp_ajax_get_latest_quiz_score', 'politeia_get_latest_quiz_score_legacy' );
 
 /**
  * Retrieve the most recent completed quiz attempt (and its metadata) for a user.
@@ -398,134 +399,5 @@ function politeia_get_quiz_attempt_summary_for_comparison( $user_id, $quiz_id ) 
     return null;
 }
 
-function villegas_get_latest_quiz_result() {
-    if ( ! is_user_logged_in() || ! current_user_can( 'read' ) ) {
-        wp_send_json_error( [
-            'message' => esc_html__( 'No autorizado.', 'villegas-courses' ),
-            'code'    => 'not_authorized',
-        ], 403 );
-    }
 
-    $quiz_id = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
-
-    if ( ! $quiz_id ) {
-        wp_send_json_error( [
-            'message' => esc_html__( 'Faltan datos del cuestionario.', 'villegas-courses' ),
-            'code'    => 'invalid_parameters',
-        ], 400 );
-    }
-
-    global $wpdb;
-
-    $user_id = get_current_user_id();
-
-    $latest_attempt = $wpdb->get_row(
-        $wpdb->prepare(
-            "SELECT ua.activity_id, ua.activity_completed
-             FROM {$wpdb->prefix}learndash_user_activity AS ua
-             INNER JOIN {$wpdb->prefix}learndash_user_activity_meta AS uam
-                ON ua.activity_id = uam.activity_id
-             WHERE ua.user_id = %d
-               AND ua.activity_type = 'quiz'
-               AND uam.activity_meta_key = 'quiz'
-               AND uam.activity_meta_value+0 = %d
-               AND ua.activity_completed IS NOT NULL
-             ORDER BY ua.activity_id DESC
-             LIMIT 1",
-            $user_id,
-            $quiz_id
-        ),
-        ARRAY_A
-    );
-
-    if ( empty( $latest_attempt ) ) {
-        wp_send_json(
-            [
-                'success' => true,
-                'status'  => 'pending',
-                'message' => esc_html__( 'Todavía no registramos tu intento.', 'villegas-courses' ),
-            ]
-        );
-    }
-
-    $activity_id        = isset( $latest_attempt['activity_id'] ) ? absint( $latest_attempt['activity_id'] ) : 0;
-    $activity_completed = isset( $latest_attempt['activity_completed'] ) ? intval( $latest_attempt['activity_completed'] ) : 0;
-
-    if ( ! $activity_id ) {
-        wp_send_json(
-            [
-                'success' => true,
-                'status'  => 'pending',
-                'message' => esc_html__( 'Todavía no registramos tu intento.', 'villegas-courses' ),
-            ]
-        );
-    }
-
-    $meta_rows = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT activity_meta_key, activity_meta_value
-             FROM {$wpdb->prefix}learndash_user_activity_meta
-             WHERE activity_id = %d",
-            $activity_id
-        ),
-        ARRAY_A
-    );
-
-    $meta = [];
-
-    foreach ( (array) $meta_rows as $row ) {
-        if ( empty( $row['activity_meta_key'] ) ) {
-            continue;
-        }
-
-        $meta_key   = sanitize_key( $row['activity_meta_key'] );
-        $meta_value = isset( $row['activity_meta_value'] ) ? $row['activity_meta_value'] : '';
-
-        $meta[ $meta_key ] = $meta_value;
-    }
-
-    $percentage_value = null;
-
-    if ( isset( $meta['percentage'] ) && '' !== $meta['percentage'] && is_numeric( $meta['percentage'] ) ) {
-        $percentage_value = round( floatval( $meta['percentage'] ), 2 );
-    }
-
-    if ( null === $percentage_value ) {
-        wp_send_json(
-            [
-                'success'      => true,
-                'status'       => 'pending',
-                'activity_id'  => $activity_id,
-                'timestamp'    => $activity_completed,
-                'message'      => esc_html__( 'El porcentaje aún no está disponible.', 'villegas-courses' ),
-            ]
-        );
-    }
-
-    $score_value = null;
-
-    if ( isset( $meta['score'] ) && is_numeric( $meta['score'] ) ) {
-        $score_value = 0 + $meta['score'];
-    }
-
-    $total_points_value = null;
-
-    if ( isset( $meta['total_points'] ) && is_numeric( $meta['total_points'] ) ) {
-        $total_points_value = 0 + $meta['total_points'];
-    }
-
-    $response = [
-        'success'            => true,
-        'status'             => 'ready',
-        'percentage'         => $percentage_value,
-        'score'              => $score_value,
-        'total_points'       => $total_points_value,
-        'timestamp'          => $activity_completed,
-        'formatted_date'     => $activity_completed ? esc_html( date_i18n( 'j \d\e F \d\e Y', $activity_completed ) ) : '',
-        'activity_id'        => $activity_id,
-        'percentage_rounded' => intval( round( $percentage_value ) ),
-    ];
-
-    wp_send_json( $response );
-}
 

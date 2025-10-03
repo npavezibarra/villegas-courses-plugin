@@ -782,6 +782,8 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 updateAttemptUI(attemptData);
 
                 return;
+            }
+
             console.log(`[Quiz Poll] Attempt — | Status: error_response | Percentage: — | Next retry: ${defaultRetry}s`);
 
             queueRetry(retriesLeft - 1, defaultRetry);
@@ -835,47 +837,6 @@ $show_loading_notice = ! $current_summary['has_attempt'];
 
     window.addEventListener('beforeunload', function(){
         restorePendingAttemptState();
-    });
-});
-</script>
-
-<script>
-jQuery(document).ready(function($) {
-    if (typeof villegasAjax === 'undefined' || !villegasAjax.ajaxUrl) {
-        return;
-    }
-
-    const quizData = window.quizData || {};
-    const quizId = quizData.quizId ? parseInt(quizData.quizId, 10) : 0;
-
-    if (!quizId) {
-        return;
-    }
-
-    $.post(villegasAjax.ajaxUrl, {
-        action: 'villegas_get_latest_quiz_result',
-        quiz_id: quizId
-    }, function(response) {
-        if (response && response.success && response.data) {
-            const data = response.data;
-            const percentage = (typeof data.percentage !== 'undefined' && data.percentage !== null)
-                ? data.percentage
-                : ((typeof data.percentage_rounded !== 'undefined' && data.percentage_rounded !== null)
-                    ? data.percentage_rounded
-                    : null);
-
-            if (percentage !== null && percentage !== '') {
-                $('#quiz-percentage').text(percentage + '%');
-            } else {
-                $('#quiz-percentage').text('—');
-            }
-
-            if (typeof data.activity_id !== 'undefined' && data.activity_id !== null) {
-                $('#quiz-activity-id').text(data.activity_id);
-            }
-        } else {
-            $('#quiz-percentage').text('—');
-        }
     });
 });
 </script>
