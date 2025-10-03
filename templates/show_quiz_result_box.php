@@ -440,6 +440,7 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         firstScore: <?php echo ! is_null( $first_percentage_value ) ? (int) $first_percentage_value : 'null'; ?>,
         finalScore: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
         currentScore: <?php echo ! is_null( $current_percentage_value ) ? (int) $current_percentage_value : 'null'; ?>,
+        currentActivityId: <?php echo $latest_activity_id ? intval( $latest_activity_id ) : 'null'; ?>,
         currentAttemptTimestamp: <?php echo intval( $current_summary['timestamp'] ); ?>,
         awaitingAttempt: <?php echo $show_loading_notice ? 'true' : 'false'; ?>,
         nonce: (typeof quizData !== 'undefined' && quizData.activityNonce)
@@ -546,10 +547,16 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         const attemptBox = $('#politeia-quiz-attempt');
         const attemptPercentage = (typeof data.percentage === 'number') ? Math.round(data.percentage) : 0;
         const attemptScore = (typeof data.score === 'number') ? Math.round(data.score) : null;
+        const attemptActivityId = parseInt(data.activity_id, 10);
         const attemptTimestamp = parseInt(data.timestamp, 10);
 
         if (!isNaN(attemptTimestamp) && attemptTimestamp > 0) {
             quizConfig.currentAttemptTimestamp = attemptTimestamp;
+        }
+
+        if (!isNaN(attemptActivityId) && attemptActivityId > 0) {
+            quizConfig.currentActivityId = attemptActivityId;
+            $('[data-activity-id-target]').text(attemptActivityId);
         }
 
         $('#politeia-attempt-percentage').text(attemptPercentage + '%');
@@ -697,23 +704,27 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 }
 
                 const resolvedTimestamp = parseInt(payload.timestamp, 10) || lastTimestamp;
+                const rawActivityId = (typeof payload.activity_id !== 'undefined') ? parseInt(payload.activity_id, 10) : null;
+                const attemptTotalPoints = (typeof payload.total_points === 'number')
+                    ? payload.total_points
+                    : ((typeof payload.total_points === 'string' && payload.total_points !== '')
+                        ? parseFloat(payload.total_points)
+                        : null);
+
                 const attemptData = {
                     percentage: (typeof payload.percentage_rounded === 'number') ? payload.percentage_rounded : payload.percentage,
                     formatted_date: payload.formatted_date,
                     final_percentage: payload.final_percentage,
                     first_percentage: payload.first_percentage,
                     score: (typeof payload.score === 'number') ? payload.score : null,
+                    total_points: attemptTotalPoints,
                     progress_delta: payload.progress_delta,
                     days_elapsed: payload.days_elapsed,
+                    activity_id: (!isNaN(rawActivityId) && rawActivityId > 0) ? rawActivityId : null,
                     timestamp: resolvedTimestamp
                 };
 
                 updateAttemptUI(attemptData);
-
-                if (typeof payload.activity_id !== 'undefined') {
-                    const activityId = payload.activity_id;
-                    $('[data-activity-id-target]').text(activityId ? activityId : '--');
-                }
 
                 return;
             }
