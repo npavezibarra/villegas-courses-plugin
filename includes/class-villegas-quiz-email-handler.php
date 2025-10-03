@@ -34,15 +34,31 @@ class Villegas_Quiz_Email_Handler {
 
         // Send the email
         if ( is_array( $email_content ) && ! empty( $email_content['subject'] ) && ! empty( $email_content['body'] ) ) {
-            $to      = get_option( 'admin_email' ); // For now, send to admin. Can extend later.
+            // Decide recipients
+            $default_recipients = [ $user->user_email ];
+            $admin_email        = get_option( 'admin_email' );
+
+            // Optionally include admin in CC
+            $include_admin = apply_filters( 'villegas_quiz_email_include_admin', true, $debug );
+            if ( $include_admin && $admin_email ) {
+                $default_recipients[] = $admin_email;
+            }
+
+            // Allow full customization of recipients
+            $recipients = apply_filters( 'villegas_quiz_email_recipients', $default_recipients, $debug );
+
+            // Subject and body can also be filtered
+            $subject = apply_filters( 'villegas_quiz_email_subject', $email_content['subject'], $debug );
+            $body    = apply_filters( 'villegas_quiz_email_body', $email_content['body'], $debug );
+
             $headers = [ 'Content-Type: text/html; charset=UTF-8' ];
 
-            $sent = wp_mail( $to, $email_content['subject'], $email_content['body'], $headers );
+            $sent = wp_mail( $recipients, $subject, $body, $headers );
 
             if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-                error_log( '[Villegas Quiz Emails] Email sent? ' . ( $sent ? 'YES' : 'NO' ) );
-                error_log( '[Villegas Quiz Emails] Recipient: ' . $to );
-                error_log( '[Villegas Quiz Emails] Subject: ' . $email_content['subject'] );
+                error_log( '[Villegas Quiz Emails] Sent? ' . ( $sent ? 'YES' : 'NO' ) );
+                error_log( '[Villegas Quiz Emails] Recipients: ' . implode( ',', (array) $recipients ) );
+                error_log( '[Villegas Quiz Emails] Subject: ' . $subject );
                 error_log( '[Villegas Quiz Emails] Debug Data: ' . print_r( $debug, true ) );
             }
         }
