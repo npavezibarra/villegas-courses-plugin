@@ -130,6 +130,19 @@ if ( $is_final_quiz ) {
     margin: 30px auto;
     max-width: 320px;
 }
+.politeia-activity-meta {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    color: #5f6b75;
+}
+.politeia-activity-meta span {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center;
+}
 .politeia-score-highlight {
     font-size: 32px;
     font-weight: 700;
@@ -277,6 +290,19 @@ if ( $is_final_quiz ) {
             <div id="politeia-quiz-chart"></div>
         </div>
 
+        <div class="politeia-activity-meta">
+            <span>
+                <?php esc_html_e( 'ID de usuario:', 'villegas-courses' ); ?>
+                <strong id="politeia-user-id"><?php echo $user_id ? esc_html( $user_id ) : '--'; ?></strong>
+            </span>
+            <span>
+                <?php esc_html_e( 'ID de actividad:', 'villegas-courses' ); ?>
+                <strong id="politeia-activity-id-top" data-activity-id-target>
+                    <?php echo $latest_activity_id > 0 ? esc_html( $latest_activity_id ) : '--'; ?>
+                </strong>
+            </span>
+        </div>
+
         <div class="politeia-score-highlight">
             <span
                 id="quiz-percentage"
@@ -385,7 +411,7 @@ if ( $is_final_quiz ) {
                 </div>
                 <div class="politeia-comparison-card">
                     <span><?php esc_html_e( 'ID de actividad', 'villegas-courses' ); ?></span>
-                    <strong id="politeia-attempt-activity-id">
+                    <strong id="politeia-attempt-activity-id" data-activity-id-target>
                         <?php echo $latest_activity_id > 0 ? esc_html( $latest_activity_id ) : '--'; ?>
                     </strong>
                 </div>
@@ -413,7 +439,7 @@ jQuery(document).ready(function($) {
     var $results = $('.politeia-quiz-results');
     var $quizPercentage = $('#quiz-percentage');
     var $attemptPercentage = $('#politeia-attempt-percentage');
-    var $activityId = $('#politeia-attempt-activity-id');
+    var $activityIdTargets = $('[data-activity-id-target]');
 
     function applyPercentage(percentage) {
         var percentageText = percentage + '%';
@@ -438,7 +464,9 @@ jQuery(document).ready(function($) {
                 if (!isNaN(percentage)) {
                     applyPercentage(percentage);
                     if (!isNaN(activityId) && activityId > 0) {
-                        $activityId.text(activityId);
+                        $activityIdTargets.text(activityId);
+                    } else {
+                        $activityIdTargets.text('--');
                     }
                     $loader.hide();
                     $results.show();
@@ -469,7 +497,7 @@ jQuery(document).ready(function($) {
         $loader.show();
         $quizPercentage.text('--%').attr('data-has-value', '0');
         $attemptPercentage.text('--%');
-        $activityId.text('--');
+        $activityIdTargets.text('--');
 
         fetchLatestResult(6);
     });
