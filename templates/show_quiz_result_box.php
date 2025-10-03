@@ -31,8 +31,20 @@ $final_summary   = $stats->get_final_quiz_summary();
 $first_quiz_id   = $stats->get_first_quiz_id();
 $final_quiz_id   = $stats->get_final_quiz_id();
 
-$latest_percentage = ( isset( $latest_summary['percentage_rounded'] ) && is_numeric( $latest_summary['percentage_rounded'] ) )
-    ? intval( $latest_summary['percentage_rounded'] )
+$current_summary = is_array( $latest_summary ) ? $latest_summary : [];
+$current_summary = wp_parse_args(
+    $current_summary,
+    [
+        'has_attempt'        => false,
+        'timestamp'          => 0,
+        'formatted_date'     => '',
+        'score'              => null,
+        'percentage_rounded' => null,
+    ]
+);
+
+$current_percentage_value = ( isset( $current_summary['percentage_rounded'] ) && is_numeric( $current_summary['percentage_rounded'] ) )
+    ? intval( $current_summary['percentage_rounded'] )
     : null;
 
 $latest_activity_id = 0;
@@ -59,8 +71,8 @@ $has_final_quiz = (bool) $final_quiz_id;
 $first_percentage_value   = is_numeric( $first_summary['percentage_rounded'] ) ? intval( $first_summary['percentage_rounded'] ) : null;
 $final_percentage_value   = is_numeric( $final_summary['percentage_rounded'] ) ? intval( $final_summary['percentage_rounded'] ) : null;
 
-$last_attempt_timestamp = intval( $latest_summary['timestamp'] );
-$has_latest_attempt     = ! empty( $latest_summary['has_attempt'] );
+$last_attempt_timestamp = intval( $current_summary['timestamp'] );
+$has_latest_attempt     = ! empty( $current_summary['has_attempt'] );
 
 $has_course    = (bool) $course_id;
 $has_access    = $has_course ? PoliteiaCourse::userHasAccess( $course_id, $user_id ) : false;
@@ -295,7 +307,7 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 data-score-template="<?php echo esc_attr__( 'Puntaje obtenido: %d pts.', 'villegas-courses' ); ?>"
                 data-score-fallback="<?php echo esc_attr__( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>"
             >
-                <?php echo $latest_percentage !== null ? esc_html( $latest_percentage . '%' ) : '--%'; ?>
+                <?php echo $current_percentage_value !== null ? esc_html( $current_percentage_value . '%' ) : '--%'; ?>
             </div>
         <?php else : ?>
             <div
@@ -389,7 +401,7 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 <div class="politeia-comparison-card">
                     <span><?php esc_html_e( 'Puntaje obtenido', 'villegas-courses' ); ?></span>
                     <strong id="politeia-attempt-percentage">
-                        <?php echo $latest_percentage !== null ? esc_html( $latest_percentage . '%' ) : '--%'; ?>
+                        <?php echo $current_percentage_value !== null ? esc_html( $current_percentage_value . '%' ) : '--%'; ?>
                     </strong>
                 </div>
                 <div class="politeia-comparison-card">
