@@ -170,15 +170,15 @@ if ( $latest_activity_pending ) {
     gap: 6px;
     align-items: center;
 }
-.built-in-result,
-.custom-result {
+.politeia-built-in,
+.politeia-custom {
     background: #f7f7f7;
     border-radius: 8px;
     margin-top: 16px;
     padding: 16px;
 }
-.built-in-result h3,
-.custom-result h3 {
+.politeia-built-in h3,
+.politeia-custom h3 {
     margin-top: 0;
 }
 .politeia-score-highlight {
@@ -344,16 +344,16 @@ if ( $latest_activity_pending ) {
             </span>
         </div>
 
-        <div class="built-in-result">
+        <div class="politeia-built-in">
             <h3>Built-in LearnDash Result</h3>
             <p>ID de usuario: <?php echo esc_html( $user_id ); ?></p>
             <p>ID de actividad: <?php echo $latest_activity_id > 0 ? esc_html( $latest_activity_id ) : '—'; ?></p>
             <p>Puntaje: <?php echo $current_percentage_value !== null ? esc_html( $current_percentage_value . '%' ) : '—'; ?></p>
         </div>
 
-        <div class="custom-result">
+        <div class="politeia-custom">
             <h3>Politeia Custom Result (AJAX)</h3>
-            <p>ID de usuario: <span id="custom-user-id"><?php echo esc_html( $user_id ); ?></span></p>
+            <p>ID de usuario: <?php echo esc_html( $user_id ); ?></p>
             <p>ID de actividad: <span id="custom-activity-id">—</span></p>
             <p>Puntaje: <span id="custom-percentage">—</span></p>
         </div>

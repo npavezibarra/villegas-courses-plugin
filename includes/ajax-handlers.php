@@ -239,13 +239,9 @@ add_action( 'wp_ajax_politeia_poll_latest_attempt_strict', 'politeia_poll_latest
 function politeia_poll_new_attempt() {
     check_ajax_referer( 'politeia_quiz_activity', 'nonce' );
 
-    $quiz_id  = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
+    $quiz_id  = absint( $_POST['quiz_id'] ?? 0 );
     $user_id  = get_current_user_id();
-    $baseline = isset( $_POST['baseline_activity_id'] ) ? absint( $_POST['baseline_activity_id'] ) : 0;
-
-    if ( ! $quiz_id ) {
-        wp_send_json_error( [ 'message' => esc_html__( 'Faltan datos del cuestionario.', 'villegas-courses' ) ], 400 );
-    }
+    $baseline = absint( $_POST['baseline_activity_id'] ?? 0 );
 
     global $wpdb;
 
@@ -263,8 +259,7 @@ function politeia_poll_new_attempt() {
     );
 
     if ( ! $attempt ) {
-        error_log( sprintf( '[CustomPoll] User %d quiz %d | No new attempt > %d yet.', $user_id, $quiz_id, $baseline ) );
-
+        error_log( "[CustomPoll] No new attempt found > $baseline for user $user_id quiz $quiz_id" );
         wp_send_json_success(
             [
                 'status'      => 'waiting_new_attempt',
@@ -275,15 +270,12 @@ function politeia_poll_new_attempt() {
 
     $activity_id = intval( $attempt['activity_id'] );
     $meta        = politeia_fetch_activity_meta_map( $activity_id );
-
-    $percentage = null;
-    if ( isset( $meta['percentage'] ) && is_numeric( $meta['percentage'] ) ) {
-        $percentage = floatval( $meta['percentage'] );
-    }
+    $percentage  = isset( $meta['percentage'] ) && is_numeric( $meta['percentage'] )
+        ? floatval( $meta['percentage'] )
+        : null;
 
     if ( null === $percentage ) {
-        error_log( sprintf( '[CustomPoll] User %d quiz %d activity %d found but metadata incomplete.', $user_id, $quiz_id, $activity_id ) );
-
+        error_log( "[CustomPoll] Attempt $activity_id exists but metadata incomplete." );
         wp_send_json_success(
             [
                 'status'      => 'pending',
@@ -293,8 +285,7 @@ function politeia_poll_new_attempt() {
         );
     }
 
-    error_log( sprintf( '[CustomPoll] User %d quiz %d activity %d READY. Percentage %s.', $user_id, $quiz_id, $activity_id, $percentage ) );
-
+    error_log( "[CustomPoll] Attempt $activity_id ready with percentage $percentage" );
     wp_send_json_success(
         [
             'status'      => 'ready',
