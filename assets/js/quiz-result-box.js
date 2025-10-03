@@ -10,19 +10,21 @@
         return;
     }
 
-    let lastSeen = 0;
+    window.politeiaCustomPollerInitialized = true;
+
+    let baselineId = 0;
     if (typeof quizConfig.currentActivityId === 'number' && !isNaN(quizConfig.currentActivityId)) {
-        lastSeen = quizConfig.currentActivityId;
+        baselineId = quizConfig.currentActivityId;
     } else if (typeof quizConfig.currentActivityId === 'string' && quizConfig.currentActivityId) {
         const parsed = parseInt(quizConfig.currentActivityId, 10);
-        lastSeen = isNaN(parsed) ? 0 : parsed;
+        baselineId = isNaN(parsed) ? 0 : parsed;
     }
 
-    function pollCustomAttempt(lastId) {
+    function pollNewAttempt() {
         $.post(ajaxConfig.ajaxUrl, {
-            action: 'politeia_poll_latest_attempt_strict',
+            action: 'politeia_poll_new_attempt',
             quiz_id: quizConfig.quizId,
-            last_activity_id: lastId,
+            baseline_activity_id: baselineId,
             nonce: quizConfig.nonce
         }).done(function(res){
             if (!res || !res.success || !res.data) {
@@ -34,14 +36,23 @@
 
             if (data.status === 'waiting_new_attempt' || data.status === 'pending') {
                 const retryDelay = parseInt(data.retry_after, 10) > 0 ? parseInt(data.retry_after, 10) : 2;
-                setTimeout(function(){ pollCustomAttempt(lastId); }, retryDelay * 1000);
+                if (data.activity_id) {
+                    $('#custom-activity-id').text(data.activity_id);
+                } else {
+                    $('#custom-activity-id').text('—');
+                }
+                $('#custom-percentage').text('…');
+                setTimeout(pollNewAttempt, retryDelay * 1000);
                 return;
             }
 
             if (data.status === 'ready') {
                 if (data.activity_id) {
-                    lastSeen = parseInt(data.activity_id, 10) || lastSeen;
-                    $('#custom-activity-id').text(lastSeen);
+                    $('#custom-activity-id').text(data.activity_id);
+                    const parsedId = parseInt(data.activity_id, 10);
+                    if (!isNaN(parsedId)) {
+                        baselineId = parsedId;
+                    }
                 }
 
                 if (typeof data.percentage === 'number') {
@@ -49,12 +60,14 @@
                 }
             }
         }).fail(function(){
-            console.error('[CustomPoll] AJAX failed');
-            setTimeout(function(){ pollCustomAttempt(lastId); }, 2000);
+            console.error('[CustomPoll] AJAX fail');
+            setTimeout(pollNewAttempt, 2000);
         });
     }
 
     $(document).on('learndash-quiz-finished', function(){
-        pollCustomAttempt(lastSeen);
+        $('#custom-activity-id').text('—');
+        $('#custom-percentage').text('…');
+        pollNewAttempt();
     });
 })(jQuery);
