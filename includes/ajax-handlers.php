@@ -110,6 +110,17 @@ function politeia_get_latest_quiz_activity() {
         $response['final_percentage'] = is_null( $summary['percentage'] )
             ? null
             : intval( round( $summary['percentage'] ) );
+
+        if ( ! is_null( $response['first_percentage'] ) && ! is_null( $response['final_percentage'] ) ) {
+            $response['progress_delta'] = intval( $response['final_percentage'] - $response['first_percentage'] );
+        }
+
+        if ( $first_summary['timestamp'] && $summary['timestamp'] && $summary['timestamp'] >= $first_summary['timestamp'] ) {
+            $response['days_elapsed'] = max(
+                1,
+                floor( ( intval( $summary['timestamp'] ) - intval( $first_summary['timestamp'] ) ) / DAY_IN_SECONDS )
+            );
+        }
     }
 
     $cache_ttl = apply_filters( 'villegas_quiz_activity_cache_ttl', 15, $quiz_id, $user_id );
