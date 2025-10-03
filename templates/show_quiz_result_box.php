@@ -279,6 +279,12 @@ $show_loading_notice = ! $current_summary['has_attempt'];
             <div id="politeia-quiz-chart"></div>
         </div>
 
+        <div class="politeia-score-highlight">
+            <span id="quiz-percentage">
+                <?php echo $current_percentage_value !== null ? esc_html( $current_percentage_value . '%' ) : '—'; ?>
+            </span>
+        </div>
+
         <div class="politeia-activity-meta">
             <span>
                 <?php esc_html_e( 'ID de usuario:', 'villegas-courses' ); ?>
@@ -286,8 +292,13 @@ $show_loading_notice = ! $current_summary['has_attempt'];
             </span>
             <span>
                 <?php esc_html_e( 'ID de actividad:', 'villegas-courses' ); ?>
-                <strong id="politeia-activity-id-top" data-activity-id-target>
-                    <?php echo $latest_activity_id > 0 ? esc_html( $latest_activity_id ) : '--'; ?>
+                <strong id="politeia-activity-id-top">
+                    <span
+                        id="quiz-activity-id"
+                        data-activity-id-target
+                    >
+                        <?php echo $latest_activity_id > 0 ? esc_html( $latest_activity_id ) : '—'; ?>
+                    </span>
                 </strong>
             </span>
         </div>
@@ -440,6 +451,7 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         firstScore: <?php echo ! is_null( $first_percentage_value ) ? (int) $first_percentage_value : 'null'; ?>,
         finalScore: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
         currentScore: <?php echo ! is_null( $current_percentage_value ) ? (int) $current_percentage_value : 'null'; ?>,
+        currentActivityId: <?php echo $latest_activity_id ? intval( $latest_activity_id ) : 'null'; ?>,
         currentAttemptTimestamp: <?php echo intval( $current_summary['timestamp'] ); ?>,
         awaitingAttempt: <?php echo $show_loading_notice ? 'true' : 'false'; ?>,
         nonce: (typeof quizData !== 'undefined' && quizData.activityNonce)
@@ -546,10 +558,17 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         const attemptBox = $('#politeia-quiz-attempt');
         const attemptPercentage = (typeof data.percentage === 'number') ? Math.round(data.percentage) : 0;
         const attemptScore = (typeof data.score === 'number') ? Math.round(data.score) : null;
+        const attemptActivityId = parseInt(data.activity_id, 10);
         const attemptTimestamp = parseInt(data.timestamp, 10);
 
         if (!isNaN(attemptTimestamp) && attemptTimestamp > 0) {
             quizConfig.currentAttemptTimestamp = attemptTimestamp;
+        }
+
+        if (!isNaN(attemptActivityId) && attemptActivityId > 0) {
+            quizConfig.currentActivityId = attemptActivityId;
+            $('[data-activity-id-target]').text(attemptActivityId);
+            $('#quiz-activity-id').text(attemptActivityId);
         }
 
         $('#politeia-attempt-percentage').text(attemptPercentage + '%');
@@ -697,23 +716,27 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 }
 
                 const resolvedTimestamp = parseInt(payload.timestamp, 10) || lastTimestamp;
+                const rawActivityId = (typeof payload.activity_id !== 'undefined') ? parseInt(payload.activity_id, 10) : null;
+                const attemptTotalPoints = (typeof payload.total_points === 'number')
+                    ? payload.total_points
+                    : ((typeof payload.total_points === 'string' && payload.total_points !== '')
+                        ? parseFloat(payload.total_points)
+                        : null);
+
                 const attemptData = {
                     percentage: (typeof payload.percentage_rounded === 'number') ? payload.percentage_rounded : payload.percentage,
                     formatted_date: payload.formatted_date,
                     final_percentage: payload.final_percentage,
                     first_percentage: payload.first_percentage,
                     score: (typeof payload.score === 'number') ? payload.score : null,
+                    total_points: attemptTotalPoints,
                     progress_delta: payload.progress_delta,
                     days_elapsed: payload.days_elapsed,
+                    activity_id: (!isNaN(rawActivityId) && rawActivityId > 0) ? rawActivityId : null,
                     timestamp: resolvedTimestamp
                 };
 
                 updateAttemptUI(attemptData);
-
-                if (typeof payload.activity_id !== 'undefined') {
-                    const activityId = payload.activity_id;
-                    $('[data-activity-id-target]').text(activityId ? activityId : '--');
-                }
 
                 return;
             }
@@ -767,6 +790,47 @@ $show_loading_notice = ! $current_summary['has_attempt'];
 
     window.addEventListener('beforeunload', function(){
         restorePendingAttemptState();
+    });
+});
+</script>
+
+<script>
+jQuery(document).ready(function($) {
+    if (typeof villegasAjax === 'undefined' || !villegasAjax.ajaxUrl) {
+        return;
+    }
+
+    const quizData = window.quizData || {};
+    const quizId = quizData.quizId ? parseInt(quizData.quizId, 10) : 0;
+
+    if (!quizId) {
+        return;
+    }
+
+    $.post(villegasAjax.ajaxUrl, {
+        action: 'villegas_get_latest_quiz_result',
+        quiz_id: quizId
+    }, function(response) {
+        if (response && response.success && response.data) {
+            const data = response.data;
+            const percentage = (typeof data.percentage !== 'undefined' && data.percentage !== null)
+                ? data.percentage
+                : ((typeof data.percentage_rounded !== 'undefined' && data.percentage_rounded !== null)
+                    ? data.percentage_rounded
+                    : null);
+
+            if (percentage !== null && percentage !== '') {
+                $('#quiz-percentage').text(percentage + '%');
+            } else {
+                $('#quiz-percentage').text('—');
+            }
+
+            if (typeof data.activity_id !== 'undefined' && data.activity_id !== null) {
+                $('#quiz-activity-id').text(data.activity_id);
+            }
+        } else {
+            $('#quiz-percentage').text('—');
+        }
     });
 });
 </script>
