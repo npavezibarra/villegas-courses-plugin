@@ -211,7 +211,8 @@ function villegas_get_latest_quiz_result() {
         ], 403 );
     }
 
-    $quiz_id = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
+    $quiz_id          = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
+    $last_activity_id = isset( $_POST['last_activity_id'] ) ? absint( $_POST['last_activity_id'] ) : 0;
 
     if ( ! $quiz_id ) {
         wp_send_json_error( [
@@ -241,6 +242,15 @@ function villegas_get_latest_quiz_result() {
         ] );
     }
 
+    $activity_id = absint( $activity_id );
+
+    if ( $last_activity_id && $activity_id <= $last_activity_id ) {
+        wp_send_json_error( [
+            'message' => esc_html__( 'Esperando nuevo intento.', 'villegas-courses' ),
+            'code'    => 'not_ready',
+        ] );
+    }
+
     $percentage_raw = $wpdb->get_var(
         $wpdb->prepare(
             "SELECT activity_meta_value
@@ -263,7 +273,7 @@ function villegas_get_latest_quiz_result() {
     wp_send_json_success(
         [
             'percentage'  => $percentage,
-            'activity_id' => intval( $activity_id ),
+            'activity_id' => $activity_id,
         ]
     );
 }

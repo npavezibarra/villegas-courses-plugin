@@ -271,7 +271,11 @@ if ( $is_final_quiz ) {
         <p><?php esc_html_e( 'Estamos registrando tu último resultado. Actualizaremos esta vista en unos segundos.', 'villegas-courses' ); ?></p>
     </div>
 
-    <div class="politeia-quiz-results" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>">
+    <div
+        class="politeia-quiz-results"
+        data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>"
+        data-initial-activity-id="<?php echo $latest_activity_id > 0 ? esc_attr( $latest_activity_id ) : '0'; ?>"
+    >
         <div class="politeia-quiz-header">
             <div>
                 <h3><?php echo esc_html( get_the_title( $quiz_id ) ); ?></h3>
@@ -440,22 +444,41 @@ jQuery(document).ready(function($) {
     var $quizPercentage = $('#quiz-percentage');
     var $attemptPercentage = $('#politeia-attempt-percentage');
     var $activityIdTargets = $('[data-activity-id-target]');
+    var currentActivityId = parseInt($results.data('initialActivityId'), 10);
+    var lastRenderedPercentageText = $quizPercentage.text();
+    var lastRenderedActivityText = $activityIdTargets.first().text();
+    var lastRenderedHasValue = $quizPercentage.attr('data-has-value') === '1';
+
+    if (isNaN(currentActivityId)) {
+        currentActivityId = 0;
+    }
 
     function applyPercentage(percentage) {
         var percentageText = percentage + '%';
         $quizPercentage.text(percentageText).attr('data-has-value', '1');
         $attemptPercentage.text(percentageText);
+        lastRenderedPercentageText = percentageText;
+        lastRenderedHasValue = true;
     }
 
-    function handleFailure() {
+    function handleFailure(previousState) {
+        if (previousState) {
+            $quizPercentage.text(previousState.percentage).attr('data-has-value', previousState.hasValue ? '1' : '0');
+            $attemptPercentage.text(previousState.attemptPercentage);
+            $activityIdTargets.text(previousState.activityId);
+            lastRenderedPercentageText = previousState.percentage;
+            lastRenderedActivityText = previousState.activityId;
+            lastRenderedHasValue = previousState.hasValue;
+        }
         $loader.hide();
         $results.show();
     }
 
-    function fetchLatestResult(retriesRemaining) {
+    function fetchLatestResult(retriesRemaining, previousState) {
         $.post(ajaxUrl, {
             action: 'villegas_get_latest_quiz_result',
-            quiz_id: quizId
+            quiz_id: quizId,
+            last_activity_id: currentActivityId
         }).done(function(response) {
             if (response && response.success && response.data && typeof response.data.percentage !== 'undefined') {
                 var percentage = parseInt(response.data.percentage, 10);
@@ -464,10 +487,14 @@ jQuery(document).ready(function($) {
                 if (!isNaN(percentage)) {
                     applyPercentage(percentage);
                     if (!isNaN(activityId) && activityId > 0) {
-                        $activityIdTargets.text(activityId);
+                        currentActivityId = activityId;
+                        lastRenderedActivityText = String(activityId);
                     } else {
-                        $activityIdTargets.text('--');
+                        currentActivityId = 0;
+                        lastRenderedActivityText = '--';
                     }
+                    $results.attr('data-initial-activity-id', currentActivityId);
+                    $activityIdTargets.text(lastRenderedActivityText);
                     $loader.hide();
                     $results.show();
                     return;
@@ -476,30 +503,37 @@ jQuery(document).ready(function($) {
 
             if (retriesRemaining > 0) {
                 setTimeout(function() {
-                    fetchLatestResult(retriesRemaining - 1);
+                    fetchLatestResult(retriesRemaining - 1, previousState);
                 }, 3000);
             } else {
-                handleFailure();
+                handleFailure(previousState);
             }
         }).fail(function() {
             if (retriesRemaining > 0) {
                 setTimeout(function() {
-                    fetchLatestResult(retriesRemaining - 1);
+                    fetchLatestResult(retriesRemaining - 1, previousState);
                 }, 3000);
             } else {
-                handleFailure();
+                handleFailure(previousState);
             }
         });
     }
 
     $(document).on('learndash-quiz-finished', function() {
+        var previousState = {
+            percentage: lastRenderedPercentageText,
+            attemptPercentage: lastRenderedPercentageText,
+            activityId: lastRenderedActivityText,
+            hasValue: lastRenderedHasValue
+        };
+
         $results.hide();
         $loader.show();
         $quizPercentage.text('--%').attr('data-has-value', '0');
         $attemptPercentage.text('--%');
         $activityIdTargets.text('--');
 
-        fetchLatestResult(6);
+        fetchLatestResult(6, previousState);
     });
 });
 </script>
