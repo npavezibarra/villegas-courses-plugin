@@ -269,12 +269,16 @@ if ( $is_final_quiz ) {
 </div>
 
 <div style="display:none;" class="wpProQuiz_results">
-    <div class="politeia-quiz-results" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>">
+    <div id="politeia-loading-notice" class="politeia-alert" style="display:<?php echo $current_summary['has_attempt'] ? 'none' : 'block'; ?>;">
+        <p><?php esc_html_e( 'Estamos registrando tu último resultado. Actualizaremos esta vista en unos segundos.', 'villegas-courses' ); ?></p>
+    </div>
+
+    <div class="politeia-quiz-results" data-quiz-id="<?php echo esc_attr( $quiz_id ); ?>" style="<?php echo $current_summary['has_attempt'] ? '' : 'display:none;'; ?>">
         <div class="politeia-quiz-header">
             <div>
                 <h3><?php echo esc_html( get_the_title( $quiz_id ) ); ?></h3>
                 <div class="politeia-quiz-meta">
-                    <?php echo esc_html( $course_title ); ?> · <?php echo esc_html( $current_formatted ); ?>
+                    <?php echo esc_html( $course_title ); ?> · <span id="politeia-quiz-date"><?php echo esc_html( $current_formatted ); ?></span>
                 </div>
             </div>
             <?php if ( $is_final_quiz && $first_summary['formatted_date'] ) : ?>
@@ -443,6 +447,9 @@ if ( $is_final_quiz ) {
         firstScore: <?php echo ! is_null( $first_percentage_value ) ? (int) $first_percentage_value : 'null'; ?>,
         finalScore: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
         currentScore: <?php echo ! is_null( $current_percentage_value ) ? (int) $current_percentage_value : 'null'; ?>,
+        currentAttemptTimestamp: <?php echo intval( $current_summary['timestamp'] ); ?>,
+        awaitingAttempt: <?php echo $current_summary['has_attempt'] ? 'false' : 'true'; ?>,
+        hideResultsWhilePending: <?php echo $current_summary['has_attempt'] ? 'false' : 'true'; ?>,
         nonce: (typeof quizData !== 'undefined' && quizData.activityNonce)
             ? quizData.activityNonce
             : (ajaxConfig.activityNonce || '')
@@ -452,6 +459,61 @@ if ( $is_final_quiz ) {
     const defaultRetry = parseInt(ajaxConfig.retryAfter, 10) > 0 ? parseInt(ajaxConfig.retryAfter, 10) : 5;
 
     let chartInstance = null;
+    const attemptBox = $('#politeia-quiz-attempt');
+    const loadingNotice = $('#politeia-loading-notice');
+    const resultsWrapper = $('.politeia-quiz-results');
+
+    const storage = (function(){
+        try {
+            return window.sessionStorage;
+        } catch (error) {
+            return null;
+        }
+    })();
+
+    const awaitingStorageKey = 'politeiaAwaitingAttempt_' + quizConfig.quizId + '_' + quizConfig.userId;
+
+    if (storage) {
+        const storedAwaiting = storage.getItem(awaitingStorageKey);
+        if (storedAwaiting) {
+            const storedTime = parseInt(storedAwaiting, 10);
+            if (!isNaN(storedTime) && (Date.now() - storedTime) < (5 * 60 * 1000)) {
+                quizConfig.awaitingAttempt = true;
+                quizConfig.hideResultsWhilePending = true;
+            } else {
+                storage.removeItem(awaitingStorageKey);
+            }
+        }
+    }
+
+    function setAwaitingState(isAwaiting) {
+        quizConfig.awaitingAttempt = !!isAwaiting;
+
+        if (quizConfig.awaitingAttempt) {
+            if (loadingNotice && loadingNotice.length) {
+                loadingNotice.show();
+            }
+
+            if (attemptBox && attemptBox.length) {
+                attemptBox.stop(true, true).slideUp();
+            }
+            if (resultsWrapper && resultsWrapper.length && quizConfig.hideResultsWhilePending) {
+                resultsWrapper.hide();
+            }
+        } else {
+            if (attemptBox && attemptBox.length) {
+                attemptBox.stop(true, true).slideDown();
+            }
+
+            if (loadingNotice && loadingNotice.length) {
+                loadingNotice.hide();
+            }
+
+            if (resultsWrapper && resultsWrapper.length) {
+                resultsWrapper.show();
+            }
+        }
+    }
 
     function renderChart(series, labels) {
         const chartEl = document.querySelector('#politeia-quiz-chart');
@@ -493,13 +555,24 @@ if ( $is_final_quiz ) {
             return;
         }
 
-        const attemptBox = $('#politeia-quiz-attempt');
         const attemptPercentage = (typeof data.percentage === 'number') ? Math.round(data.percentage) : 0;
         const attemptScore = (typeof data.score === 'number') ? Math.round(data.score) : null;
+        const attemptTimestamp = parseInt(data.timestamp, 10);
+
+        if (!isNaN(attemptTimestamp) && attemptTimestamp > 0) {
+            quizConfig.currentAttemptTimestamp = attemptTimestamp;
+            if (storage) {
+                storage.removeItem(awaitingStorageKey);
+            }
+        }
 
         $('#politeia-attempt-percentage').text(attemptPercentage + '%');
         $('#politeia-attempt-date').text(data.formatted_date || '--');
         $('#quiz-percentage').text(attemptPercentage + '%');
+
+        if (data.formatted_date) {
+            $('#politeia-quiz-date').text(data.formatted_date);
+        }
 
         const scoreDetail = document.getElementById('politeia-score-detail');
         if (scoreDetail) {
@@ -525,15 +598,41 @@ if ( $is_final_quiz ) {
                 quizConfig.finalScore = Math.round(data.final_percentage);
             }
 
-            if (typeof data.first_percentage === 'number' && typeof data.final_percentage === 'number') {
-                $('#politeia-final-alert').remove();
+            const hasComparableScores = (typeof data.first_percentage === 'number') && (typeof data.final_percentage === 'number');
 
-                const progressDelta = Math.round(data.final_percentage - data.first_percentage);
-                const progressChip = $('#politeia-progress-delta');
-                if (progressChip.length) {
+            if (hasComparableScores) {
+                $('#politeia-final-alert').remove();
+            }
+
+            const progressChip = $('#politeia-progress-delta');
+            if (progressChip.length) {
+                let progressDelta = null;
+                if (typeof data.progress_delta === 'number') {
+                    progressDelta = Math.round(data.progress_delta);
+                } else if (hasComparableScores) {
+                    progressDelta = Math.round(data.final_percentage - data.first_percentage);
+                }
+
+                if (progressDelta !== null) {
                     const progressLabel = progressChip.data('label') || '';
                     const progressSign = progressDelta > 0 ? '+' : '';
                     progressChip.text((progressLabel ? progressLabel + ' ' : '') + progressSign + progressDelta + '%');
+                }
+            }
+
+            const daysChip = $('#politeia-days-elapsed');
+            if (daysChip.length) {
+                let daysValue = null;
+                if (typeof data.days_elapsed === 'number') {
+                    daysValue = data.days_elapsed;
+                } else if (typeof data.days_elapsed === 'string' && data.days_elapsed) {
+                    const parsed = parseInt(data.days_elapsed, 10);
+                    daysValue = isNaN(parsed) ? null : parsed;
+                }
+
+                if (daysValue !== null) {
+                    const daysLabel = daysChip.data('label') || '';
+                    daysChip.text((daysLabel ? daysLabel + ' ' : '') + daysValue);
                 }
             }
         } else {
@@ -542,9 +641,8 @@ if ( $is_final_quiz ) {
 
         quizConfig.currentScore = attemptPercentage;
 
-        if (attemptBox.length) {
-            attemptBox.slideDown();
-        }
+        quizConfig.hideResultsWhilePending = false;
+        setAwaitingState(false);
 
         if (chartInstance) {
             const finalSeriesValue = quizConfig.isFinalQuiz
@@ -558,10 +656,18 @@ if ( $is_final_quiz ) {
                     : (quizConfig.firstScore !== null ? quizConfig.firstScore : 0))
                 : null;
             const newSeries = quizConfig.isFinalQuiz
-                ? [finalSeriesValue, firstSeriesValue]
+                ? [finalSeriesValue, (typeof firstSeriesValue === 'number' ? firstSeriesValue : 0)]
                 : [attemptPercentage];
             chartInstance.updateSeries(newSeries);
         }
+    }
+
+    function queueRetry(retriesLeft, waitSeconds) {
+        if (retriesLeft <= 0) {
+            return;
+        }
+
+        setTimeout(function(){ pollLatestAttempt(retriesLeft); }, waitSeconds * 1000);
     }
 
     function pollLatestAttempt(retries) {
@@ -569,37 +675,58 @@ if ( $is_final_quiz ) {
             return;
         }
 
-        $.post(ajaxUrl, {
+        const retriesLeft = typeof retries === 'number' ? retries : 0;
+        const lastTimestamp = parseInt(quizConfig.currentAttemptTimestamp, 10) || 0;
+
+        const requestData = {
             action: 'get_latest_quiz_activity',
             quiz_id: quizConfig.quizId,
             user_id: quizConfig.userId,
-            nonce: quizConfig.nonce
-        }).done(function(response){
+            nonce: quizConfig.nonce,
+            last_timestamp: lastTimestamp
+        };
+
+        if (quizConfig.awaitingAttempt) {
+            requestData.awaiting_attempt = '1';
+        }
+
+        $.post(ajaxUrl, requestData).done(function(response){
             if (response && response.success) {
                 const payload = response.data || {};
+                const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
 
                 if (payload.status === 'pending') {
-                    if (retries > 0) {
-                        const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
-                        setTimeout(function(){ pollLatestAttempt(retries - 1); }, waitSeconds * 1000);
-                    }
+                    queueRetry(retriesLeft - 1, waitSeconds);
                     return;
                 }
 
-                updateAttemptUI({
-                    percentage: (typeof payload.percentage_rounded === 'number') ? payload.percentage_rounded : payload.percentage,
-                    formatted_date: payload.formatted_date,
-                    final_percentage: payload.final_percentage,
-                    first_percentage: payload.first_percentage,
-                    score: (typeof payload.score === 'number') ? payload.score : null
-                });
-            } else if (retries > 0) {
-                setTimeout(function(){ pollLatestAttempt(retries - 1); }, defaultRetry * 1000);
+                if (payload.status === 'ready') {
+                    const responseTimestamp = parseInt(payload.timestamp, 10) || 0;
+
+                    if (!responseTimestamp || (lastTimestamp && responseTimestamp <= lastTimestamp)) {
+                        queueRetry(retriesLeft - 1, waitSeconds);
+                        return;
+                    }
+
+                    updateAttemptUI({
+                        percentage: (typeof payload.percentage_rounded === 'number') ? payload.percentage_rounded : payload.percentage,
+                        formatted_date: payload.formatted_date,
+                        final_percentage: payload.final_percentage,
+                        first_percentage: payload.first_percentage,
+                        progress_delta: (typeof payload.progress_delta === 'number') ? payload.progress_delta : null,
+                        days_elapsed: (typeof payload.days_elapsed === 'number') ? payload.days_elapsed : null,
+                        score: (typeof payload.score === 'number') ? payload.score : null,
+                        timestamp: responseTimestamp
+                    });
+                    return;
+                }
+
+                queueRetry(retriesLeft - 1, waitSeconds);
+            } else {
+                queueRetry(retriesLeft - 1, defaultRetry);
             }
         }).fail(function(){
-            if (retries > 0) {
-                setTimeout(function(){ pollLatestAttempt(retries - 1); }, defaultRetry * 1000);
-            }
+            queueRetry(retriesLeft - 1, defaultRetry);
         });
     }
 
@@ -615,18 +742,32 @@ if ( $is_final_quiz ) {
         const baseLabels = quizConfig.isFinalQuiz ? ['Prueba Final', 'Prueba Inicial'] : ['Resultado'];
         renderChart(baseSeries, baseLabels);
 
-        if (<?php echo $current_summary['has_attempt'] ? 'true' : 'false'; ?>) {
+        if (<?php echo $current_summary['has_attempt'] ? 'true' : 'false'; ?> && !quizConfig.awaitingAttempt) {
             updateAttemptUI({
                 percentage: <?php echo ! is_null( $current_percentage_value ) ? (int) $current_percentage_value : 0; ?>,
                 formatted_date: <?php echo wp_json_encode( $current_summary['formatted_date'] ); ?>,
                 final_percentage: <?php echo ! is_null( $final_percentage_value ) ? (int) $final_percentage_value : 'null'; ?>,
                 first_percentage: <?php echo ! is_null( $first_percentage_value ) ? (int) $first_percentage_value : 'null'; ?>,
-                score: <?php echo intval( $current_summary['score'] ); ?>
+                progress_delta: <?php echo is_null( $progress_delta ) ? 'null' : intval( $progress_delta ); ?>,
+                days_elapsed: <?php echo is_null( $days_elapsed ) ? 'null' : intval( $days_elapsed ); ?>,
+                score: <?php echo intval( $current_summary['score'] ); ?>,
+                timestamp: <?php echo intval( $current_summary['timestamp'] ); ?>
             });
+        }
+
+        if (quizConfig.awaitingAttempt) {
+            quizConfig.hideResultsWhilePending = true;
+            setAwaitingState(true);
+            pollLatestAttempt(6);
         }
     });
 
     $(document).on('learndash-quiz-finished', function(){
+        quizConfig.hideResultsWhilePending = true;
+        setAwaitingState(true);
+        if (storage) {
+            storage.setItem(awaitingStorageKey, String(Date.now()));
+        }
         pollLatestAttempt(6);
     });
 })(jQuery);
