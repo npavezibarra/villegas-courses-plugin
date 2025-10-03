@@ -461,8 +461,10 @@ $show_loading_notice = ! $current_summary['has_attempt'];
 
     const ajaxUrl = ajaxConfig.ajaxUrl || '';
     const defaultRetry = parseInt(ajaxConfig.retryAfter, 10) > 0 ? parseInt(ajaxConfig.retryAfter, 10) : 5;
+    const maxPollRetries = 30;
 
     const loadingNoticeEl = document.getElementById('politeia-loading-notice');
+    const loadingNoticeDefaultText = loadingNoticeEl ? loadingNoticeEl.textContent : '';
 
     let chartInstance = null;
     const attemptBox = $('#politeia-quiz-attempt');
@@ -477,6 +479,10 @@ $show_loading_notice = ! $current_summary['has_attempt'];
             return;
         }
 
+        if (loadingNoticeEl) {
+            loadingNoticeEl.textContent = loadingNoticeDefaultText;
+        }
+
         restoreLastAttempt();
         setAwaitingState(false);
     }
@@ -486,6 +492,9 @@ $show_loading_notice = ! $current_summary['has_attempt'];
 
         if (quizConfig.awaitingAttempt) {
             if (loadingNoticeEl) {
+                if (loadingNoticeDefaultText) {
+                    loadingNoticeEl.textContent = loadingNoticeDefaultText;
+                }
                 loadingNoticeEl.style.display = '';
             }
 
@@ -506,6 +515,7 @@ $show_loading_notice = ! $current_summary['has_attempt'];
             }
 
             if (loadingNoticeEl) {
+                loadingNoticeEl.textContent = loadingNoticeDefaultText;
                 loadingNoticeEl.style.display = 'none';
             }
         }
@@ -552,6 +562,7 @@ $show_loading_notice = ! $current_summary['has_attempt'];
         }
 
         if (loadingNoticeEl) {
+            loadingNoticeEl.textContent = loadingNoticeDefaultText;
             loadingNoticeEl.style.display = 'none';
         }
 
@@ -667,19 +678,15 @@ $show_loading_notice = ! $current_summary['has_attempt'];
     }
 
     function queueRetry(retriesLeft, waitSeconds) {
-        const attemptsRemaining = typeof retriesLeft === 'number' ? retriesLeft : 0;
-        const shouldContinue = quizConfig.awaitingAttempt || attemptsRemaining > 0;
+        const remaining = typeof retriesLeft === 'number' ? retriesLeft : 0;
 
-        if (!shouldContinue) {
+        if (remaining <= 0) {
             return;
         }
 
-        const nextRetries = quizConfig.awaitingAttempt
-            ? attemptsRemaining
-            : Math.max(0, attemptsRemaining - 1);
         const delaySeconds = parseInt(waitSeconds, 10) > 0 ? parseInt(waitSeconds, 10) : defaultRetry;
 
-        setTimeout(function(){ pollLatestAttempt(nextRetries); }, delaySeconds * 1000);
+        setTimeout(function(){ pollLatestAttempt(remaining); }, delaySeconds * 1000);
     }
 
     function pollLatestAttempt(retries) {
@@ -687,7 +694,12 @@ $show_loading_notice = ! $current_summary['has_attempt'];
             return;
         }
 
-        const retriesLeft = typeof retries === 'number' ? retries : 0;
+        const retriesLeft = typeof retries === 'number' ? retries : maxPollRetries;
+
+        if (retriesLeft <= 0) {
+            return;
+        }
+
         const lastTimestamp = parseInt(quizConfig.currentAttemptTimestamp, 10) || 0;
 
         const requestData = {
@@ -698,20 +710,51 @@ $show_loading_notice = ! $current_summary['has_attempt'];
             last_timestamp: lastTimestamp
         };
 
-        if (quizConfig.awaitingAttempt) {
-            requestData.awaiting_attempt = '1';
-            if (loadingNoticeEl) {
-                loadingNoticeEl.style.display = '';
-            }
+        if (quizConfig.awaitingAttempt && loadingNoticeEl) {
+            loadingNoticeEl.style.display = '';
         }
 
         $.post(ajaxUrl, requestData).done(function(response){
             if (response && response.success) {
                 const payload = response.data || {};
                 const waitSeconds = parseInt(payload.retry_after, 10) > 0 ? parseInt(payload.retry_after, 10) : defaultRetry;
+                const attemptIdentifier = (typeof payload.activity_id !== 'undefined' && payload.activity_id !== null && payload.activity_id !== '')
+                    ? payload.activity_id
+                    : '—';
+                let logPercentage = '—';
+
+                if (typeof payload.percentage !== 'undefined' && payload.percentage !== null && payload.percentage !== '') {
+                    logPercentage = payload.percentage;
+                } else if (typeof payload.percentage_rounded !== 'undefined' && payload.percentage_rounded !== null && payload.percentage_rounded !== '') {
+                    logPercentage = payload.percentage_rounded;
+                }
+
+                const logStatus = payload.status || 'unknown';
+                console.log(`[Quiz Poll] Attempt ${attemptIdentifier} | Status: ${logStatus} | Percentage: ${logPercentage !== '' ? logPercentage : '—'} | Next retry: ${waitSeconds}s`);
 
                 if (payload.status === 'pending') {
-                    queueRetry(retriesLeft, waitSeconds);
+                    const pendingActivityId = parseInt(payload.activity_id, 10);
+
+                    if (!quizConfig.awaitingAttempt) {
+                        setAwaitingState(true);
+                    }
+
+                    if (loadingNoticeEl) {
+                        if (!isNaN(pendingActivityId) && pendingActivityId > 0) {
+                            loadingNoticeEl.textContent = `Processing attempt ID: ${pendingActivityId}…`;
+                        } else {
+                            loadingNoticeEl.textContent = loadingNoticeDefaultText || 'Processing attempt…';
+                        }
+                        loadingNoticeEl.style.display = '';
+                    }
+
+                    if (!isNaN(pendingActivityId) && pendingActivityId > 0) {
+                        quizConfig.currentActivityId = pendingActivityId;
+                        $('[data-activity-id-target]').text(pendingActivityId);
+                        $('#quiz-activity-id').text(pendingActivityId);
+                    }
+
+                    queueRetry(retriesLeft - 1, waitSeconds);
                     return;
                 }
 
@@ -739,11 +782,13 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 updateAttemptUI(attemptData);
 
                 return;
-            }
+            console.log(`[Quiz Poll] Attempt — | Status: error_response | Percentage: — | Next retry: ${defaultRetry}s`);
 
-            queueRetry(retriesLeft, defaultRetry);
+            queueRetry(retriesLeft - 1, defaultRetry);
         }).fail(function(){
-            queueRetry(retriesLeft, defaultRetry);
+            console.log(`[Quiz Poll] Attempt — | Status: ajax_error | Percentage: — | Next retry: ${defaultRetry}s`);
+
+            queueRetry(retriesLeft - 1, defaultRetry);
         });
     }
 
@@ -769,19 +814,19 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 timestamp: <?php echo intval( $current_summary['timestamp'] ); ?>
             });
         } else {
-            pollLatestAttempt(6);
+            pollLatestAttempt(maxPollRetries);
         }
 
         if (quizConfig.awaitingAttempt) {
             quizConfig.hideResultsWhilePending = true;
             setAwaitingState(true);
-            pollLatestAttempt(6);
+            pollLatestAttempt(maxPollRetries);
         }
     });
 
     $(document).on('learndash-quiz-finished', function(){
         setAwaitingState(true);
-        pollLatestAttempt(6);
+        pollLatestAttempt(maxPollRetries);
     });
 
     $(document).on('click', '.wpProQuiz_sending .wpProQuiz_button_cancel, .wpProQuiz_button_cancel', function(){
