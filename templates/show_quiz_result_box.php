@@ -497,6 +497,41 @@ $show_loading_notice = ! $current_has_attempt;
     const finalAlertBox = $('#politeia-final-alert');
     const comparisonBlock = $('#politeia-comparison-block');
     const attemptBox = $('#politeia-quiz-attempt');
+    const percentageDisplay = $('#quiz-percentage');
+    const attemptPercentageDisplay = $('#politeia-attempt-percentage');
+    const attemptDateDisplay = $('#politeia-attempt-date');
+    const activityIdDisplays = $('[data-activity-id-target]');
+
+    let lastStableAttemptState = null;
+
+    function captureCurrentAttemptState() {
+        lastStableAttemptState = {
+            percentageText: percentageDisplay.text(),
+            percentageHasValue: percentageDisplay.attr('data-has-value') === '1',
+            attemptPercentageText: attemptPercentageDisplay.text(),
+            attemptDateText: attemptDateDisplay.text(),
+            activityIdText: activityIdDisplays.length ? activityIdDisplays.first().text() : ''
+        };
+    }
+
+    function restoreLastAttemptState() {
+        if (!lastStableAttemptState) {
+            return;
+        }
+
+        percentageDisplay
+            .text(lastStableAttemptState.percentageText || '--%')
+            .attr('data-has-value', lastStableAttemptState.percentageHasValue ? '1' : '0');
+
+        attemptPercentageDisplay.text(lastStableAttemptState.attemptPercentageText || '--%');
+        attemptDateDisplay.text(lastStableAttemptState.attemptDateText || '--');
+
+        if (activityIdDisplays.length) {
+            activityIdDisplays.text(lastStableAttemptState.activityIdText || '--');
+        }
+    }
+
+    captureCurrentAttemptState();
 
     let chartInstance = null;
 
@@ -706,6 +741,8 @@ $show_loading_notice = ! $current_has_attempt;
             attemptBox.stop(true, true).slideDown();
         }
 
+        captureCurrentAttemptState();
+
         if (chartInstance) {
             const finalValue = quizConfig.isFinalQuiz
                 ? (typeof data.final_percentage === 'number'
@@ -735,6 +772,10 @@ $show_loading_notice = ! $current_has_attempt;
 
     function queueRetry(retriesLeft, waitSeconds) {
         if (retriesLeft <= 0) {
+            if (quizConfig.awaitingAttempt) {
+                restoreLastAttemptState();
+                setAwaitingState(false);
+            }
             return;
         }
 
