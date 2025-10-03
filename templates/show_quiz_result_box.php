@@ -381,21 +381,65 @@ if ( $is_final_quiz ) {
 
 <script>
 jQuery(document).ready(function($) {
+    var ajaxUrl  = <?php echo wp_json_encode( admin_url( 'admin-ajax.php' ) ); ?>;
+    var quizId   = <?php echo intval( $quiz_id ); ?>;
+    var $loader  = $('#politeia-loading-notice');
+    var $results = $('.politeia-quiz-results');
+    var $quizPercentage = $('#quiz-percentage');
+    var $attemptPercentage = $('#politeia-attempt-percentage');
+
+    function applyPercentage(percentage) {
+        var percentageText = percentage + '%';
+        $quizPercentage.text(percentageText).attr('data-has-value', '1');
+        $attemptPercentage.text(percentageText);
+    }
+
+    function handleFailure() {
+        $loader.hide();
+        $results.show();
+    }
+
+    function fetchLatestResult(retriesRemaining) {
+        $.post(ajaxUrl, {
+            action: 'villegas_get_latest_quiz_result',
+            quiz_id: quizId
+        }).done(function(response) {
+            if (response && response.success && response.data && typeof response.data.percentage !== 'undefined') {
+                var percentage = parseInt(response.data.percentage, 10);
+
+                if (!isNaN(percentage)) {
+                    applyPercentage(percentage);
+                    $loader.hide();
+                    $results.show();
+                    return;
+                }
+            }
+
+            if (retriesRemaining > 0) {
+                setTimeout(function() {
+                    fetchLatestResult(retriesRemaining - 1);
+                }, 3000);
+            } else {
+                handleFailure();
+            }
+        }).fail(function() {
+            if (retriesRemaining > 0) {
+                setTimeout(function() {
+                    fetchLatestResult(retriesRemaining - 1);
+                }, 3000);
+            } else {
+                handleFailure();
+            }
+        });
+    }
+
     $(document).on('learndash-quiz-finished', function() {
-        var correct = parseInt($('.wpProQuiz_correct_answer').text(), 10);
-        var total   = parseInt($('.wpProQuiz_results .wpProQuiz_resultValue_YourScore span').last().text(), 10);
-        var $quizPercentage    = $('#quiz-percentage');
-        var $attemptPercentage = $('#politeia-attempt-percentage');
+        $results.hide();
+        $loader.show();
+        $quizPercentage.text('--%').attr('data-has-value', '0');
+        $attemptPercentage.text('--%');
 
-        if (!isNaN(correct) && !isNaN(total) && total > 0) {
-            var percentage = Math.round((correct / total) * 100);
-            var percentageText = percentage + '%';
-            $quizPercentage.text(percentageText).attr('data-has-value', '1');
-            $attemptPercentage.text(percentageText);
-        }
-
-        $('#politeia-loading-notice').hide();
-        $('.politeia-quiz-results').show();
+        fetchLatestResult(6);
     });
 });
 </script>
