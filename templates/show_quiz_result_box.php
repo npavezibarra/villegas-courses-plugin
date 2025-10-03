@@ -296,17 +296,17 @@ $show_loading_notice = ! $current_summary['has_attempt'];
                 data-score-fallback="<?php echo esc_attr__( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>"
             >
                 <?php echo $latest_percentage !== null ? esc_html( $latest_percentage . '%' ) : '--%'; ?>
-            </span>
-        </div>
-
-        <div
-            class="politeia-score-detail"
-            id="politeia-score-detail"
-            data-score-template="<?php echo esc_attr__( 'Puntaje obtenido: %d pts.', 'villegas-courses' ); ?>"
-            data-score-fallback="<?php echo esc_attr__( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>"
-        >
-            <?php esc_html_e( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>
-        </div>
+            </div>
+        <?php else : ?>
+            <div
+                class="politeia-score-detail"
+                id="politeia-score-detail"
+                data-score-template="<?php echo esc_attr__( 'Puntaje obtenido: %d pts.', 'villegas-courses' ); ?>"
+                data-score-fallback="<?php echo esc_attr__( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>"
+            >
+                <?php esc_html_e( 'Puntaje disponible pronto.', 'villegas-courses' ); ?>
+            </div>
+        <?php endif; ?>
 
         <?php if ( $is_first_quiz ) : ?>
             <?php if ( ! empty( $first_alert_messages ) ) : ?>
