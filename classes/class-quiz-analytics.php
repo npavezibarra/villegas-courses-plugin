@@ -86,7 +86,7 @@ class QuizAnalytics {
                 WHERE user_id       = %d
                   AND post_id       = %d
                   AND activity_type = 'quiz'
-                ORDER BY activity_completed DESC
+                ORDER BY activity_id DESC
                 LIMIT 1
                 ",
                 $this->user_id,
@@ -104,33 +104,28 @@ class QuizAnalytics {
             ];
         }
 
-        $score = $wpdb->get_var(
-            $wpdb->prepare(
-                "
-                SELECT activity_meta_value
-                FROM {$wpdb->prefix}learndash_user_activity_meta
-                WHERE activity_id       = %d
-                  AND activity_meta_key = 'score'
-                LIMIT 1
-                ",
-                $activity_id
-            )
-        );
-        $score = $score !== null ? intval( $score ) : 0;
+        $meta = politeia_fetch_activity_meta_map( $activity_id );
 
-        $percentage = $wpdb->get_var(
-            $wpdb->prepare(
-                "
-                SELECT activity_meta_value
-                FROM {$wpdb->prefix}learndash_user_activity_meta
-                WHERE activity_id       = %d
-                  AND activity_meta_key = 'percentage'
-                LIMIT 1
-                ",
-                $activity_id
-            )
-        );
-        $percentage = $percentage !== null ? floatval( $percentage ) : 'N/A';
+        $quiz_meta_value = isset( $meta['quiz'] ) ? intval( $meta['quiz'] ) : 0;
+        $percentage_raw  = isset( $meta['percentage'] ) ? $meta['percentage'] : null;
+        $has_percentage  = ( '' !== $percentage_raw && null !== $percentage_raw && is_numeric( $percentage_raw ) );
+
+        if ( $quiz_meta_value !== intval( $quiz_id ) || ! $has_percentage ) {
+            error_log( sprintf( '[QuizAnalytics] User %d, Quiz %d, Activity %d, Status: pending (metadata incomplete)', $this->user_id, $quiz_id, $activity_id ) );
+
+            return [
+                'score'       => null,
+                'percentage'  => null,
+                'attempts'    => 1,
+                'date'        => 'No Attempts',
+                'timestamp'   => 0,
+                'has_attempt' => false,
+                'activity_id' => $activity_id,
+            ];
+        }
+
+        $score = ( isset( $meta['score'] ) && is_numeric( $meta['score'] ) ) ? intval( $meta['score'] ) : 0;
+        $percentage = round( floatval( $percentage_raw ), 2 );
 
         $latest_attempt_ts = $wpdb->get_var(
             $wpdb->prepare(
@@ -148,12 +143,18 @@ class QuizAnalytics {
             ? date_i18n( 'j \d\e F \d\e Y', intval( $latest_attempt_ts ) )
             : 'No Attempts';
 
+        $timestamp = intval( $latest_attempt_ts );
+
+        error_log( sprintf( '[QuizAnalytics] User %d, Quiz %d, Activity %d, Status: ready, Percentage %s', $this->user_id, $quiz_id, $activity_id, $percentage ) );
+
         return [
-            'score'      => $score,
-            'percentage' => $percentage,
-            'attempts'   => 1,
-            'date'       => $attempt_date,
-            'timestamp'  => intval( $latest_attempt_ts ),
+            'score'       => $score,
+            'percentage'  => $percentage,
+            'attempts'    => 1,
+            'date'        => $attempt_date,
+            'timestamp'   => $timestamp,
+            'has_attempt' => $timestamp > 0,
+            'activity_id' => $activity_id,
         ];
     }
 
