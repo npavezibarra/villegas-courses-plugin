@@ -407,45 +407,8 @@ echo do_shortcode( '[LDAdvQuiz_toplist ' . $quiz->getId() . ' q="true"]' );
 $quiz_view->showAddToplist();
 }
 ?>
-<div class="ld-quiz-actions" style="margin: 10px 0px;">
-<?php
-/**
- *  See snippet https://developers.learndash.com/hook/show_quiz_continue_buttom_on_fail/
- *
- * @since 2.3.0.2
- */
-$show_quiz_continue_buttom_on_fail = apply_filters( 'show_quiz_continue_buttom_on_fail', false, learndash_get_quiz_id_by_pro_quiz_id( $quiz->getId() ) );
-?>
-<div class='quiz_continue_link
-<?php
-if ( $show_quiz_continue_buttom_on_fail == true ) {
-echo ' show_quiz_continue_buttom_on_fail'; }
-?>
-'>
-
-</div>
-<?php if ( ! $quiz->isBtnRestartQuizHidden() ) { ?>
-<input class="wpProQuiz_button wpProQuiz_button_restartQuiz" type="button" name="restartQuiz"
-value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_restart_button_label',
-'message'      => sprintf(
-// translators: Restart Quiz Button Label.
-esc_html_x( 'Restart %s', 'Restart Quiz Button Label', 'learndash' ),
-LearnDash_Custom_Label::get_label( 'quiz' )
-),
-)
-)
-);
-?>"/><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
-<?php
-}
-if ( ! $quiz->isBtnViewQuestionHidden() ) {
-?>
+<?php if ( ! $quiz->isBtnViewQuestionHidden() ) { ?>
+<div class="ld-quiz-view-questions">
 <input class="wpProQuiz_button wpProQuiz_button_reShowQuestion" type="button" name="reShowQuestion"
 value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
 echo wp_kses_post(
@@ -463,8 +426,10 @@ LearnDash_Custom_Label::get_label( 'questions' )
 )
 );
 ?>" /><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
+</div>
 <?php } ?>
 <?php if ( $quiz->isToplistActivated() && $quiz->getToplistDataShowIn() == WpProQuiz_Model_Quiz::QUIZ_TOPLIST_SHOW_IN_BUTTON ) { ?>
+<div class="ld-quiz-show-toplist">
 <input class="wpProQuiz_button" type="button" name="showToplist"
 value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
 echo wp_kses_post(
@@ -474,10 +439,11 @@ array(
 'quiz_post_id' => $quiz->getID(),
 'context'      => 'quiz_show_leaderboard_button_label',
 'message'      => esc_html__( 'Show leaderboard', 'learndash' ),
-)
+),
 )
 );
 ?>" /><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
+</div>
 <?php } ?>
 </div>
 </div>

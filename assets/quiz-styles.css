@@ -46,7 +46,8 @@ p.wpProQuiz_points {
     margin: auto !important;
 }
 
-.ld-quiz-actions > div > input {
+.ld-quiz-view-questions > input,
+.ld-quiz-show-toplist > input {
     width: 200px !important;
 }
 
