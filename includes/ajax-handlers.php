@@ -163,6 +163,146 @@ function politeia_get_latest_quiz_activity() {
 add_action( 'wp_ajax_get_latest_quiz_activity', 'politeia_get_latest_quiz_activity' );
 add_action( 'wp_ajax_villegas_get_latest_quiz_result', 'politeia_get_latest_quiz_activity' );
 
+function politeia_poll_latest_attempt_strict() {
+    check_ajax_referer( 'politeia_quiz_activity', 'nonce' );
+
+    if ( ! is_user_logged_in() ) {
+        wp_send_json_error( [ 'message' => esc_html__( 'No autorizado.', 'villegas-courses' ) ], 403 );
+    }
+
+    $quiz_id = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
+    $user_id = get_current_user_id();
+    $last_id = isset( $_POST['last_activity_id'] ) ? absint( $_POST['last_activity_id'] ) : 0;
+
+    if ( ! $quiz_id ) {
+        wp_send_json_error( [ 'message' => esc_html__( 'Faltan datos del cuestionario.', 'villegas-courses' ) ], 400 );
+    }
+
+    global $wpdb;
+
+    $attempt = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT activity_id, activity_completed
+             FROM {$wpdb->prefix}learndash_user_activity
+             WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz' AND activity_id > %d
+             ORDER BY activity_id DESC LIMIT 1",
+            $user_id,
+            $quiz_id,
+            $last_id
+        ),
+        ARRAY_A
+    );
+
+    if ( ! $attempt ) {
+        error_log( sprintf( '[CustomPoll] No new attempt yet for user %d quiz %d (last seen %d).', $user_id, $quiz_id, $last_id ) );
+
+        wp_send_json_success(
+            [
+                'status'      => 'waiting_new_attempt',
+                'retry_after' => 2,
+            ]
+        );
+    }
+
+    $activity_id = intval( $attempt['activity_id'] );
+    $meta        = politeia_fetch_activity_meta_map( $activity_id );
+
+    $percentage = null;
+    if ( isset( $meta['percentage'] ) && $meta['percentage'] !== '' && is_numeric( $meta['percentage'] ) ) {
+        $percentage = floatval( $meta['percentage'] );
+    }
+
+    if ( null === $percentage ) {
+        error_log( sprintf( '[CustomPoll] Activity %d found but metadata incomplete.', $activity_id ) );
+
+        wp_send_json_success(
+            [
+                'status'      => 'pending',
+                'activity_id' => $activity_id,
+                'retry_after' => 2,
+            ]
+        );
+    }
+
+    error_log( sprintf( '[CustomPoll] Activity %d ready. Percentage %s.', $activity_id, $percentage ) );
+
+    wp_send_json_success(
+        [
+            'status'      => 'ready',
+            'activity_id' => $activity_id,
+            'percentage'  => $percentage,
+        ]
+    );
+}
+add_action( 'wp_ajax_politeia_poll_latest_attempt_strict', 'politeia_poll_latest_attempt_strict' );
+
+function politeia_poll_new_attempt() {
+    check_ajax_referer( 'politeia_quiz_activity', 'nonce' );
+
+    $quiz_id  = absint( $_POST['quiz_id'] ?? 0 );
+    $user_id  = get_current_user_id();
+    $baseline = absint( $_POST['baseline_activity_id'] ?? 0 );
+
+    global $wpdb;
+
+    $attempt = $wpdb->get_row(
+        $wpdb->prepare(
+            "SELECT activity_id, activity_completed
+             FROM {$wpdb->prefix}learndash_user_activity
+             WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz' AND activity_id > %d
+             ORDER BY activity_id ASC LIMIT 1",
+            $user_id,
+            $quiz_id,
+            $baseline
+        ),
+        ARRAY_A
+    );
+
+    if ( ! $attempt ) {
+        $status           = 'waiting_new_attempt';
+        $log_activity_id  = 'none';
+        error_log( sprintf( '[CustomPoll] Baseline: %d | Found activity_id: %s | Status: %s', $baseline, $log_activity_id, $status ) );
+        error_log( "[CustomPoll] No new attempt found > $baseline for user $user_id quiz $quiz_id" );
+        wp_send_json_success(
+            [
+                'status'      => $status,
+                'retry_after' => 2,
+            ]
+        );
+    }
+
+    $activity_id = intval( $attempt['activity_id'] );
+    $meta        = politeia_fetch_activity_meta_map( $activity_id );
+    $percentage  = isset( $meta['percentage'] ) && is_numeric( $meta['percentage'] )
+        ? floatval( $meta['percentage'] )
+        : null;
+
+    if ( null === $percentage ) {
+        $status = 'pending';
+        error_log( sprintf( '[CustomPoll] Baseline: %d | Found activity_id: %d | Status: %s', $baseline, $activity_id, $status ) );
+        error_log( "[CustomPoll] Attempt $activity_id exists but metadata incomplete." );
+        wp_send_json_success(
+            [
+                'status'      => $status,
+                'activity_id' => $activity_id,
+                'retry_after' => 2,
+            ]
+        );
+    }
+
+    $status = 'ready';
+    error_log( sprintf( '[CustomPoll] Baseline: %d | Found activity_id: %d | Status: %s', $baseline, $activity_id, $status ) );
+    error_log( "[CustomPoll] Attempt $activity_id ready with percentage $percentage" );
+    wp_send_json_success(
+        [
+            'status'      => $status,
+            'activity_id' => $activity_id,
+            'percentage'  => $percentage,
+        ]
+    );
+}
+add_action( 'wp_ajax_politeia_poll_new_attempt', 'politeia_poll_new_attempt' );
+
 // Backwards compatibility: keep previous hook name but delegate to the new handler.
 function politeia_get_latest_quiz_score_legacy() {
     politeia_get_latest_quiz_activity();
