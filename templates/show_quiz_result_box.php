@@ -117,6 +117,135 @@ array(
 );
 ?>
 </p>
+<div class="wpProQuiz_pointsChart" aria-live="polite" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0;">
+    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
+        <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
+        <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#4CAF50" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+    </svg>
+    <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
+</div>
+<script>
+    (function() {
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function parsePercentage(messageEl) {
+            if (!messageEl) {
+                return null;
+            }
+
+            var spans = messageEl.querySelectorAll('span');
+            var percentText = '';
+
+            if (spans.length >= 3) {
+                percentText = spans[2].textContent || '';
+            } else {
+                percentText = messageEl.textContent || '';
+            }
+
+            var match = percentText.match(/-?\d+(?:[\.,]\d+)?/);
+
+            if (!match) {
+                return null;
+            }
+
+            var normalized = match[0].replace(',', '.');
+            var value = parseFloat(normalized);
+
+            if (isNaN(value)) {
+                return null;
+            }
+
+            return clamp(value, 0, 100);
+        }
+
+        function drawChart(svg, percent, labelEl) {
+            if (!svg) {
+                return;
+            }
+
+            var progressCircle = svg.querySelector('.wpProQuiz_pointsChart__progress');
+
+            if (!progressCircle) {
+                return;
+            }
+
+            var radius = parseFloat(progressCircle.getAttribute('r'));
+            var circumference = 2 * Math.PI * radius;
+            var offset = circumference * (1 - percent / 100);
+
+            progressCircle.setAttribute('stroke-dasharray', circumference + ' ' + circumference);
+            progressCircle.setAttribute('stroke-dashoffset', offset);
+
+            if (labelEl) {
+                labelEl.textContent = percent.toFixed(0) + '%';
+            }
+        }
+
+        function setupChart(messageEl) {
+            var chartContainer = messageEl.nextElementSibling;
+
+            if (!chartContainer || !chartContainer.classList.contains('wpProQuiz_pointsChart')) {
+                return;
+            }
+
+            var svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
+            var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
+
+            if (!svg) {
+                return;
+            }
+
+            if (chartContainer.dataset.chartInitialized) {
+                return;
+            }
+
+            chartContainer.dataset.chartInitialized = 'true';
+
+            var updateChart = function() {
+                var percent = parsePercentage(messageEl);
+
+                if (percent === null) {
+                    return;
+                }
+
+                drawChart(svg, percent, labelEl);
+                svg.setAttribute('aria-label', percent.toFixed(0) + '% quiz score');
+            };
+
+            updateChart();
+
+            var observer = new MutationObserver(function() {
+                updateChart();
+            });
+
+            observer.observe(messageEl, {
+                childList: true,
+                characterData: true,
+                subtree: true
+            });
+        }
+
+        var initializeCharts = function() {
+            var messageEls = document.querySelectorAll('.wpProQuiz_points.wpProQuiz_points--message');
+
+            if (!messageEls.length) {
+                return;
+            }
+
+            messageEls.forEach(function(messageEl) {
+                setupChart(messageEl);
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeCharts);
+        } else {
+            initializeCharts();
+        }
+    })();
+</script>
 <p class="wpProQuiz_graded_points" style="display: none;">
 <?php
 echo wp_kses_post(
