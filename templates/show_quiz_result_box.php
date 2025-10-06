@@ -117,6 +117,145 @@ array(
 );
 ?>
 </p>
+<div class="wpProQuiz_pointsChart" aria-live="polite" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0;">
+    <canvas class="wpProQuiz_pointsChart__canvas" width="160" height="160" role="img"></canvas>
+    <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
+</div>
+<script>
+    (function() {
+        function clamp(value, min, max) {
+            return Math.min(Math.max(value, min), max);
+        }
+
+        function parsePercentage(messageEl) {
+            if (!messageEl) {
+                return null;
+            }
+
+            var spans = messageEl.querySelectorAll('span');
+            var percentText = '';
+
+            if (spans.length >= 3) {
+                percentText = spans[2].textContent || '';
+            } else {
+                percentText = messageEl.textContent || '';
+            }
+
+            var match = percentText.match(/-?\d+(?:[\.,]\d+)?/);
+
+            if (!match) {
+                return null;
+            }
+
+            var normalized = match[0].replace(',', '.');
+            var value = parseFloat(normalized);
+
+            if (isNaN(value)) {
+                return null;
+            }
+
+            return clamp(value, 0, 100);
+        }
+
+        function drawChart(canvas, percent, labelEl) {
+            var ctx = canvas.getContext('2d');
+            var width = canvas.width;
+            var height = canvas.height;
+            var radius = Math.min(width, height) / 2;
+            var centerX = width / 2;
+            var centerY = height / 2;
+
+            ctx.clearRect(0, 0, width, height);
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.fillStyle = '#E3E3E3';
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            var startAngle = -Math.PI / 2;
+            var endAngle = startAngle + (Math.PI * 2 * (percent / 100));
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.fillStyle = '#4CAF50';
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.fillStyle = '#FFFFFF';
+            ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            if (labelEl) {
+                labelEl.textContent = percent.toFixed(0) + '%';
+            }
+        }
+
+        function setupChart(messageEl) {
+            var chartContainer = messageEl.nextElementSibling;
+
+            if (!chartContainer || !chartContainer.classList.contains('wpProQuiz_pointsChart')) {
+                return;
+            }
+
+            var canvas = chartContainer.querySelector('.wpProQuiz_pointsChart__canvas');
+            var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
+
+            if (!canvas) {
+                return;
+            }
+
+            if (chartContainer.dataset.chartInitialized) {
+                return;
+            }
+
+            chartContainer.dataset.chartInitialized = 'true';
+
+            var updateChart = function() {
+                var percent = parsePercentage(messageEl);
+
+                if (percent === null) {
+                    return;
+                }
+
+                drawChart(canvas, percent, labelEl);
+                canvas.setAttribute('aria-label', percent.toFixed(0) + '% quiz score');
+            };
+
+            updateChart();
+
+            var observer = new MutationObserver(function() {
+                updateChart();
+            });
+
+            observer.observe(messageEl, {
+                childList: true,
+                characterData: true,
+                subtree: true
+            });
+        }
+
+        var initializeCharts = function() {
+            var messageEls = document.querySelectorAll('.wpProQuiz_points.wpProQuiz_points--message');
+
+            if (!messageEls.length) {
+                return;
+            }
+
+            messageEls.forEach(function(messageEl) {
+                setupChart(messageEl);
+            });
+        };
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeCharts);
+        } else {
+            initializeCharts();
+        }
+    })();
+</script>
 <p class="wpProQuiz_graded_points" style="display: none;">
 <?php
 echo wp_kses_post(
