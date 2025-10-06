@@ -16,6 +16,19 @@ if ( ! class_exists( 'Villegas_Quiz_Attempts_Shortcode' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-average-quiz-result.php';
 }
 
+add_filter( 'learndash_template', 'villegas_override_quiz_result_template', 20, 5 );
+function villegas_override_quiz_result_template( $located, $name, $args, $echo, $return_file_path ) {
+    if ( 'quiz/partials/show_result_page_box.php' === $name ) {
+        $override = plugin_dir_path( __FILE__ ) . 'overrides/quiz/partials/show_result_page_box.php';
+
+        if ( file_exists( $override ) ) {
+            return $override;
+        }
+    }
+
+    return $located;
+}
+
 function allow_pending_role_users_access_quiz( $has_access, $post_id, $user_id ) {
     // Get the user's role(s)
     $user = get_userdata( $user_id );
