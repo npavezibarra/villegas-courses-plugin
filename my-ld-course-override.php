@@ -18,6 +18,14 @@ if ( ! class_exists( 'Politeia_Quiz_Stats' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-quiz-stats.php';
 }
 
+if ( ! class_exists( 'Villegas_Quiz_Attempts_Shortcode' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-average-quiz-result.php';
+}
+
+if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-stats.php';
+}
+
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-emails.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-handler.php';
 
@@ -284,12 +292,20 @@ require_once plugin_dir_path(__FILE__) . 'admin/admin-page.php';
 
 add_filter('learndash_template', 'custom_quiz_result_template', 10, 5);
 function custom_quiz_result_template($filepath, $name, $args, $echo, $return_file_path) {
-    if ($name == 'quiz/partials/show_quiz_result_box.php') {
+    if ($name === 'quiz/partials/show_quiz_result_box.php') {
         $custom_template_path = plugin_dir_path(__FILE__) . 'templates/show_quiz_result_box.php';
         if (file_exists($custom_template_path)) {
             return $custom_template_path;
         }
     }
+
+    if ($name === 'quiz/partials/show_result_page_box.php') {
+        $custom_result_box = plugin_dir_path(__FILE__) . 'overrides/quiz/partials/show_result_page_box.php';
+        if (file_exists($custom_result_box)) {
+            return $custom_result_box;
+        }
+    }
+
     return $filepath;
 }
 
