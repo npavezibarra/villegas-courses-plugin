@@ -15,7 +15,14 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+    exit;
+}
+
+$villegas_override = dirname( __DIR__ ) . '/overrides/quiz/partials/show_result_page_box.php';
+
+if ( file_exists( $villegas_override ) ) {
+    include $villegas_override;
+    return;
 }
 ?>
 <div style="display: none;" class="wpProQuiz_sending">
@@ -210,6 +217,7 @@ array(
 <?php
 }
 ?>
+</div>
 
 <div class="wpProQuiz_catOverview" <?php $quiz_view->isDisplayNone( $quiz->isShowCategoryScore() ); ?>>
 <h4>
@@ -229,8 +237,8 @@ array(
 
 <div style="margin-top: 10px;">
 <ol>
+<?php foreach ( $quiz_view->category as $cat ) { ?>
 <?php
-foreach ( $quiz_view->category as $cat ) {
 if ( ! $cat->getCategoryId() ) {
 $cat->setCategoryName(
 wp_kses_post(
@@ -250,9 +258,7 @@ array(
 <span class="wpProQuiz_catName"><?php echo esc_attr( $cat->getCategoryName() ); ?></span>
 <span class="wpProQuiz_catPercent">0%</span>
 </li>
-<?php
-}
-?>
+<?php } ?>
 </ol>
 </div>
 </div>
@@ -287,17 +293,12 @@ $quiz_view->showAddToplist();
  */
 $show_quiz_continue_buttom_on_fail = apply_filters( 'show_quiz_continue_buttom_on_fail', false, learndash_get_quiz_id_by_pro_quiz_id( $quiz->getId() ) );
 ?>
-<div class='quiz_continue_link
-<?php
-if ( $show_quiz_continue_buttom_on_fail == true ) {
-echo ' show_quiz_continue_buttom_on_fail'; }
-?>
-'>
+<div class='quiz_continue_link<?php if ( $show_quiz_continue_buttom_on_fail == true ) { echo ' show_quiz_continue_buttom_on_fail'; } ?>'>
 
 </div>
 <?php if ( ! $quiz->isBtnRestartQuizHidden() ) { ?>
 <input class="wpProQuiz_button wpProQuiz_button_restartQuiz" type="button" name="restartQuiz"
-value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
+       value="<?php
 echo wp_kses_post(
 SFWD_LMS::get_template(
 'learndash_quiz_messages',
@@ -312,13 +313,12 @@ LearnDash_Custom_Label::get_label( 'quiz' )
 )
 )
 );
-?>"/><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
-<?php
-}
+?>"/>
+<?php }
 if ( ! $quiz->isBtnViewQuestionHidden() ) {
 ?>
 <input class="wpProQuiz_button wpProQuiz_button_reShowQuestion" type="button" name="reShowQuestion"
-value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
+       value="<?php
 echo wp_kses_post(
 SFWD_LMS::get_template(
 'learndash_quiz_messages',
@@ -333,11 +333,12 @@ LearnDash_Custom_Label::get_label( 'questions' )
 )
 )
 );
-?>" /><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
-<?php } ?>
-<?php if ( $quiz->isToplistActivated() && $quiz->getToplistDataShowIn() == WpProQuiz_Model_Quiz::QUIZ_TOPLIST_SHOW_IN_BUTTON ) { ?>
+?>" />
+<?php }
+if ( $quiz->isToplistActivated() && $quiz->getToplistDataShowIn() == WpProQuiz_Model_Quiz::QUIZ_TOPLIST_SHOW_IN_BUTTON ) {
+?>
 <input class="wpProQuiz_button" type="button" name="showToplist"
-value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
+       value="<?php
 echo wp_kses_post(
 SFWD_LMS::get_template(
 'learndash_quiz_messages',
@@ -348,7 +349,6 @@ array(
 )
 )
 );
-?>" /><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
+?>" />
 <?php } ?>
-</div>
 </div>
