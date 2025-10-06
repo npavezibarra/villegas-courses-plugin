@@ -118,7 +118,10 @@ array(
 ?>
 </p>
 <div class="wpProQuiz_pointsChart" aria-live="polite" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0;">
-    <canvas class="wpProQuiz_pointsChart__canvas" width="160" height="160" role="img"></canvas>
+    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
+        <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
+        <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#4CAF50" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+    </svg>
     <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
 </div>
 <script>
@@ -157,36 +160,23 @@ array(
             return clamp(value, 0, 100);
         }
 
-        function drawChart(canvas, percent, labelEl) {
-            var ctx = canvas.getContext('2d');
-            var width = canvas.width;
-            var height = canvas.height;
-            var radius = Math.min(width, height) / 2;
-            var centerX = width / 2;
-            var centerY = height / 2;
+        function drawChart(svg, percent, labelEl) {
+            if (!svg) {
+                return;
+            }
 
-            ctx.clearRect(0, 0, width, height);
+            var progressCircle = svg.querySelector('.wpProQuiz_pointsChart__progress');
 
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.fillStyle = '#E3E3E3';
-            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
-            ctx.fill();
+            if (!progressCircle) {
+                return;
+            }
 
-            var startAngle = -Math.PI / 2;
-            var endAngle = startAngle + (Math.PI * 2 * (percent / 100));
+            var radius = parseFloat(progressCircle.getAttribute('r'));
+            var circumference = 2 * Math.PI * radius;
+            var offset = circumference * (1 - percent / 100);
 
-            ctx.beginPath();
-            ctx.moveTo(centerX, centerY);
-            ctx.fillStyle = '#4CAF50';
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
-            ctx.closePath();
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.fillStyle = '#FFFFFF';
-            ctx.arc(centerX, centerY, radius * 0.6, 0, Math.PI * 2);
-            ctx.fill();
+            progressCircle.setAttribute('stroke-dasharray', circumference + ' ' + circumference);
+            progressCircle.setAttribute('stroke-dashoffset', offset);
 
             if (labelEl) {
                 labelEl.textContent = percent.toFixed(0) + '%';
@@ -200,10 +190,10 @@ array(
                 return;
             }
 
-            var canvas = chartContainer.querySelector('.wpProQuiz_pointsChart__canvas');
+            var svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
             var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
 
-            if (!canvas) {
+            if (!svg) {
                 return;
             }
 
@@ -220,8 +210,8 @@ array(
                     return;
                 }
 
-                drawChart(canvas, percent, labelEl);
-                canvas.setAttribute('aria-label', percent.toFixed(0) + '% quiz score');
+                drawChart(svg, percent, labelEl);
+                svg.setAttribute('aria-label', percent.toFixed(0) + '% quiz score');
             };
 
             updateChart();
