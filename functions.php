@@ -8,6 +8,27 @@ if ( ! class_exists( 'PoliteiaCourse' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-course.php';
 }
 
+if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-stats.php';
+}
+
+if ( ! class_exists( 'Villegas_Quiz_Attempts_Shortcode' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-average-quiz-result.php';
+}
+
+add_filter( 'learndash_template', 'villegas_override_quiz_result_template', 20, 5 );
+function villegas_override_quiz_result_template( $located, $name, $args, $echo, $return_file_path ) {
+    if ( 'quiz/partials/show_result_page_box.php' === $name ) {
+        $override = plugin_dir_path( __FILE__ ) . 'overrides/quiz/partials/show_result_page_box.php';
+
+        if ( file_exists( $override ) ) {
+            return $override;
+        }
+    }
+
+    return $located;
+}
+
 function allow_pending_role_users_access_quiz( $has_access, $post_id, $user_id ) {
     // Get the user's role(s)
     $user = get_userdata( $user_id );
@@ -568,4 +589,32 @@ function villegas_enforce_quiz_access_control() {
 }
 
 add_action( 'template_redirect', 'villegas_enforce_quiz_access_control' );
+
+add_action( 'wp_ajax_villegas_get_latest_quiz_activity', 'villegas_get_latest_quiz_activity' );
+add_action( 'wp_ajax_nopriv_villegas_get_latest_quiz_activity', 'villegas_get_latest_quiz_activity' );
+
+function villegas_get_latest_quiz_activity() {
+    if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
+        wp_send_json_error( [ 'message' => 'Villegas quiz stats unavailable.' ], 500 );
+    }
+
+    $user_id = get_current_user_id();
+    $quiz_id = isset( $_POST['quiz_id'] ) ? absint( $_POST['quiz_id'] ) : 0;
+
+    if ( ! $quiz_id || ! $user_id ) {
+        wp_send_json_error( [ 'message' => 'Missing quiz_id or user_id' ] );
+    }
+
+    $attempts    = Villegas_Quiz_Stats::get_all_attempts_data( $user_id, $quiz_id );
+    $latest_id   = Villegas_Quiz_Stats::get_latest_attempt_id( $user_id, $quiz_id );
+    $latest_data = $latest_id ? Villegas_Quiz_Stats::get_score_and_pct_by_activity( $latest_id ) : null;
+
+    wp_send_json_success(
+        [
+            'all_attempts_percentages' => $attempts,
+            'latest_activity_details'  => $latest_data,
+            'new_attempt_found'        => ! empty( $latest_id ),
+        ]
+    );
+}
 
