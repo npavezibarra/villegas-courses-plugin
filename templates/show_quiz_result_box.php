@@ -124,6 +124,50 @@ array(
     </svg>
     <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
 </div>
+<?php
+if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
+}
+
+$quiz_id            = intval( $quiz->getID() );
+$course_id          = 0;
+$course_label       = 'None';
+$course_display     = 'None';
+$product_display    = 'None';
+
+if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
+    $resolved_course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+
+    if ( $resolved_course_id ) {
+        $course_id      = $resolved_course_id;
+        $course_display = $course_id;
+
+        $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
+        $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+
+        if ( $quiz_id === $first_quiz_id ) {
+            $course_label = 'First Quiz';
+        } elseif ( $quiz_id === $final_quiz_id ) {
+            $course_label = 'Final Quiz';
+        }
+
+        $product_id = get_post_meta( $course_id, '_related_product', true );
+
+        if ( is_array( $product_id ) ) {
+            $product_id = reset( $product_id );
+        }
+
+        if ( $product_id ) {
+            $product_display = $product_id;
+        }
+    }
+}
+?>
+<div class="wpProQuiz_pointsChart__meta" style="text-align: center; font-size: 14px;">
+    <p><strong>Quiz ID:</strong> <?php echo esc_html( $quiz_id ); ?></p>
+    <p><strong>Course ID (<?php echo esc_html( $course_label ); ?>):</strong> <?php echo esc_html( $course_display ); ?></p>
+    <p><strong>Product ID:</strong> <?php echo esc_html( $product_display ); ?></p>
+</div>
 <script>
     (function() {
         function clamp(value, min, max) {
