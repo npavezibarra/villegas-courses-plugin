@@ -46,7 +46,7 @@ array(
 </div>
 
 <div style="display: none;" class="wpProQuiz_results">
-<h4 class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
+<h4 style="font-family: sans-serif; font-size: 34px;" class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
 <?php
 if ( ! $quiz->isHideResultCorrectQuestion() ) {
 echo wp_kses_post(
