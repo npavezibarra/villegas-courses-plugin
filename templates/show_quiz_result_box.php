@@ -213,7 +213,7 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
     }
 }
 ?>
-<table class="wpProQuiz_pointsChart__meta debug_table" style="text-align: center; font-size: 14px;">
+<table class="wpProQuiz_pointsChart__meta debug_table" style="text-align: center; font-size: 14px; display: none;">
     <tbody>
         <tr>
             <th scope="row" style="padding-right: 8px; text-align: right;">
