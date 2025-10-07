@@ -101,22 +101,6 @@ array(
 <?php
 if ( ! $quiz->isHideResultPoints() ) {
 ?>
-<p class="wpProQuiz_points wpProQuiz_points--message">
-<?php
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_have_reached_points_message',
-// translators: placeholder: points earned, points total.
-'message'      => sprintf( esc_html_x( 'You have reached %1$s of %2$s point(s), (%3$s)', 'placeholder: points earned, points total', 'learndash' ), '<span>0</span>', '<span>0</span>', '<span>0</span>' ),
-'placeholders' => array( '0', '0', '0' ),
-)
-)
-);
-?>
-</p>
 <div class="wpProQuiz_pointsChart" aria-live="polite" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0;">
     <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
         <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
@@ -213,11 +197,22 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
     }
 }
 ?>
-<div class="wpProQuiz_pointsChart__meta" style="text-align: center; font-size: 14px;">
-    <p><strong>Quiz ID:</strong> <?php echo esc_html( $quiz_id ); ?></p>
-    <p><strong>Course ID (<?php echo esc_html( $course_label ); ?>):</strong> <?php echo esc_html( $course_display ); ?></p>
-    <p><strong>Product ID:</strong> <?php echo esc_html( $product_display ); ?></p>
-</div>
+<table class="wpProQuiz_pointsChart__meta debug_table" style="text-align: center; font-size: 14px; margin: 0 auto;">
+    <tbody>
+        <tr>
+            <th scope="row" style="padding: 4px 8px; text-align: right;">Quiz ID:</th>
+            <td style="padding: 4px 8px; text-align: left;"><?php echo esc_html( $quiz_id ); ?></td>
+        </tr>
+        <tr>
+            <th scope="row" style="padding: 4px 8px; text-align: right;">Course ID (<?php echo esc_html( $course_label ); ?>):</th>
+            <td style="padding: 4px 8px; text-align: left;"><?php echo esc_html( $course_display ); ?></td>
+        </tr>
+        <tr>
+            <th scope="row" style="padding: 4px 8px; text-align: right;">Product ID:</th>
+            <td style="padding: 4px 8px; text-align: left;"><?php echo esc_html( $product_display ); ?></td>
+        </tr>
+    </tbody>
+</table>
 <?php
 $button_label       = '';
 $button_url         = '';
@@ -534,77 +529,5 @@ echo do_shortcode( '[LDAdvQuiz_toplist ' . $quiz->getId() . ' q="true"]' );
 $quiz_view->showAddToplist();
 }
 ?>
-<div class="ld-quiz-actions" style="margin: 10px 0px;">
-<?php
-/**
- *  See snippet https://developers.learndash.com/hook/show_quiz_continue_buttom_on_fail/
- *
- * @since 2.3.0.2
- */
-$show_quiz_continue_buttom_on_fail = apply_filters( 'show_quiz_continue_buttom_on_fail', false, learndash_get_quiz_id_by_pro_quiz_id( $quiz->getId() ) );
-?>
-<div class='quiz_continue_link
-<?php
-if ( $show_quiz_continue_buttom_on_fail == true ) {
-echo ' show_quiz_continue_buttom_on_fail'; }
-?>
-'>
-
-</div>
-<?php if ( ! $quiz->isBtnRestartQuizHidden() ) { ?>
-<input class="wpProQuiz_button wpProQuiz_button_restartQuiz" type="button" name="restartQuiz"
-value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_restart_button_label',
-'message'      => sprintf(
-// translators: Restart Quiz Button Label.
-esc_html_x( 'Restart %s', 'Restart Quiz Button Label', 'learndash' ),
-LearnDash_Custom_Label::get_label( 'quiz' )
-),
-)
-)
-);
-?>"/><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
-<?php
-}
-if ( ! $quiz->isBtnViewQuestionHidden() ) {
-?>
-<input class="wpProQuiz_button wpProQuiz_button_reShowQuestion" type="button" name="reShowQuestion"
-value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_view_questions_button_label',
-'message'      => sprintf(
-// translators: View Questions Button Label.
-esc_html_x( 'View %s', 'View Questions Button Label', 'learndash' ),
-LearnDash_Custom_Label::get_label( 'questions' )
-),
-)
-)
-);
-?>" /><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
-<?php } ?>
-<?php if ( $quiz->isToplistActivated() && $quiz->getToplistDataShowIn() == WpProQuiz_Model_Quiz::QUIZ_TOPLIST_SHOW_IN_BUTTON ) { ?>
-<input class="wpProQuiz_button" type="button" name="showToplist"
-value="<?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentBeforeOpen,Squiz.PHP.EmbeddedPhp.ContentAfterOpen
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_show_leaderboard_button_label',
-'message'      => esc_html__( 'Show leaderboard', 'learndash' ),
-)
-)
-);
-?>" /><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
-<?php } ?>
 </div>
 </div>
