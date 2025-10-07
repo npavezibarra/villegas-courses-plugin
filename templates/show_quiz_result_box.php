@@ -124,6 +124,133 @@ array(
     </svg>
     <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
 </div>
+<?php
+if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
+}
+
+$quiz_post_id       = function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ? intval( learndash_get_quiz_id_by_pro_quiz_id( $quiz->getID() ) ) : 0;
+$quiz_id            = $quiz_post_id ? $quiz_post_id : intval( $quiz->getID() );
+$course_id          = 0;
+$course_label       = 'None';
+$course_display     = 'None';
+$product_id         = 0;
+$product_display    = 'None';
+
+if ( ! function_exists( 'villegas_is_user_enrolled_in_course' ) ) {
+    /**
+     * Determine if the provided user is enrolled in a specific course.
+     *
+     * @param int $user_id   WordPress user ID.
+     * @param int $course_id LearnDash course/post ID.
+     *
+     * @return bool
+     */
+    function villegas_is_user_enrolled_in_course( $user_id, $course_id ) {
+        if ( ! $user_id || ! $course_id ) {
+            return false;
+        }
+
+        if ( function_exists( 'learndash_is_user_enrolled' ) ) {
+            return (bool) learndash_is_user_enrolled( $user_id, $course_id );
+        }
+
+        if ( function_exists( 'sfwd_lms_has_access' ) ) {
+            return (bool) sfwd_lms_has_access( $course_id, $user_id );
+        }
+
+        return false;
+    }
+}
+
+if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
+    $resolved_course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+
+    if ( $resolved_course_id ) {
+        $course_id      = $resolved_course_id;
+        $course_display = $course_id;
+
+        $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
+        $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+
+        if ( $quiz_id === $first_quiz_id ) {
+            $course_label = 'First Quiz';
+        } elseif ( $quiz_id === $final_quiz_id ) {
+            $course_label = 'Final Quiz';
+        }
+
+        if ( function_exists( 'villegas_get_course_product_id' ) ) {
+            $related_product_id = (int) villegas_get_course_product_id( $course_id );
+
+            if ( $related_product_id ) {
+                $product_id      = $related_product_id;
+                $product_display = $product_id;
+            }
+        }
+
+        if ( ! $product_id ) {
+            $related_products = get_posts(
+                array(
+                    'post_type'      => 'product',
+                    'post_status'    => 'any',
+                    'fields'         => 'ids',
+                    'posts_per_page' => 1,
+                    'meta_query'     => array(
+                        array(
+                            'key'     => '_related_course',
+                            'value'   => sprintf( 'i:%d;', $course_id ),
+                            'compare' => 'LIKE',
+                        ),
+                    ),
+                )
+            );
+
+            if ( ! empty( $related_products ) ) {
+                $product_id      = (int) $related_products[0];
+                $product_display = $product_id;
+            }
+        }
+    }
+}
+?>
+<div class="wpProQuiz_pointsChart__meta" style="text-align: center; font-size: 14px;">
+    <p><strong>Quiz ID:</strong> <?php echo esc_html( $quiz_id ); ?></p>
+    <p><strong>Course ID (<?php echo esc_html( $course_label ); ?>):</strong> <?php echo esc_html( $course_display ); ?></p>
+    <p><strong>Product ID:</strong> <?php echo esc_html( $product_display ); ?></p>
+</div>
+<?php
+$button_label       = '';
+$button_url         = '';
+$course_url         = $course_id ? get_permalink( $course_id ) : '';
+$product_url        = $product_id ? get_permalink( $product_id ) : '';
+$is_enrolled_course = false;
+
+if ( $course_id && is_user_logged_in() ) {
+    $current_user = wp_get_current_user();
+
+    if ( $current_user && $current_user->exists() ) {
+        $is_enrolled_course = villegas_is_user_enrolled_in_course( (int) $current_user->ID, $course_id );
+    }
+}
+
+if ( $is_enrolled_course && $course_url ) {
+    $button_label = __( 'Ir al Curso', 'villegas-courses' );
+    $button_url   = $course_url;
+} elseif ( $product_url ) {
+    $button_label = __( 'Comprar Curso', 'villegas-courses' );
+    $button_url   = $product_url;
+}
+
+if ( $button_label && $button_url ) :
+    ?>
+    <div style="text-align: center; margin-top: 12px;">
+        <a class="wpProQuiz_pointsChart__cta" href="<?php echo esc_url( $button_url ); ?>" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600;">
+            <?php echo esc_html( $button_label ); ?>
+        </a>
+    </div>
+<?php
+endif;
+?>
 <script>
     (function() {
         function clamp(value, min, max) {
