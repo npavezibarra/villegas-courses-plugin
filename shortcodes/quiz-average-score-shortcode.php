@@ -16,7 +16,7 @@ function villegas_quiz_average_score_shortcode( $atts ): string {
         [
             'quiz_id'  => 0,
             'decimals' => 0,
-            'title'    => __( 'Average Score', 'villegas-courses' ),
+            'title'    => __( 'Puntaje Promedio', 'villegas-courses' ),
         ],
         $atts,
         'villegas_quiz_average_score'
@@ -59,7 +59,7 @@ function villegas_quiz_average_score_shortcode( $atts ): string {
         'aria-live'       => 'polite',
         'data-chart-id'   => 'average-score',
         'data-chart-title'=> $title,
-        'style'           => 'display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0;',
+        'style'           => 'display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0 1em 1em;',
     ];
 
     if ( $has_data ) {
