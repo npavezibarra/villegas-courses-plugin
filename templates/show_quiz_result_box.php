@@ -152,14 +152,24 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
             $course_label = 'Final Quiz';
         }
 
-        $product_id = get_post_meta( $course_id, '_related_product', true );
+        $related_products = get_posts(
+            array(
+                'post_type'      => 'product',
+                'post_status'    => 'any',
+                'fields'         => 'ids',
+                'posts_per_page' => 1,
+                'meta_query'     => array(
+                    array(
+                        'key'     => '_related_course',
+                        'value'   => sprintf( 'i:%d;', $course_id ),
+                        'compare' => 'LIKE',
+                    ),
+                ),
+            )
+        );
 
-        if ( is_array( $product_id ) ) {
-            $product_id = reset( $product_id );
-        }
-
-        if ( $product_id ) {
-            $product_display = $product_id;
+        if ( ! empty( $related_products ) ) {
+            $product_display = (int) $related_products[0];
         }
     }
 }
