@@ -137,51 +137,29 @@ $course_display     = 'None';
 $product_id         = 0;
 $product_display    = 'None';
 
-if ( ! function_exists( 'villegas_has_user_purchased_product' ) ) {
+if ( ! function_exists( 'villegas_is_user_enrolled_in_course' ) ) {
     /**
-     * Determine if the provided user purchased a specific product.
+     * Determine if the provided user is enrolled in a specific course.
      *
-     * Mirrors the stakeholder-provided SQL to prevent WooCommerce cache
-     * mismatches when verifying historic purchases.
-     *
-     * @param int $user_id    WordPress user ID.
-     * @param int $product_id WooCommerce product/post ID.
+     * @param int $user_id   WordPress user ID.
+     * @param int $course_id LearnDash course/post ID.
      *
      * @return bool
      */
-    function villegas_has_user_purchased_product( $user_id, $product_id ) {
-        if ( ! $user_id || ! $product_id ) {
+    function villegas_is_user_enrolled_in_course( $user_id, $course_id ) {
+        if ( ! $user_id || ! $course_id ) {
             return false;
         }
 
-        global $wpdb;
-
-        $order_statuses = apply_filters( 'villegas_course_purchase_statuses', array( 'wc-completed', 'wc-processing' ) );
-
-        if ( empty( $order_statuses ) ) {
-            return false;
+        if ( function_exists( 'learndash_is_user_enrolled' ) ) {
+            return (bool) learndash_is_user_enrolled( $user_id, $course_id );
         }
 
-        $status_placeholders = implode( ', ', array_fill( 0, count( $order_statuses ), '%s' ) );
+        if ( function_exists( 'sfwd_lms_has_access' ) ) {
+            return (bool) sfwd_lms_has_access( $course_id, $user_id );
+        }
 
-        $query = $wpdb->prepare(
-            "SELECT COUNT(orders.ID)
-            FROM {$wpdb->posts} AS orders
-            INNER JOIN {$wpdb->postmeta} AS user_meta ON orders.ID = user_meta.post_id
-            INNER JOIN {$wpdb->prefix}woocommerce_order_items AS order_items ON orders.ID = order_items.order_id
-            INNER JOIN {$wpdb->prefix}woocommerce_order_itemmeta AS item_meta ON order_items.order_item_id = item_meta.order_item_id
-            WHERE orders.post_type = 'shop_order'
-                AND orders.post_status IN ( {$status_placeholders} )
-                AND user_meta.meta_key = '_customer_user'
-                AND user_meta.meta_value = %d
-                AND item_meta.meta_key = '_product_id'
-                AND item_meta.meta_value = %d",
-            array_merge( $order_statuses, array( $user_id, $product_id ) )
-        );
-
-        $order_count = (int) $wpdb->get_var( $query );
-
-        return $order_count > 0;
+        return false;
     }
 }
 
@@ -241,34 +219,26 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
     <p><strong>Product ID:</strong> <?php echo esc_html( $product_display ); ?></p>
 </div>
 <?php
-$button_label          = '';
-$button_url            = '';
-$has_purchased_product = false;
+$button_label       = '';
+$button_url         = '';
+$course_url         = $course_id ? get_permalink( $course_id ) : '';
+$product_url        = $product_id ? get_permalink( $product_id ) : '';
+$is_enrolled_course = false;
 
-if ( $product_id ) {
-    $product_url = get_permalink( $product_id );
+if ( $course_id && is_user_logged_in() ) {
+    $current_user = wp_get_current_user();
 
-    if ( $product_url ) {
-        $button_label = __( 'Comprar Curso', 'villegas-courses' );
-        $button_url   = $product_url;
+    if ( $current_user && $current_user->exists() ) {
+        $is_enrolled_course = villegas_is_user_enrolled_in_course( (int) $current_user->ID, $course_id );
     }
+}
 
-    if ( $button_url && is_user_logged_in() ) {
-        $current_user = wp_get_current_user();
-
-        if ( $current_user && $current_user->exists() ) {
-            $has_purchased_product = villegas_has_user_purchased_product( (int) $current_user->ID, $product_id );
-        }
-    }
-
-    if ( $has_purchased_product ) {
-        $course_url = $course_id ? get_permalink( $course_id ) : '';
-
-        if ( $course_url ) {
-            $button_label = __( 'Ir al Curso', 'villegas-courses' );
-            $button_url   = $course_url;
-        }
-    }
+if ( $is_enrolled_course && $course_url ) {
+    $button_label = __( 'Ir al Curso', 'villegas-courses' );
+    $button_url   = $course_url;
+} elseif ( $product_url ) {
+    $button_label = __( 'Comprar Curso', 'villegas-courses' );
+    $button_url   = $product_url;
 }
 
 if ( $button_label && $button_url ) :
