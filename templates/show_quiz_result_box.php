@@ -129,7 +129,8 @@ if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
     require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
 }
 
-$quiz_id            = intval( $quiz->getID() );
+$quiz_post_id       = function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ? intval( learndash_get_quiz_id_by_pro_quiz_id( $quiz->getID() ) ) : 0;
+$quiz_id            = $quiz_post_id ? $quiz_post_id : intval( $quiz->getID() );
 $course_id          = 0;
 $course_label       = 'None';
 $course_display     = 'None';
