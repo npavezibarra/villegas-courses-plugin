@@ -16,7 +16,7 @@ function villegas_quiz_average_score_shortcode( $atts ): string {
         [
             'quiz_id'  => 0,
             'decimals' => 0,
-            'title'    => __( 'Average Score', 'villegas-courses' ),
+            'title'    => __( 'Puntaje Promedio', 'villegas-courses' ),
         ],
         $atts,
         'villegas_quiz_average_score'
@@ -59,7 +59,7 @@ function villegas_quiz_average_score_shortcode( $atts ): string {
         'aria-live'       => 'polite',
         'data-chart-id'   => 'average-score',
         'data-chart-title'=> $title,
-        'style'           => 'display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0;',
+        'style'           => 'display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0 1em 1em;',
     ];
 
     if ( $has_data ) {
@@ -77,7 +77,7 @@ function villegas_quiz_average_score_shortcode( $atts ): string {
     <div<?php echo $attributes_markup; ?>>
         <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
             <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
-            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#2196F3" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
         </svg>
         <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
             <?php echo esc_html( $label ); ?>
