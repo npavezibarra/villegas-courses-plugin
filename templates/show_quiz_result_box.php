@@ -132,7 +132,7 @@ array(
 </p>
 <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart" aria-live="polite" data-chart-id="user-score" data-chart-title="<?php esc_attr_e( 'Tu Puntaje', 'villegas-courses' ); ?>" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 1em 1em 0;">
     <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
-        <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4"></circle>
+        <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
         <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
     </svg>
     <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
@@ -140,7 +140,7 @@ array(
         <?php esc_html_e( 'Tu Puntaje', 'villegas-courses' ); ?>
     </div>
 </div>
-<div id="quiz-score-divider" style="display: inline-block; width: 1px; height: 140px; background-color: #E3E3E3; margin: 1em 0; vertical-align: middle;"></div>
+<div id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px; vertical-align: middle;"></div>
 <?php if ( ! empty( $average_chart_markup ) ) : ?>
     <?php echo $average_chart_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 <?php endif; ?>
@@ -228,6 +228,7 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
     }
 }
 ?>
+<hr style="margin-bottom: 40px;">
 <table class="wpProQuiz_pointsChart__meta debug_table" style="text-align: center; font-size: 14px; display: none;">
     <tbody>
         <tr>
