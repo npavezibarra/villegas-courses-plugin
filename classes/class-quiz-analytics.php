@@ -78,31 +78,39 @@ class QuizAnalytics {
     private function getUserQuizPerformance( $quiz_id ) {
         global $wpdb;
 
-        $activity_id = $wpdb->get_var(
+        $activity_row = $wpdb->get_row(
             $wpdb->prepare(
                 "
-                SELECT activity_id
-                FROM {$wpdb->prefix}learndash_user_activity
-                WHERE user_id       = %d
-                  AND post_id       = %d
-                  AND activity_type = 'quiz'
-                ORDER BY activity_id DESC
-                LIMIT 1
+                SELECT ua.activity_id, ua.activity_started, ua.activity_completed
+                  FROM {$wpdb->prefix}learndash_user_activity AS ua
+            INNER JOIN {$wpdb->prefix}learndash_user_activity_meta AS uam
+                    ON uam.activity_id = ua.activity_id
+                   AND uam.activity_meta_key = 'quiz'
+                 WHERE ua.user_id = %d
+                   AND ua.activity_type = 'quiz'
+                   AND uam.activity_meta_value+0 = %d
+              ORDER BY ua.activity_completed DESC, ua.activity_id DESC
+                 LIMIT 1
                 ",
                 $this->user_id,
                 $quiz_id
             )
         );
 
+        $activity_id = $activity_row ? intval( $activity_row->activity_id ) : 0;
+
         if ( ! $activity_id ) {
             return [
                 'score'       => 0,
-                'percentage'  => 'N/A',
+                'percentage'  => null,
                 'attempts'    => 0,
-                'date'        => 'No Attempts',
+                'date'        => '',
                 'timestamp'   => 0,
                 'has_attempt' => false,
                 'activity_id' => 0,
+                'duration'    => 0,
+                'questions_correct' => 0,
+                'questions_total'   => 0,
             ];
         }
 
@@ -119,33 +127,49 @@ class QuizAnalytics {
                 'score'       => null,
                 'percentage'  => null,
                 'attempts'    => 1,
-                'date'        => 'No Attempts',
+                'date'        => '',
                 'timestamp'   => 0,
                 'has_attempt' => false,
                 'activity_id' => $activity_id,
+                'duration'    => 0,
+                'questions_correct' => 0,
+                'questions_total'   => 0,
             ];
         }
 
         $score = ( isset( $meta['score'] ) && is_numeric( $meta['score'] ) ) ? intval( $meta['score'] ) : 0;
         $percentage = round( floatval( $percentage_raw ), 2 );
 
-        $latest_attempt_ts = $wpdb->get_var(
-            $wpdb->prepare(
-                "
-                SELECT activity_completed
-                FROM {$wpdb->prefix}learndash_user_activity
-                WHERE activity_id = %d
-                LIMIT 1
-                ",
-                $activity_id
-            )
-        );
+        $activity_completed_raw = $activity_row && ! empty( $activity_row->activity_completed )
+            ? $activity_row->activity_completed
+            : '';
+        $activity_started_raw = $activity_row && ! empty( $activity_row->activity_started )
+            ? $activity_row->activity_started
+            : '';
 
-        $attempt_date = ( $latest_attempt_ts && intval( $latest_attempt_ts ) > 0 )
-            ? date_i18n( 'j \d\e F \d\e Y', intval( $latest_attempt_ts ) )
-            : 'No Attempts';
+        $timestamp = $activity_completed_raw ? strtotime( $activity_completed_raw ) : 0;
+        $started   = $activity_started_raw ? strtotime( $activity_started_raw ) : 0;
 
-        $timestamp = intval( $latest_attempt_ts );
+        $attempt_date = $timestamp
+            ? date_i18n( 'j \d\e F \d\e Y', $timestamp )
+            : '';
+
+        $duration = 0;
+
+        if ( $timestamp && $started && $timestamp >= $started ) {
+            $duration = $timestamp - $started;
+        }
+
+        $questions_total   = isset( $meta['question_count'] ) ? intval( $meta['question_count'] ) : 0;
+        $questions_correct = isset( $meta['correct'] ) ? intval( $meta['correct'] ) : 0;
+
+        if ( ! $questions_total && isset( $meta['total'] ) && is_numeric( $meta['total'] ) ) {
+            $questions_total = intval( $meta['total'] );
+        }
+
+        if ( ! $questions_correct && isset( $meta['count'] ) && is_numeric( $meta['count'] ) ) {
+            $questions_correct = intval( $meta['count'] );
+        }
 
         error_log( sprintf( '[QuizAnalytics] User %d, Quiz %d, Activity %d, Status: ready, Percentage %s', $this->user_id, $quiz_id, $activity_id, $percentage ) );
 
@@ -157,6 +181,9 @@ class QuizAnalytics {
             'timestamp'   => $timestamp,
             'has_attempt' => ( $timestamp > 0 ),
             'activity_id' => $activity_id,
+            'duration'    => $duration,
+            'questions_correct' => $questions_correct,
+            'questions_total'   => $questions_total,
         ];
     }
 

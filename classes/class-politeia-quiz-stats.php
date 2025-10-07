@@ -130,6 +130,9 @@ class Politeia_Quiz_Stats {
             'has_attempt'        => $has_attempt,
             'formatted_date'     => $timestamp > 0 ? date_i18n( 'j \d\e F \d\e Y', $timestamp ) : null,
             'activity_id'        => intval( $performance['activity_id'] ?? 0 ),
+            'duration'           => intval( $performance['duration'] ?? 0 ),
+            'questions_correct'  => intval( $performance['questions_correct'] ?? 0 ),
+            'questions_total'    => intval( $performance['questions_total'] ?? 0 ),
         ];
     }
 

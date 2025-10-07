@@ -188,7 +188,175 @@ if ( null !== $average_percentage ) {
         'value' => intval( $average_percentage ) . '%',
     ];
 }
+
+$quiz_title_text        = $quiz_post_id ? get_the_title( $quiz_post_id ) : '';
+$primary_pct_number     = ( isset( $current_quiz_summary['percentage'] ) && is_numeric( $current_quiz_summary['percentage'] ) )
+    ? round( floatval( $current_quiz_summary['percentage'] ) )
+    : null;
+$average_pct_number     = is_numeric( $average_percentage ) ? intval( $average_percentage ) : null;
+$primary_pct_text       = null !== $primary_pct_number ? $primary_pct_number . '%' : '—';
+$average_pct_text       = null !== $average_pct_number ? $average_pct_number . '%' : '—';
+$primary_pct_progress   = max( 0, min( 100, null !== $primary_pct_number ? $primary_pct_number : 0 ) );
+$average_pct_progress   = max( 0, min( 100, null !== $average_pct_number ? $average_pct_number : 0 ) );
+$attempt_duration       = isset( $current_quiz_summary['duration'] ) ? intval( $current_quiz_summary['duration'] ) : 0;
+$duration_display       = $attempt_duration > 0 ? gmdate( 'H:i:s', $attempt_duration ) : '—';
+$questions_total        = isset( $current_quiz_summary['questions_total'] ) ? intval( $current_quiz_summary['questions_total'] ) : 0;
+
+if ( ! $questions_total && $question_count ) {
+    $questions_total = intval( $question_count );
+}
+
+$questions_correct      = isset( $current_quiz_summary['questions_correct'] ) ? intval( $current_quiz_summary['questions_correct'] ) : null;
+$questions_correct_text = ( null !== $questions_correct && $questions_total )
+    ? sprintf( _n( '%1$d de %2$d pregunta respondida correctamente', '%1$d de %2$d preguntas respondidas correctamente', $questions_total, 'villegas-courses' ), $questions_correct, $questions_total )
+    : ( $questions_total ? sprintf( __( '%d preguntas en total', 'villegas-courses' ), $questions_total ) : '—' );
 ?>
+<style>
+    .villegas-quiz-summary {
+        margin: 24px 0 32px;
+        padding: 24px 24px 32px;
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(17, 24, 39, 0.08);
+        text-align: center;
+    }
+
+    .villegas-quiz-summary__header {
+        margin-bottom: 24px;
+    }
+
+    .villegas-quiz-summary__title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: #0b1120;
+        margin: 0;
+    }
+
+    .villegas-quiz-summary__rings {
+        display: flex;
+        justify-content: center;
+        gap: 32px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+
+    .villegas-quiz-summary__ring {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        position: relative;
+        background: conic-gradient(#d7b205 calc(var(--percent, 0) * 1%), #f3f4f6 0deg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s ease;
+    }
+
+    .villegas-quiz-summary__ring::after {
+        content: '';
+        position: absolute;
+        inset: 18px;
+        background: #ffffff;
+        border-radius: 50%;
+        box-shadow: inset 0 0 0 1px rgba(209, 213, 219, 0.6);
+    }
+
+    .villegas-quiz-summary__ring-content {
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .villegas-quiz-summary__ring-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #0b1120;
+    }
+
+    .villegas-quiz-summary__ring-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #6b7280;
+    }
+
+    .villegas-quiz-summary__details {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        flex-wrap: wrap;
+        color: #111827;
+        font-size: 0.95rem;
+    }
+
+    .villegas-quiz-summary__detail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .villegas-quiz-summary__detail-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6b7280;
+    }
+
+    .villegas-quiz-summary__detail-value {
+        font-weight: 600;
+        font-size: 1.05rem;
+    }
+
+    .villegas-quiz-summary ~ .wpProQuiz_results,
+    .villegas-quiz-summary ~ .wpProQuiz_resultTable,
+    .villegas-quiz-summary ~ .wpProQuiz_points,
+    .villegas-quiz-summary ~ .wpProQuiz_pointsChart,
+    .villegas-quiz-summary ~ .wpProQuiz_graded_points,
+    .villegas-quiz-summary ~ .wpProQuiz_points.wpProQuiz_points--message,
+    .villegas-quiz-summary ~ .wpProQuiz_resultTable + .wpProQuiz_catOverview {
+        display: none !important;
+    }
+</style>
+<div class="villegas-quiz-summary">
+    <div class="villegas-quiz-summary__header">
+        <?php if ( $quiz_title_text ) : ?>
+            <h2 class="villegas-quiz-summary__title"><?php echo esc_html( $quiz_title_text ); ?></h2>
+        <?php endif; ?>
+        <?php if ( $course_title ) : ?>
+            <p style="margin: 8px 0 0; color: #6b7280; font-size: 0.95rem;">
+                <?php echo esc_html( $course_title ); ?>
+            </p>
+        <?php endif; ?>
+    </div>
+    <div class="villegas-quiz-summary__rings">
+        <div class="villegas-quiz-summary__ring" style="--percent: <?php echo esc_attr( $primary_pct_progress ); ?>;">
+            <div class="villegas-quiz-summary__ring-content">
+                <span class="villegas-quiz-summary__ring-value"><?php echo esc_html( $primary_pct_text ); ?></span>
+                <span class="villegas-quiz-summary__ring-label"><?php esc_html_e( 'Tu puntaje', 'villegas-courses' ); ?></span>
+            </div>
+        </div>
+        <div class="villegas-quiz-summary__ring" style="--percent: <?php echo esc_attr( $average_pct_progress ); ?>;">
+            <div class="villegas-quiz-summary__ring-content">
+                <span class="villegas-quiz-summary__ring-value"><?php echo esc_html( $average_pct_text ); ?></span>
+                <span class="villegas-quiz-summary__ring-label"><?php esc_html_e( 'Promedio Villegas', 'villegas-courses' ); ?></span>
+            </div>
+        </div>
+    </div>
+    <div class="villegas-quiz-summary__details">
+        <div class="villegas-quiz-summary__detail">
+            <span class="villegas-quiz-summary__detail-label"><?php esc_html_e( 'Tu tiempo', 'villegas-courses' ); ?></span>
+            <span class="villegas-quiz-summary__detail-value"><?php echo esc_html( $duration_display ); ?></span>
+        </div>
+        <div class="villegas-quiz-summary__detail">
+            <span class="villegas-quiz-summary__detail-label"><?php esc_html_e( 'Preguntas', 'villegas-courses' ); ?></span>
+            <span class="villegas-quiz-summary__detail-value"><?php echo esc_html( $questions_correct_text ); ?></span>
+        </div>
+    </div>
+</div>
 <div style="display: none;" class="wpProQuiz_sending">
 <h4 class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
 <p>
