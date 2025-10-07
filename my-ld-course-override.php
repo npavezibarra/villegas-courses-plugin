@@ -18,6 +18,10 @@ if ( ! class_exists( 'Politeia_Quiz_Stats' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-quiz-stats.php';
 }
 
+if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'classes/class-villegas-quiz-stats.php';
+}
+
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-emails.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-handler.php';
 
@@ -268,6 +272,7 @@ require_once plugin_dir_path(__FILE__) . 'login/process-registration.php';*/
 /* CLASSES */
 require_once plugin_dir_path(__FILE__) . 'classes/class-quiz-analytics.php';
 require_once plugin_dir_path(__FILE__) . 'shortcodes/quiz-class-shortcodes.php';
+require_once plugin_dir_path(__FILE__) . 'shortcodes/quiz-average-score-shortcode.php';
 /* AJAX HANDLER*/
 require_once plugin_dir_path(__FILE__) . 'includes/ajax-handlers.php';
 /* USER OPTIONS */
