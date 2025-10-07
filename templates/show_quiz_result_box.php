@@ -134,6 +134,7 @@ $quiz_id            = $quiz_post_id ? $quiz_post_id : intval( $quiz->getID() );
 $course_id          = 0;
 $course_label       = 'None';
 $course_display     = 'None';
+$product_id         = 0;
 $product_display    = 'None';
 
 if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
@@ -152,24 +153,36 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
             $course_label = 'Final Quiz';
         }
 
-        $related_products = get_posts(
-            array(
-                'post_type'      => 'product',
-                'post_status'    => 'any',
-                'fields'         => 'ids',
-                'posts_per_page' => 1,
-                'meta_query'     => array(
-                    array(
-                        'key'     => '_related_course',
-                        'value'   => sprintf( 'i:%d;', $course_id ),
-                        'compare' => 'LIKE',
-                    ),
-                ),
-            )
-        );
+        if ( function_exists( 'villegas_get_course_product_id' ) ) {
+            $related_product_id = (int) villegas_get_course_product_id( $course_id );
 
-        if ( ! empty( $related_products ) ) {
-            $product_display = (int) $related_products[0];
+            if ( $related_product_id ) {
+                $product_id      = $related_product_id;
+                $product_display = $product_id;
+            }
+        }
+
+        if ( ! $product_id ) {
+            $related_products = get_posts(
+                array(
+                    'post_type'      => 'product',
+                    'post_status'    => 'any',
+                    'fields'         => 'ids',
+                    'posts_per_page' => 1,
+                    'meta_query'     => array(
+                        array(
+                            'key'     => '_related_course',
+                            'value'   => sprintf( 'i:%d;', $course_id ),
+                            'compare' => 'LIKE',
+                        ),
+                    ),
+                )
+            );
+
+            if ( ! empty( $related_products ) ) {
+                $product_id      = (int) $related_products[0];
+                $product_display = $product_id;
+            }
         }
     }
 }
@@ -179,6 +192,46 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
     <p><strong>Course ID (<?php echo esc_html( $course_label ); ?>):</strong> <?php echo esc_html( $course_display ); ?></p>
     <p><strong>Product ID:</strong> <?php echo esc_html( $product_display ); ?></p>
 </div>
+<?php
+$button_label = '';
+$button_url   = '';
+
+if ( $product_id ) {
+    $button_label = __( 'Comprar Curso', 'villegas-courses' );
+    $product_url  = get_permalink( $product_id );
+
+    if ( $product_url ) {
+        $button_url = $product_url;
+    }
+
+    if ( is_user_logged_in() && function_exists( 'wc_customer_bought_product' ) ) {
+        $current_user = wp_get_current_user();
+
+        if ( $current_user && $current_user->exists() ) {
+            $has_bought = wc_customer_bought_product( $current_user->user_email, $current_user->ID, $product_id );
+
+            if ( $has_bought ) {
+                $course_url = $course_id ? get_permalink( $course_id ) : '';
+
+                if ( $course_url ) {
+                    $button_label = __( 'Ir al Curso', 'villegas-courses' );
+                    $button_url   = $course_url;
+                }
+            }
+        }
+    }
+}
+
+if ( $button_label && $button_url ) :
+    ?>
+    <div style="text-align: center; margin-top: 12px;">
+        <a class="wpProQuiz_pointsChart__cta" href="<?php echo esc_url( $button_url ); ?>" style="display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600;">
+            <?php echo esc_html( $button_label ); ?>
+        </a>
+    </div>
+<?php
+endif;
+?>
 <script>
     (function() {
         function clamp(value, min, max) {
