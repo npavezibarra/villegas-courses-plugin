@@ -46,7 +46,8 @@ array(
 </div>
 
 <div style="display: none;" class="wpProQuiz_results">
-<h4 class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
+<hr>
+<h4 style="font-family: sans-serif; font-size: 34px;" class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
 <?php
 if ( ! $quiz->isHideResultCorrectQuestion() ) {
 echo wp_kses_post(
@@ -213,7 +214,7 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
     }
 }
 ?>
-<table class="wpProQuiz_pointsChart__meta debug_table" style="text-align: center; font-size: 14px;">
+<table class="wpProQuiz_pointsChart__meta debug_table" style="text-align: center; font-size: 14px; display: none;">
     <tbody>
         <tr>
             <th scope="row" style="padding-right: 8px; text-align: right;">
