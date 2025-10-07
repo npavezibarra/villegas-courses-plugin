@@ -495,13 +495,16 @@ function politeia_get_quiz_attempt_summary_for_comparison( $user_id, $quiz_id ) 
 
     $attempts = $wpdb->get_results(
         $wpdb->prepare(
-            "SELECT activity_id, activity_completed
-             FROM {$wpdb->prefix}learndash_user_activity
-             WHERE user_id = %d
-               AND post_id = %d
-               AND activity_type = 'quiz'
-             ORDER BY activity_id DESC
-             LIMIT %d",
+            "SELECT ua.activity_id, ua.activity_completed
+               FROM {$wpdb->prefix}learndash_user_activity AS ua
+         INNER JOIN {$wpdb->prefix}learndash_user_activity_meta AS uam
+                 ON ua.activity_id = uam.activity_id
+                AND uam.activity_meta_key = 'quiz'
+              WHERE ua.user_id = %d
+                AND ua.activity_type = 'quiz'
+                AND uam.activity_meta_value+0 = %d
+           ORDER BY ua.activity_completed DESC, ua.activity_id DESC
+              LIMIT %d",
             $user_id,
             $quiz_id,
             $limit
@@ -530,7 +533,11 @@ function politeia_get_quiz_attempt_summary_for_comparison( $user_id, $quiz_id ) 
         $percentage = round( floatval( $meta['percentage'] ), 2 );
         $score      = ( isset( $meta['score'] ) && is_numeric( $meta['score'] ) ) ? 0 + $meta['score'] : null;
         $total      = ( isset( $meta['total_points'] ) && is_numeric( $meta['total_points'] ) ) ? 0 + $meta['total_points'] : null;
-        $timestamp  = isset( $attempt['activity_completed'] ) ? intval( $attempt['activity_completed'] ) : 0;
+        $timestamp  = 0;
+
+        if ( ! empty( $attempt['activity_completed'] ) ) {
+            $timestamp = strtotime( $attempt['activity_completed'] );
+        }
 
         return [
             'activity_id'    => $activity_id,
