@@ -101,7 +101,7 @@ array(
 <?php
 if ( ! $quiz->isHideResultPoints() ) {
 ?>
-<p class="wpProQuiz_points wpProQuiz_points--message">
+<p class="wpProQuiz_points wpProQuiz_points--message" style="display: none;">
 <?php
 echo wp_kses_post(
 SFWD_LMS::get_template(
@@ -213,11 +213,34 @@ if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
     }
 }
 ?>
-<div class="wpProQuiz_pointsChart__meta" style="text-align: center; font-size: 14px;">
-    <p><strong>Quiz ID:</strong> <?php echo esc_html( $quiz_id ); ?></p>
-    <p><strong>Course ID (<?php echo esc_html( $course_label ); ?>):</strong> <?php echo esc_html( $course_display ); ?></p>
-    <p><strong>Product ID:</strong> <?php echo esc_html( $product_display ); ?></p>
-</div>
+<table class="wpProQuiz_pointsChart__meta debug_table" style="text-align: center; font-size: 14px;">
+    <tbody>
+        <tr>
+            <th scope="row" style="padding-right: 8px; text-align: right;">
+                <strong>Quiz ID:</strong>
+            </th>
+            <td style="text-align: left;">
+                <?php echo esc_html( $quiz_id ); ?>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row" style="padding-right: 8px; text-align: right;">
+                <strong>Course ID (<?php echo esc_html( $course_label ); ?>):</strong>
+            </th>
+            <td style="text-align: left;">
+                <?php echo esc_html( $course_display ); ?>
+            </td>
+        </tr>
+        <tr>
+            <th scope="row" style="padding-right: 8px; text-align: right;">
+                <strong>Product ID:</strong>
+            </th>
+            <td style="text-align: left;">
+                <?php echo esc_html( $product_display ); ?>
+            </td>
+        </tr>
+    </tbody>
+</table>
 <?php
 $button_label       = '';
 $button_url         = '';
@@ -534,7 +557,7 @@ echo do_shortcode( '[LDAdvQuiz_toplist ' . $quiz->getId() . ' q="true"]' );
 $quiz_view->showAddToplist();
 }
 ?>
-<div class="ld-quiz-actions" style="margin: 10px 0px;">
+<div class="ld-quiz-actions" style="margin: 10px 0px; display: none;">
 <?php
 /**
  *  See snippet https://developers.learndash.com/hook/show_quiz_continue_buttom_on_fail/
