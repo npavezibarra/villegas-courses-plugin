@@ -15,7 +15,178 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+    exit;
+}
+
+$current_user_id       = get_current_user_id();
+$quiz_post_id          = intval( learndash_get_quiz_id_by_pro_quiz_id( $quiz->getId() ) );
+$quiz_post_id          = $quiz_post_id ? $quiz_post_id : get_the_ID();
+$average_table_markup  = '';
+$average_percentage    = null;
+$course_id             = 0;
+$course_permalink      = '';
+$course_title          = '';
+$first_quiz_id         = 0;
+$final_quiz_id         = 0;
+$is_first_quiz         = false;
+$is_final_quiz         = false;
+$related_product_id    = 0;
+$product_permalink     = '';
+$has_bought_course     = false;
+$first_quiz_summary    = [];
+$current_quiz_summary  = [];
+$delta_percentage      = null;
+$courses_archive_url   = get_post_type_archive_link( 'sfwd-courses' );
+$courses_archive_url   = $courses_archive_url ? $courses_archive_url : home_url( '/cursos/' );
+
+if ( $quiz_post_id && class_exists( 'Villegas_Quiz_Attempts_Shortcode' ) ) {
+    $average_table_markup = do_shortcode( '[villegas_quiz_attempts id="' . intval( $quiz_post_id ) . '"]' );
+    $average_percentage   = intval( Villegas_Quiz_Attempts_Shortcode::$last_average );
+}
+
+if ( $quiz_post_id && class_exists( 'PoliteiaCourse' ) ) {
+    $course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_post_id );
+
+    if ( $course_id ) {
+        $course_permalink   = get_permalink( $course_id );
+        $course_title       = get_the_title( $course_id );
+        $first_quiz_id      = PoliteiaCourse::getFirstQuizId( $course_id );
+        $final_quiz_id      = PoliteiaCourse::getFinalQuizId( $course_id );
+        $is_first_quiz      = $first_quiz_id && intval( $first_quiz_id ) === intval( $quiz_post_id );
+        $is_final_quiz      = $final_quiz_id && intval( $final_quiz_id ) === intval( $quiz_post_id );
+
+        // Prioritize final quiz mapping when both match.
+        if ( $is_final_quiz ) {
+            $is_first_quiz = false;
+        }
+
+        $related_product_id = PoliteiaCourse::getRelatedProductId( $course_id );
+
+        if ( $related_product_id ) {
+            $product_permalink = get_permalink( $related_product_id );
+
+            if ( $current_user_id && function_exists( 'wc_get_orders' ) ) {
+                $orders = wc_get_orders(
+                    [
+                        'customer_id' => $current_user_id,
+                        'status'      => [ 'completed', 'processing', 'on-hold', 'course-on-hold' ],
+                        'limit'       => -1,
+                    ]
+                );
+
+                foreach ( $orders as $order ) {
+                    foreach ( $order->get_items() as $item ) {
+                        $item_product_id = $item->get_product_id();
+                        if ( intval( $item_product_id ) === intval( $related_product_id ) ) {
+                            $has_bought_course = true;
+                            break 2;
+                        }
+                    }
+                }
+            }
+
+            if ( ! $has_bought_course && $current_user_id && function_exists( 'wc_customer_bought_product' ) ) {
+                $has_bought_course = wc_customer_bought_product( '', $current_user_id, $related_product_id );
+            }
+        } else {
+            // Free or manually granted courses behave like already purchased.
+            $has_bought_course = true;
+        }
+    }
+}
+
+if ( class_exists( 'Politeia_Quiz_Stats' ) && $quiz_post_id ) {
+    $stats                = new Politeia_Quiz_Stats( $quiz_post_id, $current_user_id );
+    $current_quiz_summary = $stats->get_current_quiz_summary();
+
+    if ( $first_quiz_id ) {
+        $first_quiz_summary = $stats->get_quiz_summary( $first_quiz_id );
+    }
+
+    if ( $is_final_quiz && ! empty( $current_quiz_summary ) && ! empty( $first_quiz_summary ) ) {
+        $current_pct = isset( $current_quiz_summary['percentage_rounded'] ) ? $current_quiz_summary['percentage_rounded'] : null;
+        $first_pct   = isset( $first_quiz_summary['percentage_rounded'] ) ? $first_quiz_summary['percentage_rounded'] : null;
+
+        if ( is_numeric( $current_pct ) && is_numeric( $first_pct ) ) {
+            $delta_percentage = intval( $current_pct ) - intval( $first_pct );
+        }
+    }
+}
+
+$primary_button_url   = '';
+$primary_button_label = '';
+
+if ( $is_final_quiz ) {
+    $primary_button_url   = $courses_archive_url;
+    $primary_button_label = __( 'Ver más cursos', 'villegas-courses' );
+} elseif ( $course_permalink ) {
+    if ( $product_permalink && ! $has_bought_course ) {
+        $primary_button_url   = $product_permalink;
+        $primary_button_label = __( 'Comprar curso', 'villegas-courses' );
+    } else {
+        $primary_button_url   = $course_permalink;
+        $primary_button_label = __( 'Ir al curso', 'villegas-courses' );
+    }
+}
+
+$cta_heading    = __( 'Resultados del quiz', 'villegas-courses' );
+$cta_paragraph  = __( 'Continúa con tu aprendizaje y aprovecha tus resultados.', 'villegas-courses' );
+
+if ( $is_final_quiz ) {
+    $cta_heading = __( '¡Terminaste el curso!', 'villegas-courses' );
+    $cta_paragraph = $course_title
+        ? sprintf( __( 'Explora otros cursos después de completar %s.', 'villegas-courses' ), esc_html( $course_title ) )
+        : __( 'Explora otros cursos disponibles para seguir aprendiendo.', 'villegas-courses' );
+
+    if ( null !== $delta_percentage ) {
+        $cta_paragraph .= ' ' . sprintf(
+            __( 'Tu puntaje cambió %s respecto a la evaluación inicial.', 'villegas-courses' ),
+            sprintf( '%+d%%', intval( $delta_percentage ) )
+        );
+    }
+} elseif ( $is_first_quiz ) {
+    $cta_heading   = __( 'Primer paso completado', 'villegas-courses' );
+    $cta_paragraph = $course_title
+        ? sprintf( __( 'Ya puedes continuar con el curso %s.', 'villegas-courses' ), esc_html( $course_title ) )
+        : __( 'Ya puedes continuar con tu curso.', 'villegas-courses' );
+}
+
+$metrics = [];
+
+$current_has_attempt = ! empty( $current_quiz_summary['has_attempt'] );
+$current_pct_display = ( $current_has_attempt && isset( $current_quiz_summary['percentage_rounded'] ) && is_numeric( $current_quiz_summary['percentage_rounded'] ) )
+    ? intval( $current_quiz_summary['percentage_rounded'] ) . '%'
+    : '—';
+
+$metrics[] = [
+    'label' => __( 'Tu resultado', 'villegas-courses' ),
+    'value' => $current_pct_display,
+];
+
+if ( $is_final_quiz && $first_quiz_id ) {
+    $first_has_attempt = ! empty( $first_quiz_summary['has_attempt'] );
+    $first_pct_display = ( $first_has_attempt && isset( $first_quiz_summary['percentage_rounded'] ) && is_numeric( $first_quiz_summary['percentage_rounded'] ) )
+        ? intval( $first_quiz_summary['percentage_rounded'] ) . '%'
+        : '—';
+
+    $metrics[] = [
+        'label' => __( 'Primera evaluación', 'villegas-courses' ),
+        'value' => $first_pct_display,
+    ];
+
+    if ( null !== $delta_percentage ) {
+        $metrics[] = [
+            'label' => __( 'Cambio total', 'villegas-courses' ),
+            'value' => sprintf( '%+d%%', intval( $delta_percentage ) ),
+        ];
+    }
+}
+
+if ( null !== $average_percentage ) {
+    $metrics[] = [
+        'label' => __( 'Promedio general', 'villegas-courses' ),
+        'value' => intval( $average_percentage ) . '%',
+    ];
 }
 ?>
 <div style="display: none;" class="wpProQuiz_sending">
@@ -480,4 +651,47 @@ array(
 ?>" /><?php // phpcs:ignore Squiz.PHP.EmbeddedPhp.ContentAfterEnd ?>
 <?php } ?>
 </div>
+<?php if ( $course_id ) : ?>
+    <div class="villegas-quiz-result-cta" style="margin: 24px 0; padding: 24px; border: 1px solid #e6e8eb; border-radius: 10px; background: #f7f8fa; display: flex; flex-wrap: wrap; gap: 16px; align-items: center;">
+        <div class="villegas-quiz-result-cta__body" style="flex: 1 1 280px; min-width: 260px;">
+            <h4 style="margin: 0 0 8px; font-size: 1.25rem; font-weight: 600; color: #111827;">
+                <?php echo esc_html( $cta_heading ); ?>
+            </h4>
+            <p style="margin: 0 0 16px; color: #4b5563;">
+                <?php echo esc_html( $cta_paragraph ); ?>
+            </p>
+            <?php if ( ! empty( $metrics ) ) : ?>
+                <ul class="villegas-quiz-result-cta__metrics" style="list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));">
+                    <?php foreach ( $metrics as $metric ) : ?>
+                        <li style="background: #ffffff; border: 1px solid #d1d5db; border-radius: 8px; padding: 12px; text-align: center;">
+                            <span class="villegas-quiz-result-cta__metric-label" style="display:block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; margin-bottom: 6px;">
+                                <?php echo esc_html( $metric['label'] ); ?>
+                            </span>
+                            <span class="villegas-quiz-result-cta__metric-value" style="display:block; font-size: 1.5rem; font-weight: 700; color: #111827;">
+                                <?php echo esc_html( $metric['value'] ); ?>
+                            </span>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
+        </div>
+        <?php if ( $primary_button_url ) : ?>
+            <div class="villegas-quiz-result-cta__actions" style="display: flex; flex-direction: column; gap: 10px; align-items: flex-start;">
+                <a class="wpProQuiz_button villegas-quiz-cta__button" style="font-size: 1rem; padding: 12px 24px;" href="<?php echo esc_url( $primary_button_url ); ?>">
+                    <?php echo esc_html( $primary_button_label ); ?>
+                </a>
+                <?php if ( $is_final_quiz && $course_permalink ) : ?>
+                    <a class="wpProQuiz_button wpProQuiz_button_secondary" style="font-size: 0.95rem; padding: 10px 20px; background: #ffffff; color: #111827; border: 1px solid #d1d5db;" href="<?php echo esc_url( $course_permalink ); ?>">
+                        <?php esc_html_e( 'Revisar curso', 'villegas-courses' ); ?>
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
+    </div>
+<?php endif; ?>
 </div>
+<?php if ( ! empty( $average_table_markup ) ) : ?>
+<div class="villegas-quiz-attempts-table" style="display:none;">
+    <?php echo $average_table_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+</div>
+<?php endif; ?>

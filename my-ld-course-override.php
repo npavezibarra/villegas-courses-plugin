@@ -18,6 +18,10 @@ if ( ! class_exists( 'Politeia_Quiz_Stats' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-quiz-stats.php';
 }
 
+if ( ! class_exists( 'Villegas_Quiz_Attempts_Shortcode' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/villegas-average-quiz-result.php';
+}
+
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-emails.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-handler.php';
 

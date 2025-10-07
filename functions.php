@@ -187,6 +187,118 @@ function villegas_inyectar_quiz_data_footer() {
 // add_action('wp_footer', 'villegas_inyectar_quiz_data_footer');
 
 
+add_action( 'wp_footer', 'villegas_add_quiz_result_button' );
+
+function villegas_add_quiz_result_button() {
+    if ( ! is_singular( 'sfwd-quiz' ) ) {
+        return;
+    }
+
+    if ( ! function_exists( 'wc_get_products' ) ) {
+        return;
+    }
+
+    $quiz_id = get_the_ID();
+    if ( ! $quiz_id ) {
+        return;
+    }
+
+    $related_course_raw = get_post_meta( $quiz_id, '_related_course', true );
+    if ( is_array( $related_course_raw ) ) {
+        $related_course_id = ! empty( $related_course_raw ) ? intval( reset( $related_course_raw ) ) : 0;
+    } else {
+        $related_course_id = intval( $related_course_raw );
+    }
+
+    if ( ! $related_course_id && class_exists( 'PoliteiaCourse' ) ) {
+        $related_course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
+    }
+
+    if ( ! $related_course_id ) {
+        return;
+    }
+
+    $course_permalink = get_permalink( $related_course_id );
+
+    $product_ids = wc_get_products(
+        [
+            'limit'      => 1,
+            'status'     => 'publish',
+            'meta_key'   => '_related_course',
+            'meta_value' => $related_course_id,
+            'return'     => 'ids',
+        ]
+    );
+
+    $product_id        = ! empty( $product_ids ) ? intval( $product_ids[0] ) : 0;
+    $product_permalink = $product_id ? get_permalink( $product_id ) : '';
+    $user_id           = get_current_user_id();
+    $has_bought        = false;
+
+    if ( $product_id && $user_id && function_exists( 'wc_customer_bought_product' ) ) {
+        $has_bought = wc_customer_bought_product( '', $user_id, $product_id );
+    }
+
+    if ( ! $product_id ) {
+        $has_bought = true;
+    }
+
+    $first_quiz_id = class_exists( 'PoliteiaCourse' ) ? PoliteiaCourse::getFirstQuizId( $related_course_id ) : 0;
+    $final_quiz_id = class_exists( 'PoliteiaCourse' ) ? PoliteiaCourse::getFinalQuizId( $related_course_id ) : 0;
+
+    $is_final = $final_quiz_id && intval( $quiz_id ) === intval( $final_quiz_id );
+
+    $primary_url   = '';
+    $primary_label = '';
+
+    if ( $is_final ) {
+        $primary_url   = get_post_type_archive_link( 'sfwd-courses' );
+        if ( ! $primary_url ) {
+            $primary_url = home_url( '/cursos/' );
+        }
+        $primary_label = __( 'Ver más cursos', 'villegas-courses' );
+    } else {
+        if ( $product_permalink && ! $has_bought ) {
+            $primary_url   = $product_permalink;
+            $primary_label = __( 'Comprar curso', 'villegas-courses' );
+        } else {
+            $primary_url   = $course_permalink;
+            $primary_label = __( 'Ir al curso', 'villegas-courses' );
+        }
+    }
+
+    if ( ! $primary_url ) {
+        return;
+    }
+
+    $button_url   = esc_url_raw( $primary_url );
+    $button_label = $primary_label;
+
+    ?>
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (document.querySelector('.villegas-quiz-cta__button')) {
+            return;
+        }
+
+        var actionsContainer = document.querySelector('.ld-quiz-actions');
+        if (!actionsContainer) {
+            return;
+        }
+
+        var button = document.createElement('a');
+        button.href = <?php echo wp_json_encode( $button_url ); ?>;
+        button.textContent = <?php echo wp_json_encode( $button_label ); ?>;
+        button.className = 'wpProQuiz_button villegas-quiz-cta__button';
+        button.style.marginLeft = '10px';
+
+        actionsContainer.appendChild(button);
+    });
+    </script>
+    <?php
+}
+
+
 /* MENSAJE QUIZ TOMADO */
 
 // Función auxiliar para contar intentos
