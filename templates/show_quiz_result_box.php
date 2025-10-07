@@ -101,7 +101,7 @@ array(
 <?php
 if ( ! $quiz->isHideResultPoints() ) {
 ?>
-<p class="wpProQuiz_points wpProQuiz_points--message">
+<p class="wpProQuiz_points wpProQuiz_points--message" style="display: none;">
 <?php
 echo wp_kses_post(
 SFWD_LMS::get_template(
@@ -557,7 +557,7 @@ echo do_shortcode( '[LDAdvQuiz_toplist ' . $quiz->getId() . ' q="true"]' );
 $quiz_view->showAddToplist();
 }
 ?>
-<div class="ld-quiz-actions" style="margin: 10px 0px;">
+<div class="ld-quiz-actions" style="margin: 10px 0px; display: none;">
 <?php
 /**
  *  See snippet https://developers.learndash.com/hook/show_quiz_continue_buttom_on_fail/
