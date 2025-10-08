@@ -22,37 +22,9 @@ if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-villegas-quiz-stats.php';
 }
 
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-emails.php';
-require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-handler.php';
-
-register_activation_hook( __FILE__, function() {
-    if ( ! wp_next_scheduled( 'villegas_process_quiz_email_queue' ) ) {
-        wp_schedule_event( time() + 300, 'five_minutes', 'villegas_process_quiz_email_queue' );
-    }
-} );
-
-register_deactivation_hook( __FILE__, function() {
-    wp_clear_scheduled_hook( 'villegas_process_quiz_email_queue' );
-} );
-
-add_filter( 'cron_schedules', function( $schedules ) {
-    if ( ! isset( $schedules['five_minutes'] ) ) {
-        $schedules['five_minutes'] = [
-            'interval' => 300,
-            'display'  => __( 'Every Five Minutes', 'villegas-courses' ),
-        ];
-    }
-
-    return $schedules;
-} );
-
 if ( is_admin() ) {
-    require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-settings.php';
-    Villegas_Quiz_Email_Settings::init();
     require_once plugin_dir_path( __FILE__ ) . 'includes/admin/class-course-checklist-handler.php';
 }
-
-add_action( 'learndash_quiz_completed', [ 'Villegas_Quiz_Email_Handler', 'on_quiz_completed' ], 10, 2 );
 
 // Reemplazar la plantilla del curso de LearnDash
 function my_custom_ld_course_template( $template ) {

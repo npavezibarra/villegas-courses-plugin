@@ -200,6 +200,10 @@ if ( ! function_exists( 'villegas_quiz_completed_handler' ) ) {
 
         $admin_email = get_option( 'admin_email' );
 
+        if ( $admin_email && ! empty( $user->user_email ) && 0 === strcasecmp( $admin_email, $user->user_email ) ) {
+            $admin_email = '';
+        }
+
         if ( ! $admin_email ) {
             return;
         }
