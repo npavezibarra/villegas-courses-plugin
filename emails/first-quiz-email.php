@@ -99,18 +99,16 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '<p style="margin:0;font-size:16px;line-height:1.5;">' . sprintf( esc_html__( 'Completaste el Primer Quiz de %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ) . '</p>';
     $body .= '</div>';
 
-    $body .= '<div id="villegas-email-graficas" style="display:flex;flex-wrap:wrap;gap:32px;justify-content:center;padding:0 48px 32px;border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;">';
+    $body .= '<div id="villegas-email-graficas" style="display:flex;flex-wrap:wrap;gap:28px;justify-content:center;padding:0 32px 32px;border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;">';
 
-    $body .= '<div style="text-align:center;min-width:220px;">';
+    $body .= '<div style="text-align:center;flex:0 1 240px;">';
     $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Tu puntaje', 'villegas-courses' ) . '</h2>';
     $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Tu puntaje', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
-    $body .= '<p style="margin-top:12px;font-size:18px;font-weight:600;color:#111111;">' . esc_html( number_format_i18n( round( $user_score ) ) ) . '%</p>';
     $body .= '</div>';
 
-    $body .= '<div style="text-align:center;min-width:220px;">';
+    $body .= '<div style="text-align:center;flex:0 1 240px;">';
     $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Promedio Villegas', 'villegas-courses' ) . '</h2>';
     $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Promedio Villegas', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
-    $body .= '<p style="margin-top:12px;font-size:15px;color:#444444;">' . esc_html( $average_caption ) . '</p>';
     $body .= '</div>';
 
     $body .= '</div>';
