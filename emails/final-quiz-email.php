@@ -71,7 +71,10 @@ function villegas_get_final_quiz_email_content( array $quiz_data, WP_User $user 
 
     $courses_url = home_url( '/courses/' );
 
-    $body  = '<div id="villegas-final-wrapper" style="background-color:#f6f6f6;padding:32px 0;">';
+    $inline_styles  = '<style type="text/css">[id$="villegas-final-graficas"]{display:flex !important;flex-wrap:wrap !important;gap:32px !important;padding:0 48px 32px !important;border-top:1px solid #f1f1f1 !important;border-bottom:1px solid #f1f1f1 !important;justify-content:center !important;}</style>';
+
+    $body  = $inline_styles;
+    $body .= '<div id="villegas-final-wrapper" style="background-color:#f6f6f6;padding:32px 0;">';
     $body .= '<div id="villegas-final-card" style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
 
     $body .= '<div id="villegas-final-encabezado" style="text-align:center;padding:28px 24px 0;">';
