@@ -206,6 +206,16 @@ class Villegas_Course_Checklist_Handler {
 
         wp_set_object_terms( $product_id, 'course', 'product_type', false );
 
+        $thumbnail_id = get_post_thumbnail_id( $course_id );
+        if ( $thumbnail_id ) {
+            set_post_thumbnail( $product_id, $thumbnail_id );
+        }
+
+        $course_category = get_term_by( 'name', 'Cursos', 'product_cat' );
+        if ( $course_category && ! is_wp_error( $course_category ) ) {
+            wp_set_object_terms( $product_id, [ (int) $course_category->term_id ], 'product_cat', false );
+        }
+
         update_post_meta( $product_id, '_price', $price );
         update_post_meta( $product_id, '_regular_price', $price );
         update_post_meta( $product_id, '_related_course', $course_id );
