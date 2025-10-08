@@ -221,6 +221,21 @@ function villegas_render_course_checklist_page() {
                 background-color: #f0f0f1;
                 outline: none;
             }
+
+            .villegas-product-form {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                padding: 8px 12px;
+            }
+
+            .villegas-product-form__label {
+                font-weight: 600;
+            }
+
+            .villegas-product-form__input {
+                width: 100%;
+            }
         </style>
         <h1><?php esc_html_e( 'Course Checklist', 'villegas-courses' ); ?></h1>
         <table class="widefat fixed striped">
@@ -393,19 +408,31 @@ function villegas_render_course_checklist_page() {
                                 <?php if ( $product_id ) : ?>
                                     <?php echo esc_html( $product_id ); ?>
                                 <?php else : ?>
-                                    <?php
-                                    villegas_course_checklist_render_dropdown(
-                                        [
-                                            [
-                                                'label'      => __( 'Create Product', 'villegas-courses' ),
-                                                'class'      => 'action-create-product',
-                                                'attributes' => [
-                                                    'data-course-id' => $course_id,
-                                                ],
-                                            ],
-                                        ]
-                                    );
-                                    ?>
+                                    <div class="villegas-dropdown villegas-product-dropdown">
+                                        <button type="button" class="button button-primary create-dropdown" aria-haspopup="true" aria-expanded="false">
+                                            <?php esc_html_e( 'CREATE', 'villegas-courses' ); ?>
+                                        </button>
+                                        <div class="dropdown-menu" role="menu">
+                                            <form class="villegas-product-form" data-course-id="<?php echo esc_attr( $course_id ); ?>">
+                                                <label for="villegas-product-price-<?php echo esc_attr( $course_id ); ?>" class="villegas-product-form__label">
+                                                    <?php esc_html_e( 'Price', 'villegas-courses' ); ?>
+                                                </label>
+                                                <input
+                                                    id="villegas-product-price-<?php echo esc_attr( $course_id ); ?>"
+                                                    class="villegas-product-form__input"
+                                                    type="number"
+                                                    name="price"
+                                                    min="1"
+                                                    step="1"
+                                                    inputmode="numeric"
+                                                    required
+                                                />
+                                                <button type="submit" class="button button-primary villegas-product-form__submit">
+                                                    <?php esc_html_e( 'Create Product', 'villegas-courses' ); ?>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
                                 <?php endif; ?>
                             </td>
                         </tr>

@@ -111,27 +111,22 @@
       });
   });
 
-  $(document).on('click', '.action-create-product', function (event) {
+  $(document).on('submit', '.villegas-product-form', function (event) {
     event.preventDefault();
-    closeMenus();
 
     if (!ajaxUrl) {
       return;
     }
 
-    const $button = $(this);
-    const courseId = $button.data('course-id');
-    const promptMessage = messages.pricePrompt || 'Enter product price (integer, no commas or dots):';
-    const priceInput = window.prompt(promptMessage);
-
-    if (priceInput === null) {
-      return;
-    }
-
-    const cleaned = String(priceInput).trim();
+    const $form = $(this);
+    const $submit = $form.find('[type="submit"]');
+    const $priceField = $form.find('input[name="price"]');
+    const courseId = $form.data('course-id');
+    const cleaned = String($priceField.val()).trim();
 
     if (!/^\d+$/.test(cleaned)) {
       window.alert(messages.priceError || 'Please enter a valid integer price greater than zero.');
+      $priceField.trigger('focus');
       return;
     }
 
@@ -139,8 +134,11 @@
 
     if (!price) {
       window.alert(messages.priceError || 'Please enter a valid integer price greater than zero.');
+      $priceField.trigger('focus');
       return;
     }
+
+    $submit.prop('disabled', true);
 
     $.post(
       ajaxUrl,
@@ -163,6 +161,9 @@
       })
       .fail(function (jqXHR) {
         handleAjaxError(jqXHR.responseJSON);
+      })
+      .always(function () {
+        $submit.prop('disabled', false);
       });
   });
 })(jQuery);
