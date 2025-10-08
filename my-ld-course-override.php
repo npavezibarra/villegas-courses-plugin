@@ -282,6 +282,7 @@ require_once plugin_dir_path(__FILE__) . 'profile/profile-picture.php';
 /* SHORTCODES */
 require_once plugin_dir_path(__FILE__) . 'shortcodes/shortcode-cursos-finalizados.php';
 /* ADMIN PAGES */
+require_once plugin_dir_path(__FILE__) . 'admin/pages/course-checklist.php';
 require_once plugin_dir_path(__FILE__) . 'admin/admin-page.php';
 
 
