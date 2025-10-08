@@ -109,6 +109,47 @@ if ( ! function_exists( 'villegas_course_checklist_find_final_quiz_id' ) ) {
     }
 }
 
+if ( ! function_exists( 'villegas_course_checklist_product_exists' ) ) {
+    /**
+     * Determine whether the provided product ID references a valid WooCommerce product.
+     *
+     * @param int $product_id Product post ID.
+     *
+     * @return bool
+     */
+    function villegas_course_checklist_product_exists( $product_id ) {
+        if ( function_exists( 'villegas_course_product_exists' ) ) {
+            return villegas_course_product_exists( $product_id );
+        }
+
+        $product_id = absint( $product_id );
+
+        if ( ! $product_id ) {
+            return false;
+        }
+
+        $product = get_post( $product_id );
+
+        if ( ! $product || 'product' !== $product->post_type ) {
+            return false;
+        }
+
+        return 'trash' !== $product->post_status && 'auto-draft' !== $product->post_status;
+    }
+}
+
+if ( ! function_exists( 'villegas_course_checklist_clear_product_links' ) ) {
+    /**
+     * Remove stored product relationships for the provided course.
+     *
+     * @param int $course_id Course post ID.
+     */
+    function villegas_course_checklist_clear_product_links( $course_id ) {
+        delete_post_meta( $course_id, '_related_product' );
+        delete_post_meta( $course_id, '_linked_woocommerce_product' );
+    }
+}
+
 if ( ! function_exists( 'villegas_course_checklist_render_dropdown' ) ) {
     /**
      * Render a dropdown button with the provided actions.
@@ -331,12 +372,27 @@ function villegas_render_course_checklist_page() {
                             $product_id = absint( villegas_get_course_product_id( $course_id ) );
                         }
 
+                        if ( $product_id && ! villegas_course_checklist_product_exists( $product_id ) ) {
+                            villegas_course_checklist_clear_product_links( $course_id );
+                            $product_id = 0;
+                        }
+
                         if ( ! $product_id ) {
                             $product_id = absint( get_post_meta( $course_id, '_related_product', true ) );
+
+                            if ( $product_id && ! villegas_course_checklist_product_exists( $product_id ) ) {
+                                villegas_course_checklist_clear_product_links( $course_id );
+                                $product_id = 0;
+                            }
                         }
 
                         if ( ! $product_id ) {
                             $product_id = absint( get_post_meta( $course_id, '_linked_woocommerce_product', true ) );
+
+                            if ( $product_id && ! villegas_course_checklist_product_exists( $product_id ) ) {
+                                villegas_course_checklist_clear_product_links( $course_id );
+                                $product_id = 0;
+                            }
                         }
                         ?>
                         <tr>
