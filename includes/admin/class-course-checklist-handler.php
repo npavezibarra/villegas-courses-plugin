@@ -217,21 +217,65 @@ class Villegas_Course_Checklist_Handler {
     }
 
     private function get_first_quiz_id( $course_id ) {
-        return intval( get_post_meta( $course_id, '_first_quiz_id', true ) );
+        $quiz_id = intval( get_post_meta( $course_id, '_first_quiz_id', true ) );
+
+        if ( $quiz_id && ! $this->quiz_exists( $quiz_id ) ) {
+            delete_post_meta( $course_id, '_first_quiz_id' );
+            return 0;
+        }
+
+        return $quiz_id;
     }
 
     private function get_final_quiz_id( $course_id ) {
         $quiz_id = intval( get_post_meta( $course_id, '_final_quiz_id', true ) );
         if ( $quiz_id ) {
-            return $quiz_id;
+            if ( $this->quiz_exists( $quiz_id ) ) {
+                return $quiz_id;
+            }
+
+            delete_post_meta( $course_id, '_final_quiz_id' );
         }
 
-        $steps = get_post_meta( $course_id, 'ld_course_steps', true );
+        $steps          = get_post_meta( $course_id, 'ld_course_steps', true );
+        $original_steps = $steps;
+
         if ( ! is_array( $steps ) ) {
             return 0;
         }
 
-        return $this->find_quiz_in_steps( $steps );
+        while ( true ) {
+            $candidate = $this->find_quiz_in_steps( $steps );
+
+            if ( ! $candidate ) {
+                $quiz_id = 0;
+                break;
+            }
+
+            if ( $this->quiz_exists( $candidate ) ) {
+                $quiz_id = $candidate;
+                break;
+            }
+
+            $updated_steps = $this->remove_quiz_from_steps( $steps, $candidate );
+
+            if ( $updated_steps === $steps ) {
+                $quiz_id = 0;
+                break;
+            }
+
+            $steps = $updated_steps;
+        }
+
+        if ( $original_steps !== $steps ) {
+            if ( empty( $steps ) ) {
+                delete_post_meta( $course_id, 'ld_course_steps' );
+            } else {
+                update_post_meta( $course_id, 'ld_course_steps', $steps );
+            }
+        }
+
+        return $quiz_id;
     }
 
     private function find_quiz_in_steps( $steps ) {
@@ -257,6 +301,48 @@ class Villegas_Course_Checklist_Handler {
         }
 
         return 0;
+    }
+
+    private function quiz_exists( $quiz_id ) {
+        $quiz_id = intval( $quiz_id );
+
+        if ( ! $quiz_id ) {
+            return false;
+        }
+
+        $quiz = get_post( $quiz_id );
+
+        return $quiz && 'sfwd-quiz' === $quiz->post_type && 'trash' !== $quiz->post_status;
+    }
+
+    private function remove_quiz_from_steps( $steps, $quiz_id ) {
+        if ( ! is_array( $steps ) ) {
+            return $steps;
+        }
+
+        $quiz_id = intval( $quiz_id );
+
+        foreach ( $steps as $key => $value ) {
+            $key_matches   = intval( $key ) === $quiz_id;
+            $value_matches = ! is_array( $value ) && intval( $value ) === $quiz_id;
+
+            if ( $key_matches || $value_matches ) {
+                unset( $steps[ $key ] );
+                continue;
+            }
+
+            if ( is_array( $value ) ) {
+                $updated = $this->remove_quiz_from_steps( $value, $quiz_id );
+
+                if ( empty( $updated ) ) {
+                    unset( $steps[ $key ] );
+                } else {
+                    $steps[ $key ] = $updated;
+                }
+            }
+        }
+
+        return $steps;
     }
 
     private function append_quiz_to_course_steps( $course_id, $quiz_id ) {

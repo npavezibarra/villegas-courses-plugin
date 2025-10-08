@@ -7,6 +7,69 @@ if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
     require_once plugin_dir_path( __FILE__ ) . '../../classes/class-course-quiz-helper.php';
 }
 
+if ( ! function_exists( 'villegas_course_checklist_quiz_exists' ) ) {
+    /**
+     * Determine whether the provided quiz ID references a valid LearnDash quiz.
+     *
+     * @param int $quiz_id Quiz post ID.
+     *
+     * @return bool True when the quiz exists and is not trashed.
+     */
+    function villegas_course_checklist_quiz_exists( $quiz_id ) {
+        $quiz_id = absint( $quiz_id );
+        if ( ! $quiz_id ) {
+            return false;
+        }
+
+        $quiz = get_post( $quiz_id );
+        if ( ! $quiz || 'sfwd-quiz' !== $quiz->post_type ) {
+            return false;
+        }
+
+        return 'trash' !== $quiz->post_status;
+    }
+}
+
+if ( ! function_exists( 'villegas_course_checklist_remove_quiz_from_steps' ) ) {
+    /**
+     * Remove a quiz reference from the LearnDash course steps array.
+     *
+     * @param mixed $steps    Steps structure.
+     * @param int   $quiz_id  Quiz post ID to remove.
+     *
+     * @return mixed Updated steps structure.
+     */
+    function villegas_course_checklist_remove_quiz_from_steps( $steps, $quiz_id ) {
+        if ( ! is_array( $steps ) ) {
+            return $steps;
+        }
+
+        $quiz_id = absint( $quiz_id );
+
+        foreach ( $steps as $key => $value ) {
+            $key_matches   = absint( $key ) === $quiz_id;
+            $value_matches = ! is_array( $value ) && absint( $value ) === $quiz_id;
+
+            if ( $key_matches || $value_matches ) {
+                unset( $steps[ $key ] );
+                continue;
+            }
+
+            if ( is_array( $value ) ) {
+                $updated = villegas_course_checklist_remove_quiz_from_steps( $value, $quiz_id );
+
+                if ( empty( $updated ) ) {
+                    unset( $steps[ $key ] );
+                } else {
+                    $steps[ $key ] = $updated;
+                }
+            }
+        }
+
+        return $steps;
+    }
+}
+
 if ( ! function_exists( 'villegas_course_checklist_find_final_quiz_id' ) ) {
     /**
      * Recursively search LearnDash course steps for the first quiz ID.
@@ -21,7 +84,7 @@ if ( ! function_exists( 'villegas_course_checklist_find_final_quiz_id' ) ) {
         }
 
         foreach ( $steps as $key => $value ) {
-            // Some course step arrays store quiz IDs as the key, others in nested arrays.
+            // Some course step arrays store quiz IDs as the key, others in nested arrays or as numeric values.
             if ( is_numeric( $key ) ) {
                 $quiz_id = absint( $key );
                 if ( $quiz_id && 'sfwd-quiz' === get_post_type( $quiz_id ) ) {
@@ -32,6 +95,11 @@ if ( ! function_exists( 'villegas_course_checklist_find_final_quiz_id' ) ) {
             if ( is_array( $value ) ) {
                 $quiz_id = villegas_course_checklist_find_final_quiz_id( $value );
                 if ( $quiz_id ) {
+                    return $quiz_id;
+                }
+            } elseif ( is_numeric( $value ) ) {
+                $quiz_id = absint( $value );
+                if ( $quiz_id && 'sfwd-quiz' === get_post_type( $quiz_id ) ) {
                     return $quiz_id;
                 }
             }
@@ -176,18 +244,72 @@ function villegas_render_course_checklist_page() {
                         $final_quiz_id = 0;
                         $product_id    = 0;
 
+                        $ld_steps = null;
+
                         if ( class_exists( 'CourseQuizMetaHelper' ) ) {
                             $first_quiz_id = absint( CourseQuizMetaHelper::getFirstQuizId( $course_id ) );
                             $final_quiz_id = absint( CourseQuizMetaHelper::getFinalQuizId( $course_id ) );
                         }
 
+                        if ( $first_quiz_id && ! villegas_course_checklist_quiz_exists( $first_quiz_id ) ) {
+                            delete_post_meta( $course_id, '_first_quiz_id' );
+                            $first_quiz_id = 0;
+                        }
+
+                        if ( $final_quiz_id && ! villegas_course_checklist_quiz_exists( $final_quiz_id ) ) {
+                            delete_post_meta( $course_id, '_final_quiz_id' );
+                            $final_quiz_id = 0;
+                        }
+
                         if ( ! $first_quiz_id ) {
-                            $first_quiz_id = absint( get_post_meta( $course_id, '_first_quiz_id', true ) );
+                            $first_meta = absint( get_post_meta( $course_id, '_first_quiz_id', true ) );
+
+                            if ( $first_meta && villegas_course_checklist_quiz_exists( $first_meta ) ) {
+                                $first_quiz_id = $first_meta;
+                            } elseif ( $first_meta ) {
+                                delete_post_meta( $course_id, '_first_quiz_id' );
+                            }
                         }
 
                         if ( ! $final_quiz_id ) {
-                            $ld_steps      = get_post_meta( $course_id, 'ld_course_steps', true );
-                            $final_quiz_id = absint( villegas_course_checklist_find_final_quiz_id( $ld_steps ) );
+                            if ( ! is_array( $ld_steps ) ) {
+                                $ld_steps = get_post_meta( $course_id, 'ld_course_steps', true );
+                            }
+
+                            if ( is_array( $ld_steps ) ) {
+                                $original_steps = $ld_steps;
+
+                                while ( true ) {
+                                    $candidate = absint( villegas_course_checklist_find_final_quiz_id( $ld_steps ) );
+
+                                    if ( ! $candidate ) {
+                                        $final_quiz_id = 0;
+                                        break;
+                                    }
+
+                                    if ( villegas_course_checklist_quiz_exists( $candidate ) ) {
+                                        $final_quiz_id = $candidate;
+                                        break;
+                                    }
+
+                                    $updated_steps = villegas_course_checklist_remove_quiz_from_steps( $ld_steps, $candidate );
+
+                                    if ( $updated_steps === $ld_steps ) {
+                                        $final_quiz_id = 0;
+                                        break;
+                                    }
+
+                                    $ld_steps = $updated_steps;
+                                }
+
+                                if ( $ld_steps !== $original_steps ) {
+                                    if ( empty( $ld_steps ) ) {
+                                        delete_post_meta( $course_id, 'ld_course_steps' );
+                                    } else {
+                                        update_post_meta( $course_id, 'ld_course_steps', $ld_steps );
+                                    }
+                                }
+                            }
                         }
 
                         if ( function_exists( 'villegas_get_course_product_id' ) ) {
