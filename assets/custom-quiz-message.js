@@ -23,23 +23,54 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 jQuery(document).on('learndash-quiz-finished', function () {
-    if (typeof quizData !== 'undefined' && quizData.type === 'final') {
-        var finalQuizNonce = quizData.finalQuizNonce || '';
-        var ajaxConfig = window.villegasAjax || {};
-        var ajaxUrl = ajaxConfig.ajaxUrl || '';
+    if (typeof quizData === 'undefined') {
+        return;
+    }
 
-        if (!finalQuizNonce || !ajaxUrl) {
+    var ajaxConfig = window.villegasAjax || {};
+    var ajaxUrl = ajaxConfig.ajaxUrl || window.ajaxurl || '';
+
+    if (!ajaxUrl) {
+        console.error('No se pudo determinar la URL de AJAX para enviar los correos de quiz.');
+        return;
+    }
+
+    var correctAnswers = parseInt(jQuery('.wpProQuiz_correct_answer').text(), 10);
+    var totalQuestions = parseInt(jQuery('.total-questions').text(), 10);
+
+    if (isNaN(correctAnswers) || totalQuestions <= 0) {
+        return;
+    }
+
+    var percentage = Math.round((correctAnswers / totalQuestions) * 100);
+
+    if (quizData.type === 'first') {
+        var firstQuizNonce = quizData.firstQuizNonce || '';
+
+        if (!firstQuizNonce) {
+            console.error('Falta el nonce para enviar el correo del First Quiz.');
+            return;
+        }
+
+        jQuery.post(ajaxUrl, {
+            action: 'villegas_send_first_quiz_email',
+            quiz_id: quizData.quizId,
+            user_id: quizData.userId || 0,
+            quiz_percentage: percentage,
+            nonce: firstQuizNonce
+        }).fail(function (response) {
+            console.error('Error al enviar correo First Quiz:', response);
+        });
+    }
+
+    if (quizData.type === 'final') {
+        var finalQuizNonce = quizData.finalQuizNonce || '';
+
+        if (!finalQuizNonce) {
             console.error('Faltan datos para enviar el correo del Final Quiz. Abortando envío.');
             return;
         }
 
-        var correctAnswers = parseInt(jQuery('.wpProQuiz_correct_answer').text(), 10);
-        var totalQuestions = parseInt(jQuery('.total-questions').text(), 10);
-        if (isNaN(correctAnswers) || totalQuestions <= 0) return;
-
-        var percentage = Math.round((correctAnswers / totalQuestions) * 100);
-
-        // Función que revisa si el handler PHP ya encontrará el intento.
         function intentarEnviar(reintentoCount) {
             if (reintentoCount > 5) {
                 console.error('No se encontró intento tras varios reintentos. Abortando envío.');
@@ -55,17 +86,17 @@ jQuery(document).on('learndash-quiz-finished', function () {
                 if (response.success) {
                     return;
                 } else if (response.data === 'Intento no encontrado') {
-                    setTimeout(function() {
+                    setTimeout(function () {
                         intentarEnviar(reintentoCount + 1);
                     }, 500);
                 } else {
-                    // Otro tipo de error (p.ej. plantilla no encontrada, usuario no existe, etc.)
                     console.error('Error al enviar correo Final Quiz:', response);
                 }
+            }).fail(function (response) {
+                console.error('Error al comunicarse con AJAX del Final Quiz:', response);
             });
         }
 
-        // Iniciamos el primer intento (reintentoCount = 0)
         intentarEnviar(0);
     }
 });

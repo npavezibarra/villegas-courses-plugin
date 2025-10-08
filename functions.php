@@ -8,6 +8,12 @@ if ( ! class_exists( 'PoliteiaCourse' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-course.php';
 }
 
+if ( ! class_exists( 'Villegas_Course' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-course.php';
+}
+
+require_once plugin_dir_path( __FILE__ ) . 'includes/emails.php';
+
 function allow_pending_role_users_access_quiz( $has_access, $post_id, $user_id ) {
     // Get the user's role(s)
     $user = get_userdata( $user_id );

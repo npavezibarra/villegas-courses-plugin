@@ -111,6 +111,10 @@ if ( ! $quiz->isHideResultPoints() ) {
     $average_chart_markup = '';
 
     if ( $quiz_id ) {
+        if ( shortcode_exists( 'villegas_quiz_attempts' ) ) {
+            do_shortcode( sprintf( '[villegas_quiz_attempts id="%d"]', $quiz_id ) );
+        }
+
         $average_chart_markup = do_shortcode( sprintf( '[villegas_quiz_average_score quiz_id="%d" title="%s"]', $quiz_id, esc_attr__( 'Puntaje Promedio', 'villegas-courses' ) ) );
     }
 ?>
