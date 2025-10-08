@@ -305,6 +305,31 @@ function villegas_mensaje_personalizado_intentos($quiz_id, $ignored, $user_id) {
 }
 
 /**
+ * Check whether a WooCommerce product exists and is usable.
+ *
+ * @param int $product_id Product post ID.
+ *
+ * @return bool
+ */
+function villegas_course_product_exists( $product_id ) {
+    $product_id = intval( $product_id );
+
+    if ( ! $product_id ) {
+        return false;
+    }
+
+    $product = get_post( $product_id );
+
+    if ( ! $product || 'product' !== $product->post_type ) {
+        return false;
+    }
+
+    $status = get_post_status( $product_id );
+
+    return ! in_array( $status, array( 'trash', 'auto-draft' ), true );
+}
+
+/**
  * Resolve the WooCommerce product associated with a LearnDash course.
  *
  * @param int $course_id Course post ID.
@@ -322,6 +347,12 @@ function villegas_get_course_product_id( $course_id ) {
     $linked_product = get_post_meta( $course_id, '_linked_woocommerce_product', true );
     if ( $linked_product ) {
         $product_id = intval( $linked_product );
+    }
+
+    if ( $product_id && ! villegas_course_product_exists( $product_id ) ) {
+        delete_post_meta( $course_id, '_linked_woocommerce_product' );
+        delete_post_meta( $course_id, '_related_product' );
+        $product_id = 0;
     }
 
     if ( ! $product_id ) {
@@ -344,6 +375,10 @@ function villegas_get_course_product_id( $course_id ) {
         if ( ! empty( $products ) ) {
             $product_id = intval( $products[0] );
         }
+    }
+
+    if ( $product_id && ! villegas_course_product_exists( $product_id ) ) {
+        $product_id = 0;
     }
 
     return $product_id;

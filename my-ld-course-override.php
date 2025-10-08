@@ -49,6 +49,7 @@ add_filter( 'cron_schedules', function( $schedules ) {
 if ( is_admin() ) {
     require_once plugin_dir_path( __FILE__ ) . 'includes/class-villegas-quiz-email-settings.php';
     Villegas_Quiz_Email_Settings::init();
+    require_once plugin_dir_path( __FILE__ ) . 'includes/admin/class-course-checklist-handler.php';
 }
 
 add_action( 'learndash_quiz_completed', [ 'Villegas_Quiz_Email_Handler', 'on_quiz_completed' ], 10, 2 );
