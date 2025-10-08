@@ -52,6 +52,11 @@ function villegas_render_course_checklist_page() {
     );
     ?>
     <div class="wrap">
+        <style>
+            table.widefat.fixed.striped {
+                max-width: 1000px;
+            }
+        </style>
         <h1><?php esc_html_e( 'Course Checklist', 'villegas-courses' ); ?></h1>
         <table class="widefat fixed striped">
             <thead>
