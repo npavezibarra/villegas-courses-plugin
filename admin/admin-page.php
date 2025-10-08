@@ -26,6 +26,15 @@ function villegas_admin_menu() {
         'villegas-lms-quizzes',
         'villegas_admin_quizzes_page'
     );
+
+    add_submenu_page(
+        'villegas-lms',
+        'Course Checklist',
+        'Course Checklist',
+        'manage_options',
+        'villegas-course-checklist',
+        'villegas_render_course_checklist_page'
+    );
 }
 add_action('admin_menu', 'villegas_admin_menu');
 
