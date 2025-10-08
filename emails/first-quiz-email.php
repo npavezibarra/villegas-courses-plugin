@@ -26,8 +26,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $average_value = null !== $average_score ? (float) $average_score : 0.0;
 
     $subject = sprintf(
-        /* translators: %s: quiz title. */
-        __( '✔️ First Quiz completed: %s', 'villegas-courses' ),
+        __( '✔️ Primer quiz completado: %s', 'villegas-courses' ),
         $debug['quiz_title']
     );
 
@@ -43,9 +42,9 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $is_free_course = in_array( $course_price_type, [ 'free', 'open' ], true );
     $has_access     = $course_id ? Villegas_Course::user_has_access( $course_id, $user->ID ) : false;
 
-    $button_label = __( 'Go to Course', 'villegas-courses' );
+    $button_label = __( 'Ir al curso', 'villegas-courses' );
     $button_url   = $course_url;
-    $button_note  = __( 'Continue with the lessons to prepare for the Final Quiz.', 'villegas-courses' );
+    $button_note  = __( 'Continúa con las lecciones para prepararte para el Quiz Final.', 'villegas-courses' );
 
     if ( ! $is_free_course && ! $has_access ) {
         $product_id = $course_id ? Villegas_Course::get_related_product_id( $course_id ) : 0;
@@ -58,8 +57,8 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
             $button_url = home_url( '/courses/' );
         }
 
-        $button_label = __( 'Buy Course', 'villegas-courses' );
-        $button_note  = __( 'Purchase the course to unlock every lesson and the Final Quiz.', 'villegas-courses' );
+        $button_label = __( 'Comprar curso', 'villegas-courses' );
+        $button_note  = __( 'Compra el curso para desbloquear todas las lecciones y el Quiz Final.', 'villegas-courses' );
     }
 
     $logo_url = '';
@@ -82,42 +81,42 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $average_chart_url = villegas_generate_quickchart_url( $average_value );
 
     $average_caption = null !== $average_score
-        ? sprintf( __( 'Villegas average: %s%%', 'villegas-courses' ), number_format_i18n( round( $average_value ) ) )
-        : __( 'Villegas average: no attempts yet', 'villegas-courses' );
+        ? sprintf( __( 'Promedio Villegas: %s%%', 'villegas-courses' ), number_format_i18n( round( $average_value ) ) )
+        : __( 'Promedio Villegas: aún no hay intentos', 'villegas-courses' );
 
-    $body  = '<div style="background-color:#f6f6f6;padding:32px 0;">';
-    $body .= '<div style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
+    $body  = '<div id="villegas-email-wrapper" style="background-color:#f6f6f6;padding:32px 0;">';
+    $body .= '<div id="villegas-email-card" style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
 
+    $body .= '<div id="villegas-email-encabezado" style="text-align:center;padding:28px 24px 0;">';
     if ( $logo_url ) {
-        $body .= '<div style="text-align:center;padding:28px 24px 0;">';
         $body .= '<img src="' . esc_url( $logo_url ) . '" alt="Villegas" style="max-width:220px;height:auto;">';
-        $body .= '</div>';
     }
-
-    $body .= '<div style="padding:20px 48px 32px;text-align:center;">';
-    $body .= '<p style="margin:0;font-size:12px;color:#6d6d6d;">' . sprintf( esc_html__( 'Completed on %s', 'villegas-courses' ), esc_html( $completion_date ) ) . '</p>';
-    $body .= '<h1 style="margin:12px 0 8px;font-size:26px;color:#111111;">' . sprintf( esc_html__( 'Great job, %s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ) . '</h1>';
-    $body .= '<p style="margin:0;font-size:16px;line-height:1.5;">' . sprintf( esc_html__( 'You completed the First Quiz of %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ) . '</p>';
     $body .= '</div>';
 
-    $body .= '<div style="display:flex;flex-wrap:wrap;gap:32px;justify-content:center;padding:0 48px 32px;border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;">';
+    $body .= '<div id="villegas-email-presentacion" style="padding:20px 48px 32px;text-align:center;">';
+    $body .= '<p style="margin:0;font-size:12px;color:#6d6d6d;">' . sprintf( esc_html__( 'Completado el %s', 'villegas-courses' ), esc_html( $completion_date ) ) . '</p>';
+    $body .= '<h1 style="margin:12px 0 8px;font-size:26px;color:#111111;">' . sprintf( esc_html__( '¡Gran trabajo, %s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ) . '</h1>';
+    $body .= '<p style="margin:0;font-size:16px;line-height:1.5;">' . sprintf( esc_html__( 'Completaste el Primer Quiz de %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ) . '</p>';
+    $body .= '</div>';
+
+    $body .= '<div id="villegas-email-graficas" style="display:flex;flex-wrap:wrap;gap:32px;justify-content:center;padding:0 48px 32px;border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;">';
 
     $body .= '<div style="text-align:center;min-width:220px;">';
-    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Your Score', 'villegas-courses' ) . '</h2>';
-    $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Your score', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
+    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Tu puntaje', 'villegas-courses' ) . '</h2>';
+    $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Tu puntaje', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
     $body .= '<p style="margin-top:12px;font-size:18px;font-weight:600;color:#111111;">' . esc_html( number_format_i18n( round( $user_score ) ) ) . '%</p>';
     $body .= '</div>';
 
     $body .= '<div style="text-align:center;min-width:220px;">';
-    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Villegas Average', 'villegas-courses' ) . '</h2>';
-    $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Villegas average', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
+    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Promedio Villegas', 'villegas-courses' ) . '</h2>';
+    $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Promedio Villegas', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
     $body .= '<p style="margin-top:12px;font-size:15px;color:#444444;">' . esc_html( $average_caption ) . '</p>';
     $body .= '</div>';
 
     $body .= '</div>';
 
-    $body .= '<div style="padding:32px 48px;text-align:center;">';
-    $body .= '<p style="margin:0 0 18px;font-size:15px;color:#333333;">' . esc_html__( 'Every lesson you finish will bring you closer to comparing your progress in the Final Quiz.', 'villegas-courses' ) . '</p>';
+    $body .= '<div id="villegas-email-cta" style="padding:32px 48px;text-align:center;">';
+    $body .= '<p style="margin:0 0 18px;font-size:15px;color:#333333;">' . esc_html__( 'Cada lección completada te acerca a comparar tu progreso en el Quiz Final.', 'villegas-courses' ) . '</p>';
     $body .= '<a href="' . esc_url( $button_url ) . '" style="display:inline-block;background:#000000;color:#ffffff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;">' . esc_html( $button_label ) . '</a>';
     $body .= '<p style="margin-top:16px;font-size:13px;color:#666666;">' . esc_html( $button_note ) . '</p>';
     $body .= '</div>';
