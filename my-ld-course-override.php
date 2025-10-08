@@ -343,7 +343,7 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     $analytics = new QuizAnalytics($quiz_id, get_current_user_id());
     $type      = $analytics->isFirstQuiz() ? 'first' : 'final';
 
-    $first_quiz_nonce = wp_create_nonce( 'enviar_correo_first_quiz' );
+    $first_quiz_nonce = wp_create_nonce( 'villegas_send_first_quiz_email' );
     $final_quiz_nonce = wp_create_nonce( 'enviar_correo_final_quiz' );
 
 
@@ -465,130 +465,6 @@ function el_villegas_override_single_sfwd_quiz($template) {
     return $template; // Fallback to the default template
 }
 
-/* EMAIL FIRST QUIZ */
-
-// Registrar el endpoint AJAX para usuarios logueados
-add_action('wp_ajax_enviar_correo_first_quiz', 'enviar_correo_first_quiz_handler');
-
-function enviar_correo_first_quiz_handler() {
-    check_ajax_referer( 'enviar_correo_first_quiz', 'nonce' );
-
-    if ( ! is_user_logged_in() ) {
-        wp_send_json_error( 'No autorizado' );
-    }
-
-    $req = wp_unslash( $_POST );
-
-    $current_user_id = get_current_user_id();
-    $target_user_id  = isset( $req['user_id'] ) ? (int) $req['user_id'] : 0;
-
-    if ( $target_user_id && $target_user_id !== $current_user_id ) {
-        wp_send_json_error( 'Usuario no autorizado' );
-    }
-
-    global $wpdb;
-
-    // Recibir y sanitizar los datos enviados vía AJAX
-    $quiz_percentage = isset( $req['quiz_percentage'] ) ? (int) $req['quiz_percentage'] : 0;
-    $quiz_id         = isset( $req['quiz_id'] ) ? (int) $req['quiz_id'] : 0;
-    $user_id         = $current_user_id;
-
-    if ( ! $user_id || ! $quiz_id ) {
-        wp_send_json_error( 'Datos faltantes' );
-    }
-
-    // Obtener datos del usuario
-    $user = get_userdata( $user_id );
-    if ( ! $user ) {
-        wp_send_json_error( 'Usuario no encontrado' );
-    }
-    $user_email = $user->user_email;
-    $user_name  = $user->display_name;
-    $quiz_title = get_the_title($quiz_id);
-
-    // Obtener Course ID desde la metadata configurada
-    $course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
-
-    // Verificar acceso al curso
-    $tiene_acceso = $course_id ? sfwd_lms_has_access($course_id, $user_id) : false;
-    $course_title = $course_id ? get_the_title($course_id) : '';
-
-    if ($tiene_acceso) {
-        $boton_url = get_permalink($course_id);
-        $boton_texto = 'Ir al Curso';
-
-        $next_steps_text = '
-        <h3>¿Qué pasos seguir ahora?</h3>
-        <p>Ahora puedes proceder a completar todas las lecciones incluidas en este curso sobre <strong>' . esc_html($course_title) . '</strong>.</p>
-        <p>Una vez finalizadas, estarás listo para realizar la Prueba Final, que reflejará el progreso alcanzado durante el curso.</p>
-        <p>Recuerda que puedes avanzar a tu propio ritmo: algunos estudiantes lo completan en un día, mientras que otros pueden tardar más.</p>';
-    } else {
-        // Buscar el Product ID relacionado
-        $product_id = get_post_meta($course_id, '_linked_woocommerce_product', true);
-
-        if (!$product_id) {
-            // Buscar producto con _related_course que contenga el course_id
-            $args = array(
-                'post_type'      => 'product',
-                'post_status'    => 'publish',
-                'meta_query'     => array(
-                    array(
-                        'key'     => '_related_course',
-                        'value'   => $course_id,
-                        'compare' => 'LIKE',
-                    ),
-                ),
-                'posts_per_page' => 1,
-            );
-            $products = get_posts($args);
-            if (!empty($products)) {
-                $product_id = $products[0]->ID;
-            }
-        }
-
-        // Verifica que el ID sea válido antes de obtener permalink
-        $boton_url = ($product_id && get_post_status($product_id) === 'publish') ? get_permalink($product_id) : site_url();
-
-        $boton_texto = 'Comprar Curso';
-
-        $next_steps_text = '
-        <h3>Continúa tu aprendizaje</h3>
-        <p>Ya has completado la Prueba Inicial, ahora puedes comprar el curso y acceder al contenido exclusivo sobre <strong>' . esc_html($course_title) . '</strong>.</p>
-        <p>Al finalizarlo, podrás rendir la Prueba Final y comparar tu progreso respecto a tu evaluación inicial.</p>';
-    }
-
-
-    // Cargar el contenido del correo desde el archivo de plantilla
-    $email_file = plugin_dir_path(__FILE__) . 'emails/first-quiz-email.php';
-    if ( file_exists($email_file) ) {
-        $email_content = file_get_contents($email_file);
-    } else {
-        $email_content = '<p>Has finalizado el First Quiz.</p>';
-    }
-
-    // Reemplazar los marcadores con los valores reales
-    $email_content = str_replace('{{user_name}}', esc_html($user_name), $email_content);
-    $email_content = str_replace('{{quiz_name}}', esc_html($quiz_title), $email_content);
-    $email_content = str_replace('{{quiz_percentage}}', esc_html($quiz_percentage), $email_content);
-    $email_content = str_replace('{{course_url}}', esc_url($boton_url), $email_content);
-    $email_content = str_replace('{{boton_texto}}', esc_html($boton_texto), $email_content);
-    $email_content = str_replace('{{next_steps_text}}', $next_steps_text, $email_content);
-
-    $subject = 'Has finalizado el First Quiz';
-    $headers = array('Content-Type: text/html; charset=UTF-8');
-
-    // Enviar el correo
-    $sent = wp_mail($user_email, $subject, $email_content, $headers);
-    if ( $sent ) {
-        wp_send_json_success('Correo enviado');
-    } else {
-        wp_send_json_error('Error al enviar el correo');
-    }
-
-    wp_die();
-}
-
-
 /* --------------------------------------------------------------------------
  *  FINAL QUIZ – ENVÍO DE CORREO CON PLANTILLA (una vez por intento)
  * --------------------------------------------------------------------------*/
@@ -602,130 +478,79 @@ function handle_enviar_correo_final_quiz() {
         }
 
         $req             = wp_unslash( $_POST );
-        $quiz_id         = isset( $req['quiz_id'] )         ? (int) $req['quiz_id']         : 0;
-        $requested_user  = isset( $req['user_id'] )         ? (int) $req['user_id']         : 0;
+        $quiz_id         = isset( $req['quiz_id'] ) ? (int) $req['quiz_id'] : 0;
+        $requested_user  = isset( $req['user_id'] ) ? (int) $req['user_id'] : 0;
         $current_user_id = get_current_user_id();
 
         if ( $requested_user && $requested_user !== $current_user_id ) {
                 wp_send_json_error( 'Usuario no autorizado' );
         }
 
-        $user_id         = $current_user_id;
-        $quiz_percentage = isset( $req['quiz_percentage'] ) ? (int) $req['quiz_percentage'] : 0;
+        $user_id      = $current_user_id;
+        $quiz_percent = isset( $req['quiz_percentage'] ) ? (float) $req['quiz_percentage'] : null;
 
         if ( ! $quiz_id || ! $user_id ) {
                 wp_send_json_error( 'Datos incompletos' );
         }
 
-	global $wpdb;
+        global $wpdb;
 
-	// Obtener el último intento
-	$attempt = $wpdb->get_row(
-		$wpdb->prepare(
-			"SELECT activity_id, activity_completed
-			 FROM {$wpdb->prefix}learndash_user_activity
-			 WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'
-			 ORDER BY activity_completed DESC LIMIT 1",
-			$user_id,
-			$quiz_id
-		),
-		ARRAY_A
-	);
+        $attempt = $wpdb->get_row(
+                $wpdb->prepare(
+                        "SELECT activity_id, activity_completed
+                         FROM {$wpdb->prefix}learndash_user_activity
+                         WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'
+                         ORDER BY activity_completed DESC LIMIT 1",
+                        $user_id,
+                        $quiz_id
+                ),
+                ARRAY_A
+        );
 
-	if ( ! $attempt || ! isset( $attempt['activity_id'] ) ) {
-		wp_send_json_error( 'Intento no encontrado' );
-	}
+        if ( ! $attempt || empty( $attempt['activity_id'] ) ) {
+                wp_send_json_error( 'Intento no encontrado' );
+        }
 
-	$activity_id     = (int) $attempt['activity_id'];
-	$completed_ts    = (int) $attempt['activity_completed'];
-	$completion_date = $completed_ts ? date_i18n( 'j \d\e F \d\e Y', $completed_ts ) : '';
+        $activity_id = (int) $attempt['activity_id'];
+        $key         = "villegas_final_quiz_email_{$activity_id}";
 
-	// ---------- Protección única por intento ----------
-    $key = "villegas_final_quiz_email_{$activity_id}";
+        if ( get_transient( $key ) ) {
+                wp_send_json_success( 'Correo ya enviado para este intento' );
+        }
 
-    // Si ya existe el transitorio, no enviar
-    if ( get_transient( $key ) ) {
-        wp_send_json_success( 'Correo ya enviado para este intento' );
-    }
-    
+        $user = get_userdata( $user_id );
 
-	// ---------- Usuario ----------
-	$user = get_userdata( $user_id );
-	if ( ! $user ) {
-		wp_send_json_error( 'Usuario no encontrado' );
-	}
-	$user_email = $user->user_email;
-	$user_name  = $user->display_name;
+        if ( ! $user ) {
+                wp_send_json_error( 'Usuario no encontrado' );
+        }
 
-	// ---------- Datos del First Quiz ----------
-	if ( ! class_exists( 'QuizAnalytics' ) ) {
-		require_once plugin_dir_path( __FILE__ ) . 'classes/class-quiz-analytics.php';
-	}
-        $analytics         = new QuizAnalytics( $quiz_id, $user_id );
-        $first_quiz_id     = $analytics->getFirstQuiz();
-        $first_quiz_title  = get_the_title( $first_quiz_id );
-        $first_perf        = $analytics->getFirstQuizPerformance();
-	$first_pct         = is_numeric( $first_perf['percentage'] ) ? (int) round( $first_perf['percentage'] ) : 0;
-	//$first_quiz_date   = isset( $first_perf['date'] ) && strtotime( $first_perf['date'] ) ? date_i18n( 'j \d\e F \d\e Y', strtotime( $first_perf['date'] ) ) : '';
-    $first_ts         = $analytics->getFirstQuizTimestamp();
-    $first_quiz_date  = $first_ts ? date_i18n( 'j \d\e F \d\e Y', $first_ts ) : '';
+        $email = villegas_get_final_quiz_email_content(
+                [
+                        'quiz'       => $quiz_id,
+                        'percentage' => $quiz_percent,
+                ],
+                $user
+        );
 
+        if ( empty( $email['subject'] ) || empty( $email['body'] ) ) {
+                wp_send_json_error( 'Plantilla de correo no disponible' );
+        }
 
-    // ---------- Cálculos comparativos ----------
-    $variation = $quiz_percentage - $first_pct;
-    $arrow     = $variation >= 0 ? '▲' : '▼';
-    $days      = 0;
-    $first_ts = $analytics->getFirstQuizTimestamp();
-    if ( $first_ts && $completed_ts ) {
-        $dias_raw = floor( ( $completed_ts - $first_ts ) / DAY_IN_SECONDS );
-        $days     = max( 1, $dias_raw );
-    }
+        $sent = wp_mail(
+                $user->user_email,
+                $email['subject'],
+                $email['body'],
+                [ 'Content-Type: text/html; charset=UTF-8' ]
+        );
 
-    $days_label = $days === 1 ? 'día' : 'días';
+        if ( $sent ) {
+                set_transient( $key, 1, HOUR_IN_SECONDS );
+                wp_send_json_success( 'Correo enviado' );
+        }
 
-	// ---------- Estilo barras ----------
-	$final_bar_style = $quiz_percentage > 0 ? "width: {$quiz_percentage}%; background-color: #ff9800;" : "width: 0%;" ;
-	$first_bar_style = $first_pct > 0 ? "width: {$first_pct}%; background-color: #ff9800;" : "width: 0%;" ;
-
-	// ---------- Preparar plantilla ----------
-        $course_id    = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
-        $course_title = $course_id ? get_the_title( $course_id ) : '';
-	$subject      = '¡Has completado el Final Quiz!';
-	$headers      = [ 'Content-Type: text/html; charset=UTF-8' ];
-    $quiz_title   = get_the_title( $quiz_id );
-
-
-	$email_file = plugin_dir_path( __FILE__ ) . 'emails/final-quiz-email.php';
-	if ( ! file_exists( $email_file ) ) {
-		wp_send_json_error( 'Plantilla de correo no encontrada' );
-	}
-	$email_content = file_get_contents( $email_file );
-
-	// Reemplazos dinámicos
-	$email_content = str_replace( '{{user_name}}',              esc_html( $user_name ),         $email_content );
-    $email_content = str_replace( '{{quiz_title}}', esc_html( $quiz_title ), $email_content );
-	$email_content = str_replace( '{{completion_date}}',        esc_html( $completion_date ),   $email_content );
-	$email_content = str_replace( '{{quiz_percentage}}',        esc_html( $quiz_percentage ),   $email_content );
-	$email_content = str_replace( '{{final_bar_style}}',        $final_bar_style,               $email_content );
-	$email_content = str_replace( '{{first_quiz_title}}',       esc_html( $first_quiz_title ),  $email_content );
-	$email_content = str_replace( '{{first_quiz_percentage}}',  esc_html( $first_pct ),         $email_content );
-	$email_content = str_replace( '{{first_quiz_date}}',        esc_html( $first_quiz_date ),   $email_content );
-	$email_content = str_replace( '{{first_bar_style}}',        $first_bar_style,               $email_content );
-	$email_content = str_replace( '{{knowledge_variation}}',    abs( $variation ),              $email_content );
-	$email_content = str_replace( '{{variation_arrow}}',        esc_html( $arrow ),             $email_content );
-	$email_content = str_replace( '{{days_to_complete}}',       esc_html( $days ),              $email_content );
-	$email_content = str_replace( '{{days_label}}',             esc_html( $days_label ),        $email_content );
-
-	// ---------- Enviar correo ----------
-	$sent = wp_mail( $user_email, $subject, $email_content, $headers );
-
-	if ( $sent ) {
-		set_transient( $key, 1, 3600 ); // Guardamos el envío durante 1 hora
-		wp_send_json_success( 'Correo enviado' );
-	} else {
-		wp_send_json_error( 'Error al enviar el correo' );
-	}
+        wp_send_json_error( 'Error al enviar el correo' );
 }
+
 
 
 /* ENQUEUE JAVASCRIPR PUNTAJE PRIVADO */
