@@ -41,6 +41,40 @@ if ( ! function_exists( 'villegas_course_checklist_find_final_quiz_id' ) ) {
     }
 }
 
+if ( ! function_exists( 'villegas_course_checklist_render_dropdown' ) ) {
+    /**
+     * Render a dropdown button with the provided actions.
+     *
+     * @param array $actions Dropdown action definitions.
+     */
+    function villegas_course_checklist_render_dropdown( $actions ) {
+        if ( empty( $actions ) ) {
+            return;
+        }
+
+        echo '<div class="villegas-dropdown">';
+        echo '<button type="button" class="button button-primary create-dropdown" aria-haspopup="true" aria-expanded="false">' . esc_html__( 'CREATE', 'villegas-courses' ) . '</button>';
+        echo '<ul class="dropdown-menu" role="menu">';
+
+        foreach ( $actions as $action ) {
+            $class      = isset( $action['class'] ) ? $action['class'] : '';
+            $attributes = isset( $action['attributes'] ) && is_array( $action['attributes'] ) ? $action['attributes'] : [];
+
+            $attr_html = '';
+            foreach ( $attributes as $attr_key => $attr_value ) {
+                $attr_html .= sprintf( ' %s="%s"', esc_attr( $attr_key ), esc_attr( $attr_value ) );
+            }
+
+            echo '<li role="presentation">';
+            echo '<button type="button" class="dropdown-item ' . esc_attr( $class ) . '" role="menuitem"' . $attr_html . '>' . esc_html( $action['label'] ) . '</button>';
+            echo '</li>';
+        }
+
+        echo '</ul>';
+        echo '</div>';
+    }
+}
+
 /**
  * Render the Course Checklist admin page.
  */
@@ -50,11 +84,74 @@ function villegas_render_course_checklist_page() {
     $courses = $wpdb->get_results(
         "SELECT ID, post_title FROM {$wpdb->posts} WHERE post_type = 'sfwd-courses' AND post_status = 'publish' ORDER BY post_title ASC"
     );
+
+    wp_enqueue_script(
+        'villegas-course-checklist',
+        plugin_dir_url( __FILE__ ) . '../js/course-checklist.js',
+        [ 'jquery' ],
+        '1.0.0',
+        true
+    );
+
+    wp_localize_script(
+        'villegas-course-checklist',
+        'villegas_checklist',
+        [
+            'nonce'   => wp_create_nonce( 'villegas_checklist_nonce' ),
+            'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+            'i18n'    => [
+                'pricePrompt' => __( 'Enter product price (integer, no commas or dots):', 'villegas-courses' ),
+                'priceError'  => __( 'Please enter a valid integer price greater than zero.', 'villegas-courses' ),
+                'ajaxError'   => __( 'An unexpected error occurred. Please try again.', 'villegas-courses' ),
+            ],
+        ]
+    );
     ?>
     <div class="wrap">
         <style>
             table.widefat.fixed.striped {
                 max-width: 1000px;
+            }
+
+            .villegas-dropdown {
+                position: relative;
+                display: inline-block;
+            }
+
+            .villegas-dropdown .dropdown-menu {
+                position: absolute;
+                top: 100%;
+                left: 0;
+                z-index: 100;
+                display: none;
+                margin: 4px 0 0;
+                padding: 4px 0;
+                min-width: 180px;
+                background: #fff;
+                border: 1px solid #c3c4c7;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+                list-style: none;
+            }
+
+            .villegas-dropdown .dropdown-menu.show {
+                display: block;
+            }
+
+            .villegas-dropdown .dropdown-item {
+                display: block;
+                width: 100%;
+                padding: 6px 12px;
+                text-align: left;
+                background: transparent;
+                border: none;
+                color: #1d2327;
+                cursor: pointer;
+            }
+
+            .villegas-dropdown .dropdown-item:hover,
+            .villegas-dropdown .dropdown-item:focus {
+                background-color: #f0f0f1;
+                outline: none;
             }
         </style>
         <h1><?php esc_html_e( 'Course Checklist', 'villegas-courses' ); ?></h1>
@@ -112,21 +209,81 @@ function villegas_render_course_checklist_page() {
                                 <?php if ( $first_quiz_id ) : ?>
                                     <?php echo esc_html( $first_quiz_id ); ?>
                                 <?php else : ?>
-                                    <a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=sfwd-quiz' ) ); ?>"><?php esc_html_e( 'CREATE', 'villegas-courses' ); ?></a>
+                                    <?php
+                                    $first_quiz_actions = [
+                                        [
+                                            'label'      => __( 'Create New', 'villegas-courses' ),
+                                            'class'      => 'action-create-quiz',
+                                            'attributes' => [
+                                                'data-course-id' => $course_id,
+                                                'data-quiz-type' => 'first',
+                                            ],
+                                        ],
+                                    ];
+
+                                    if ( $final_quiz_id ) {
+                                        $first_quiz_actions[] = [
+                                            'label'      => __( 'Copy Opposite Quiz', 'villegas-courses' ),
+                                            'class'      => 'action-clone-quiz',
+                                            'attributes' => [
+                                                'data-course-id' => $course_id,
+                                                'data-quiz-type' => 'first',
+                                            ],
+                                        ];
+                                    }
+
+                                    villegas_course_checklist_render_dropdown( $first_quiz_actions );
+                                    ?>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ( $final_quiz_id ) : ?>
                                     <?php echo esc_html( $final_quiz_id ); ?>
                                 <?php else : ?>
-                                    <a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=sfwd-quiz' ) ); ?>"><?php esc_html_e( 'CREATE', 'villegas-courses' ); ?></a>
+                                    <?php
+                                    $final_quiz_actions = [
+                                        [
+                                            'label'      => __( 'Create New', 'villegas-courses' ),
+                                            'class'      => 'action-create-quiz',
+                                            'attributes' => [
+                                                'data-course-id' => $course_id,
+                                                'data-quiz-type' => 'final',
+                                            ],
+                                        ],
+                                    ];
+
+                                    if ( $first_quiz_id ) {
+                                        $final_quiz_actions[] = [
+                                            'label'      => __( 'Copy Opposite Quiz', 'villegas-courses' ),
+                                            'class'      => 'action-clone-quiz',
+                                            'attributes' => [
+                                                'data-course-id' => $course_id,
+                                                'data-quiz-type' => 'final',
+                                            ],
+                                        ];
+                                    }
+
+                                    villegas_course_checklist_render_dropdown( $final_quiz_actions );
+                                    ?>
                                 <?php endif; ?>
                             </td>
                             <td>
                                 <?php if ( $product_id ) : ?>
                                     <?php echo esc_html( $product_id ); ?>
                                 <?php else : ?>
-                                    <a class="button button-primary" href="<?php echo esc_url( admin_url( 'post-new.php?post_type=product' ) ); ?>"><?php esc_html_e( 'CREATE', 'villegas-courses' ); ?></a>
+                                    <?php
+                                    villegas_course_checklist_render_dropdown(
+                                        [
+                                            [
+                                                'label'      => __( 'Create Product', 'villegas-courses' ),
+                                                'class'      => 'action-create-product',
+                                                'attributes' => [
+                                                    'data-course-id' => $course_id,
+                                                ],
+                                            ],
+                                        ]
+                                    );
+                                    ?>
                                 <?php endif; ?>
                             </td>
                         </tr>
