@@ -61,29 +61,12 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         $button_note  = __( 'Compra el curso para desbloquear todas las lecciones y el Quiz Final.', 'villegas-courses' );
     }
 
-    $plugin_root   = dirname( __DIR__ );
-    $logo_relative = 'assets/jpg/academia-email-logo.jpeg';
-    $logo_path     = trailingslashit( $plugin_root ) . $logo_relative;
+    // Always use plugin-hosted logo to ensure deliverability in emails
+    $logo_url = plugins_url( 'assets/jpg/academia-email-logo.jpeg', VILLEGAS_COURSES_PLUGIN_FILE );
 
-    if ( file_exists( $logo_path ) ) {
-        $base_file = file_exists( $plugin_root . '/functions.php' ) ? $plugin_root . '/functions.php' : __FILE__;
-        $logo_url  = plugins_url( $logo_relative, $base_file );
-    } else {
-        $logo_url = '';
-
-        if ( function_exists( 'get_theme_mod' ) ) {
-            $logo_id = (int) get_theme_mod( 'custom_logo' );
-            if ( $logo_id ) {
-                $logo_src = wp_get_attachment_image_src( $logo_id, 'full' );
-                if ( $logo_src ) {
-                    $logo_url = $logo_src[0];
-                }
-            }
-        }
-
-        if ( ! $logo_url ) {
-            $logo_url = get_site_icon_url( 192 );
-        }
+    // Fallback if the file is missing or unreadable
+    if ( ! $logo_url ) {
+        $logo_url = get_site_icon_url( 192 );
     }
 
     $user_chart_url    = villegas_generate_quickchart_url( $user_score );
@@ -97,7 +80,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     $body .= '<div id="villegas-email-encabezado" style="text-align:center;padding:28px 24px 0;">';
     if ( $logo_url ) {
-        $body .= '<img src="' . esc_url( $logo_url ) . '" alt="Villegas" style="width:100%;max-width:720px;height:200px;object-fit:cover;object-position:center;display:block;margin:0 auto;">';
+        $body .= '<img src="' . esc_url( $logo_url ) . '" alt="Academia Villegas" style="width:100%;max-width:720px;height:200px;object-fit:cover;object-position:center;display:block;margin:0 auto;">';
     }
     $body .= '</div>';
 
