@@ -98,6 +98,113 @@ if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
     }
 }
 
+if ( ! function_exists( 'villegas_get_latest_quiz_attempt_from_usermeta' ) ) {
+    function villegas_get_latest_quiz_attempt_from_usermeta( int $user_id, int $quiz_id ): array {
+        $user_id = absint( $user_id );
+        $quiz_id = absint( $quiz_id );
+
+        if ( ! $user_id || ! $quiz_id ) {
+            return [ 'percentage' => null, 'timestamp' => null ];
+        }
+
+        $raw_meta = get_user_meta( $user_id, '_sfwd-quizzes', true );
+
+        if ( empty( $raw_meta ) ) {
+            return [ 'percentage' => null, 'timestamp' => null ];
+        }
+
+        if ( is_string( $raw_meta ) ) {
+            $raw_meta = maybe_unserialize( $raw_meta );
+        }
+
+        if ( ! is_array( $raw_meta ) ) {
+            return [ 'percentage' => null, 'timestamp' => null ];
+        }
+
+        $latest_attempt = [
+            'percentage' => null,
+            'timestamp'  => null,
+        ];
+
+        foreach ( $raw_meta as $attempt ) {
+            if ( ! is_array( $attempt ) ) {
+                continue;
+            }
+
+            $candidate_ids = [];
+
+            if ( isset( $attempt['quiz'] ) ) {
+                $candidate_ids[] = absint( $attempt['quiz'] );
+            }
+
+            if ( isset( $attempt['quiz_post_id'] ) ) {
+                $candidate_ids[] = absint( $attempt['quiz_post_id'] );
+            }
+
+            if ( isset( $attempt['quiz_id'] ) ) {
+                $candidate_ids[] = absint( $attempt['quiz_id'] );
+            }
+
+            if ( isset( $attempt['quiz_pro_id'] ) ) {
+                $candidate_ids[] = absint( $attempt['quiz_pro_id'] );
+            }
+
+            if ( isset( $attempt['pro_quiz_id'] ) ) {
+                $candidate_ids[] = absint( $attempt['pro_quiz_id'] );
+            }
+
+            $candidate_ids = array_filter( $candidate_ids );
+
+            if ( empty( $candidate_ids ) || ! in_array( $quiz_id, $candidate_ids, true ) ) {
+                continue;
+            }
+
+            $timestamp = isset( $attempt['time'] ) ? (int) $attempt['time'] : 0;
+
+            $percentage = null;
+
+            if ( isset( $attempt['percentage'] ) ) {
+                $percentage = villegas_normalize_percentage_value( $attempt['percentage'] );
+            }
+
+            if ( null === $percentage && isset( $attempt['score'], $attempt['count'] ) ) {
+                $total_questions = (float) $attempt['count'];
+
+                if ( $total_questions > 0 ) {
+                    $percentage = ( (float) $attempt['score'] / $total_questions ) * 100;
+                }
+            }
+
+            if ( null === $percentage && isset( $attempt['points'], $attempt['total_points'] ) ) {
+                $total_points = (float) $attempt['total_points'];
+
+                if ( $total_points > 0 ) {
+                    $percentage = ( (float) $attempt['points'] / $total_points ) * 100;
+                }
+            }
+
+            $percentage = null !== $percentage ? max( 0.0, min( 100.0, (float) $percentage ) ) : null;
+
+            $should_replace = false;
+
+            if ( null === $latest_attempt['timestamp'] ) {
+                $should_replace = true;
+            } elseif ( null !== $percentage && null === $latest_attempt['percentage'] ) {
+                $should_replace = true;
+            } elseif ( $timestamp > (int) $latest_attempt['timestamp'] ) {
+                $should_replace = null === $latest_attempt['percentage'] || $percentage !== null;
+            }
+
+            if ( $should_replace ) {
+                $latest_attempt['percentage'] = $percentage;
+                $latest_attempt['timestamp']  = $timestamp ?: null;
+            }
+        }
+
+        return $latest_attempt;
+    }
+}
+
 if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
     function villegas_get_latest_quiz_attempt( int $user_id, int $quiz_id ): array {
         global $wpdb;
@@ -158,7 +265,7 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
         }
 
         if ( empty( $attempt ) || empty( $attempt['activity_id'] ) ) {
-            return [ 'percentage' => null, 'timestamp' => null ];
+            return villegas_get_latest_quiz_attempt_from_usermeta( $user_id, $quiz_id );
         }
 
         $percentage = $wpdb->get_var(
@@ -172,10 +279,24 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
             )
         );
 
-        return [
+        $result = [
             'percentage' => villegas_normalize_percentage_value( $percentage ),
             'timestamp'  => ! empty( $attempt['activity_completed'] ) ? (int) $attempt['activity_completed'] : null,
         ];
+
+        if ( null === $result['percentage'] || null === $result['timestamp'] ) {
+            $meta_attempt = villegas_get_latest_quiz_attempt_from_usermeta( $user_id, $quiz_id );
+
+            if ( null === $result['percentage'] && null !== $meta_attempt['percentage'] ) {
+                $result['percentage'] = $meta_attempt['percentage'];
+            }
+
+            if ( ( null === $result['timestamp'] || 0 === $result['timestamp'] ) && null !== $meta_attempt['timestamp'] ) {
+                $result['timestamp'] = $meta_attempt['timestamp'];
+            }
+        }
+
+        return $result;
     }
 }
 

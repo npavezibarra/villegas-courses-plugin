@@ -30,6 +30,14 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         $current_percentage = villegas_normalize_percentage_value( $debug['first_attempt']['percentage'] );
     }
 
+    if ( null === $current_percentage && $quiz_post_id ) {
+        $meta_attempt = villegas_get_latest_quiz_attempt_from_usermeta( $user->ID, $quiz_post_id );
+
+        if ( null !== $meta_attempt['percentage'] ) {
+            $current_percentage = villegas_normalize_percentage_value( $meta_attempt['percentage'] );
+        }
+    }
+
     $user_score = null !== $current_percentage ? $current_percentage : 0.0;
     $user_score = max( 0.0, min( 100.0, $user_score ) );
 
