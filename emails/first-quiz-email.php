@@ -61,12 +61,37 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         $button_note  = __( 'Compra el curso para desbloquear todas las lecciones y el Quiz Final.', 'villegas-courses' );
     }
 
-    // Force absolute HTTPS logo URL for email delivery.
-    $logo_url = 'https://elvillegas.cl/wp-content/plugins/villegas-courses-plugin/assets/jpg/academia-email-logo.jpeg';
+    // Prefer externally accessible HTTPS assets so email clients can always load the header image.
+    $logo_candidates = [
+        'https://elvillegas.cl/wp-content/plugins/villegas-courses-plugin/assets/jpg/academia-email-logo.jpeg',
+        'https://raw.githubusercontent.com/npavezibarra/villegas-courses-plugin/main/assets/jpg/academia-email-logo.jpeg',
+    ];
 
-    // Fallback if production URL is unavailable.
-    if ( ! @fopen( $logo_url, 'r' ) ) {
-        $logo_url = plugins_url( 'assets/jpg/academia-email-logo.jpeg', VILLEGAS_COURSES_PLUGIN_FILE );
+    $logo_url = '';
+
+    if ( function_exists( 'wp_remote_head' ) ) {
+        foreach ( $logo_candidates as $candidate_url ) {
+            $response = wp_remote_head( $candidate_url, [ 'timeout' => 5 ] );
+
+            if ( is_wp_error( $response ) ) {
+                continue;
+            }
+
+            $status_code = (int) wp_remote_retrieve_response_code( $response );
+
+            if ( $status_code >= 200 && $status_code < 400 ) {
+                $logo_url = $candidate_url;
+                break;
+            }
+        }
+    }
+
+    if ( ! $logo_url ) {
+        $logo_url = reset( $logo_candidates );
+    }
+
+    if ( ! $logo_url ) {
+        $logo_url = get_site_icon_url( 192 );
     }
 
     $user_chart_url    = villegas_generate_quickchart_url( $user_score );
