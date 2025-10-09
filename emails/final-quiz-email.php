@@ -12,13 +12,11 @@ function villegas_get_final_quiz_email_content( array $quiz_data, WP_User $user 
 
     $course_title = $debug['course_title'];
 
-    $first_score = isset( $debug['first_attempt']['percentage'] ) && null !== $debug['first_attempt']['percentage']
-        ? (float) $debug['first_attempt']['percentage']
-        : 0.0;
+    $first_score = villegas_normalize_percentage_value( $debug['first_attempt']['percentage'] ?? null );
+    $final_score = villegas_normalize_percentage_value( $debug['final_attempt']['percentage'] ?? null );
 
-    $final_score = isset( $debug['final_attempt']['percentage'] ) && null !== $debug['final_attempt']['percentage']
-        ? (float) $debug['final_attempt']['percentage']
-        : 0.0;
+    $first_score = null !== $first_score ? max( 0.0, min( 100.0, $first_score ) ) : 0.0;
+    $final_score = null !== $final_score ? max( 0.0, min( 100.0, $final_score ) ) : 0.0;
 
     $first_timestamp = ! empty( $debug['first_attempt']['timestamp'] ) ? (int) $debug['first_attempt']['timestamp'] : null;
     $final_timestamp = ! empty( $debug['final_attempt']['timestamp'] ) ? (int) $debug['final_attempt']['timestamp'] : current_time( 'timestamp' );
