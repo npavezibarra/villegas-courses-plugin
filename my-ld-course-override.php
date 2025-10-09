@@ -10,6 +10,10 @@ if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
 }
 
+if ( ! defined( 'VILLEGAS_COURSES_PLUGIN_FILE' ) ) {
+    define( 'VILLEGAS_COURSES_PLUGIN_FILE', __FILE__ );
+}
+
 if ( ! class_exists( 'PoliteiaCourse' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-course.php';
 }
