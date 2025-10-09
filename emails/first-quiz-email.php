@@ -61,12 +61,12 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         $button_note  = __( 'Compra el curso para desbloquear todas las lecciones y el Quiz Final.', 'villegas-courses' );
     }
 
-    // Always use plugin-hosted logo to ensure deliverability in emails.
-    $logo_url = plugins_url( 'assets/jpg/academia-email-logo.jpeg', VILLEGAS_COURSES_PLUGIN_FILE );
+    // Force absolute HTTPS logo URL for email delivery.
+    $logo_url = 'https://elvillegas.cl/wp-content/plugins/villegas-courses-plugin/assets/jpg/academia-email-logo.jpeg';
 
-    // Fallback if the file is missing or unreadable.
-    if ( ! $logo_url ) {
-        $logo_url = get_site_icon_url( 192 );
+    // Fallback if production URL is unavailable.
+    if ( ! @fopen( $logo_url, 'r' ) ) {
+        $logo_url = plugins_url( 'assets/jpg/academia-email-logo.jpeg', VILLEGAS_COURSES_PLUGIN_FILE );
     }
 
     $user_chart_url    = villegas_generate_quickchart_url( $user_score );
