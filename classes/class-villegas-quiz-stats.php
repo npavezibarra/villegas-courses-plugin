@@ -91,4 +91,53 @@ class Villegas_Quiz_Stats {
 
         return $count > 0 ? ( $total / $count ) : null;
     }
+
+    /**
+     * Fetch the latest attempt percentage for a specific user and quiz.
+     *
+     * @param int $quiz_id LearnDash quiz post ID.
+     * @param int $user_id WP user ID.
+     * @return float|null Percentage of the latest attempt or null if not found.
+     */
+    public static function get_latest_attempt_percentage( $quiz_id, $user_id ) {
+        $quiz_id = absint( $quiz_id );
+        $user_id = absint( $user_id );
+
+        if ( ! $quiz_id || ! $user_id ) {
+            return null;
+        }
+
+        if ( function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
+            $attempt = villegas_get_latest_quiz_attempt( $user_id, $quiz_id );
+
+            if ( is_array( $attempt ) && isset( $attempt['percentage'] ) && null !== $attempt['percentage'] ) {
+                return is_numeric( $attempt['percentage'] ) ? (float) $attempt['percentage'] : null;
+            }
+        }
+
+        global $wpdb;
+
+        $table = "{$wpdb->prefix}learndash_user_activity";
+
+        $result = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT activity_meta
+                 FROM {$table}
+                 WHERE user_id = %d AND activity_type = 'quiz' AND activity_post_id = %d
+                 ORDER BY activity_updated DESC LIMIT 1",
+                $user_id,
+                $quiz_id
+            )
+        );
+
+        if ( $result ) {
+            $meta = maybe_unserialize( $result );
+
+            if ( isset( $meta['percentage'] ) && is_numeric( $meta['percentage'] ) ) {
+                return (float) $meta['percentage'];
+            }
+        }
+
+        return null;
+    }
 }
