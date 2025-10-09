@@ -10,10 +10,11 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         return [ 'subject' => '', 'body' => '' ];
     }
 
-    $quiz_id   = $debug['quiz_id'];
-    $course_id = $debug['course_id'];
+    $quiz_id       = $debug['quiz_id'];
+    $quiz_post_id  = ! empty( $debug['quiz_post_id'] ) ? (int) $debug['quiz_post_id'] : $quiz_id;
+    $course_id     = $debug['course_id'];
 
-    $latest_attempt = Villegas_Quiz_Stats::get_latest_attempt_percentage( $quiz_id, $user->ID );
+    $latest_attempt = $quiz_post_id ? Villegas_Quiz_Stats::get_latest_attempt_percentage( $quiz_post_id, $user->ID ) : null;
 
     $current_percentage = null;
 
@@ -29,8 +30,8 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     $average_score = null;
 
-    if ( $quiz_id ) {
-        $average_score = Villegas_Quiz_Stats::get_average_percentage( $quiz_id );
+    if ( $quiz_post_id ) {
+        $average_score = Villegas_Quiz_Stats::get_average_percentage( $quiz_post_id );
     }
 
     $average_value = null !== $average_score ? (float) $average_score : 0.0;

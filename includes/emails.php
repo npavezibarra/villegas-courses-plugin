@@ -120,22 +120,58 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
 
 if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
     function villegas_get_quiz_debug_data( array $quiz_data, WP_User $user ): array {
-        $quiz_id = isset( $quiz_data['quiz'] ) ? $quiz_data['quiz'] : 0;
+        $quiz_raw    = isset( $quiz_data['quiz'] ) ? $quiz_data['quiz'] : 0;
+        $quiz_post_id = 0;
+        $quiz_pro_id  = 0;
+        $quiz_title   = '';
 
-        if ( $quiz_id instanceof WP_Post ) {
-            $quiz_id = $quiz_id->ID;
+        if ( $quiz_raw instanceof WP_Post ) {
+            $quiz_post_id = (int) $quiz_raw->ID;
+        } elseif ( is_object( $quiz_raw ) ) {
+            if ( method_exists( $quiz_raw, 'getId' ) ) {
+                $quiz_pro_id = (int) $quiz_raw->getId();
+            }
+
+            if ( method_exists( $quiz_raw, 'getPostId' ) ) {
+                $quiz_post_id = (int) $quiz_raw->getPostId();
+            }
+
+            if ( method_exists( $quiz_raw, 'getName' ) ) {
+                $quiz_title = (string) $quiz_raw->getName();
+            }
+        } else {
+            $quiz_post_id = absint( $quiz_raw );
         }
 
+        if ( ! $quiz_post_id && isset( $quiz_data['quiz_post_id'] ) ) {
+            $quiz_post_id = absint( $quiz_data['quiz_post_id'] );
+        }
+
+        if ( ! $quiz_pro_id && isset( $quiz_data['quiz_pro_id'] ) ) {
+            $quiz_pro_id = absint( $quiz_data['quiz_pro_id'] );
+        }
+
+        if ( ! $quiz_post_id && $quiz_pro_id && function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ) {
+            $quiz_post_id = (int) learndash_get_quiz_id_by_pro_quiz_id( $quiz_pro_id );
+        }
+
+        $quiz_id = $quiz_post_id ? $quiz_post_id : $quiz_pro_id;
         $quiz_id = absint( $quiz_id );
         $user_id = absint( $user->ID );
 
+        $resolved_title = $quiz_post_id ? get_the_title( $quiz_post_id ) : '';
+
+        if ( ! $resolved_title && $quiz_title ) {
+            $resolved_title = $quiz_title;
+        }
+
         $course_id = 0;
 
-        if ( $quiz_id ) {
-            $course_id = Villegas_Course::get_course_from_quiz( $quiz_id );
+        if ( $quiz_post_id ) {
+            $course_id = Villegas_Course::get_course_from_quiz( $quiz_post_id );
 
             if ( ! $course_id && function_exists( 'learndash_get_course_id' ) ) {
-                $course_id = (int) learndash_get_course_id( $quiz_id );
+                $course_id = (int) learndash_get_course_id( $quiz_post_id );
             }
         }
 
@@ -164,7 +200,9 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
 
         return [
             'quiz_id'             => $quiz_id,
-            'quiz_title'          => $quiz_id ? get_the_title( $quiz_id ) : '',
+            'quiz_post_id'        => $quiz_post_id,
+            'quiz_pro_id'         => $quiz_pro_id,
+            'quiz_title'          => $resolved_title,
             'course_id'           => $course_id,
             'course_title'        => $course_id ? get_the_title( $course_id ) : '',
             'first_quiz_id'       => $first_quiz_id,
