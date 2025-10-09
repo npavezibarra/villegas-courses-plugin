@@ -424,6 +424,10 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
             $quiz_post_id = absint( $quiz_data['quiz_post_id'] );
         }
 
+        if ( ! $quiz_post_id && isset( $quiz_data['quiz_id'] ) ) {
+            $quiz_post_id = absint( $quiz_data['quiz_id'] );
+        }
+
         if ( ! $quiz_pro_id && isset( $quiz_data['quiz_pro_id'] ) ) {
             $quiz_pro_id = absint( $quiz_data['quiz_pro_id'] );
         }
