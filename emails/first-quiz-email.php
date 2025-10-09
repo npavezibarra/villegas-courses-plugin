@@ -15,13 +15,17 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     $latest_attempt = Villegas_Quiz_Stats::get_latest_attempt_percentage( $quiz_id, $user->ID );
 
-    if ( null === $latest_attempt && isset( $debug['first_attempt']['percentage'] ) ) {
-        $latest_attempt = is_numeric( $debug['first_attempt']['percentage'] )
-            ? (float) $debug['first_attempt']['percentage']
-            : null;
+    $current_percentage = null;
+
+    if ( isset( $debug['current_percentage'] ) && null !== $debug['current_percentage'] && is_numeric( $debug['current_percentage'] ) ) {
+        $current_percentage = (float) $debug['current_percentage'];
+    } elseif ( null !== $latest_attempt ) {
+        $current_percentage = (float) $latest_attempt;
+    } elseif ( isset( $debug['first_attempt']['percentage'] ) && null !== $debug['first_attempt']['percentage'] && is_numeric( $debug['first_attempt']['percentage'] ) ) {
+        $current_percentage = (float) $debug['first_attempt']['percentage'];
     }
 
-    $user_score = null !== $latest_attempt ? (float) $latest_attempt : 0.0;
+    $user_score = null !== $current_percentage ? $current_percentage : 0.0;
 
     $average_score = null;
 
@@ -30,6 +34,9 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     }
 
     $average_value = null !== $average_score ? (float) $average_score : 0.0;
+
+    $user_display_percent    = round( $user_score );
+    $average_display_percent = null !== $average_score ? round( (float) $average_score ) : 0;
 
     $subject = sprintf(
         __( '✔️ Primer quiz completado: %s', 'villegas-courses' ),
@@ -100,8 +107,8 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         $logo_url = get_site_icon_url( 192 );
     }
 
-    $user_chart_url    = villegas_generate_quickchart_url( $user_score );
-    $average_chart_url = villegas_generate_quickchart_url( $average_value );
+    $user_chart_url    = villegas_generate_quickchart_url( $user_score, $user_display_percent );
+    $average_chart_url = villegas_generate_quickchart_url( $average_value, $average_display_percent );
 
     $inline_styles  = '<style type="text/css">
   @media only screen and (max-width: 500px) {

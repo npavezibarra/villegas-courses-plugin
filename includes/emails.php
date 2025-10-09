@@ -16,16 +16,19 @@ if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
 }
 
 if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
-    function villegas_generate_quickchart_url( float $value ): string {
-        $percentage = max( 0, min( 100, round( (float) $value, 2 ) ) );
-        $remaining  = max( 0, 100 - $percentage );
+    function villegas_generate_quickchart_url( float $value, ?float $display_value = null ): string {
+        $clamped_value   = max( 0, min( 100, (float) $value ) );
+        $chart_value     = round( $clamped_value, 2 );
+        $label_source    = null !== $display_value ? max( 0, min( 100, (float) $display_value ) ) : $clamped_value;
+        $label_value_int = (int) round( $label_source );
+        $remaining       = max( 0, round( 100 - $chart_value, 2 ) );
 
         $config = [
             'type'    => 'doughnut',
             'data'    => [
                 'datasets' => [
                     [
-                        'data'            => [ $percentage, $remaining ],
+                        'data'            => [ $chart_value, $remaining ],
                         'backgroundColor' => [ '#f9c600', '#f2f2f2' ],
                         'borderWidth'     => 0,
                         'cutout'          => '70%',
@@ -41,7 +44,7 @@ if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
                     'doughnutlabel' => [
                         'labels' => [
                             [
-                                'text'  => $percentage . '%',
+                                'text'  => sprintf( '%d%%', $label_value_int ),
                                 'font'  => [ 'size' => 26, 'weight' => 'bold', 'family' => 'Helvetica, Arial, sans-serif' ],
                                 'color' => '#222222',
                             ],
