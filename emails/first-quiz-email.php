@@ -16,17 +16,22 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     $latest_attempt = $quiz_post_id ? Villegas_Quiz_Stats::get_latest_attempt_percentage( $quiz_post_id, $user->ID ) : null;
 
-    $current_percentage = null;
+    $current_percentage = villegas_normalize_percentage_value( $debug['current_percentage'] ?? null );
 
-    if ( isset( $debug['current_percentage'] ) && null !== $debug['current_percentage'] && is_numeric( $debug['current_percentage'] ) ) {
-        $current_percentage = (float) $debug['current_percentage'];
-    } elseif ( null !== $latest_attempt ) {
-        $current_percentage = (float) $latest_attempt;
-    } elseif ( isset( $debug['first_attempt']['percentage'] ) && null !== $debug['first_attempt']['percentage'] && is_numeric( $debug['first_attempt']['percentage'] ) ) {
-        $current_percentage = (float) $debug['first_attempt']['percentage'];
+    if ( null === $current_percentage && array_key_exists( 'percentage', $quiz_data ) ) {
+        $current_percentage = villegas_normalize_percentage_value( $quiz_data['percentage'] );
+    }
+
+    if ( null === $current_percentage && null !== $latest_attempt ) {
+        $current_percentage = villegas_normalize_percentage_value( $latest_attempt );
+    }
+
+    if ( null === $current_percentage && isset( $debug['first_attempt']['percentage'] ) ) {
+        $current_percentage = villegas_normalize_percentage_value( $debug['first_attempt']['percentage'] );
     }
 
     $user_score = null !== $current_percentage ? $current_percentage : 0.0;
+    $user_score = max( 0.0, min( 100.0, $user_score ) );
 
     $average_score = null;
 
@@ -34,7 +39,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         $average_score = Villegas_Quiz_Stats::get_average_percentage( $quiz_post_id );
     }
 
-    $average_value = null !== $average_score ? (float) $average_score : 0.0;
+    $average_value = null !== $average_score ? max( 0.0, min( 100.0, (float) $average_score ) ) : 0.0;
 
     $user_display_percent    = round( $user_score );
     $average_display_percent = null !== $average_score ? round( (float) $average_score ) : 0;

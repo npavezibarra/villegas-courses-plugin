@@ -15,6 +15,41 @@ if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
     require_once plugin_dir_path( __FILE__ ) . '../classes/class-villegas-quiz-stats.php';
 }
 
+if ( ! function_exists( 'villegas_normalize_percentage_value' ) ) {
+    function villegas_normalize_percentage_value( $value ): ?float {
+        if ( null === $value ) {
+            return null;
+        }
+
+        if ( is_numeric( $value ) ) {
+            return (float) $value;
+        }
+
+        if ( is_string( $value ) ) {
+            $filtered = preg_replace( '/[^0-9.,-]/', '', $value );
+
+            if ( '' === $filtered ) {
+                return null;
+            }
+
+            $has_comma = false !== strpos( $filtered, ',' );
+            $has_dot   = false !== strpos( $filtered, '.' );
+
+            if ( $has_comma && ! $has_dot ) {
+                $filtered = str_replace( ',', '.', $filtered );
+            } else {
+                $filtered = str_replace( ',', '', $filtered );
+            }
+
+            if ( is_numeric( $filtered ) ) {
+                return (float) $filtered;
+            }
+        }
+
+        return null;
+    }
+}
+
 if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
     function villegas_generate_quickchart_url( float $value, ?float $display_value = null ): string {
         $clamped_value   = max( 0, min( 100, (float) $value ) );
@@ -77,24 +112,50 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
         $activity_table = $wpdb->prefix . 'learndash_user_activity';
         $meta_table     = $wpdb->prefix . 'learndash_user_activity_meta';
 
-        $attempt = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT ua.activity_id, ua.activity_completed
-                 FROM {$activity_table} AS ua
-                 INNER JOIN {$meta_table} AS quiz_meta
-                    ON quiz_meta.activity_id = ua.activity_id
-                   AND quiz_meta.activity_meta_key = 'quiz'
-                   AND quiz_meta.activity_meta_value+0 = %d
-                 WHERE ua.user_id = %d
-                   AND ua.activity_type = 'quiz'
-                   AND ua.activity_completed IS NOT NULL
-                 ORDER BY ua.activity_completed DESC
-                 LIMIT 1",
-                $quiz_id,
-                $user_id
-            ),
-            ARRAY_A
-        );
+        $attempt         = [];
+        $query_templates = [
+            "SELECT ua.activity_id, ua.activity_completed"
+            . " FROM {$activity_table} AS ua"
+            . " WHERE ua.user_id = %d"
+            . "   AND ua.activity_type = 'quiz'"
+            . "   AND ua.activity_completed IS NOT NULL"
+            . "   AND ua.post_id = %d"
+            . " ORDER BY ua.activity_completed DESC"
+            . " LIMIT 1",
+            "SELECT ua.activity_id, ua.activity_completed"
+            . " FROM {$activity_table} AS ua"
+            . " WHERE ua.user_id = %d"
+            . "   AND ua.activity_type = 'quiz'"
+            . "   AND ua.activity_completed IS NOT NULL"
+            . "   AND ua.activity_post_id = %d"
+            . " ORDER BY ua.activity_completed DESC"
+            . " LIMIT 1",
+            "SELECT ua.activity_id, ua.activity_completed"
+            . " FROM {$activity_table} AS ua"
+            . " INNER JOIN {$meta_table} AS quiz_meta"
+            . "    ON quiz_meta.activity_id = ua.activity_id"
+            . "   AND quiz_meta.activity_meta_key = 'quiz'"
+            . "   AND quiz_meta.activity_meta_value+0 = %d"
+            . " WHERE ua.user_id = %d"
+            . "   AND ua.activity_type = 'quiz'"
+            . "   AND ua.activity_completed IS NOT NULL"
+            . " ORDER BY ua.activity_completed DESC"
+            . " LIMIT 1",
+        ];
+
+        foreach ( $query_templates as $index => $sql ) {
+            if ( 2 === $index ) {
+                $prepared = $wpdb->prepare( $sql, $quiz_id, $user_id );
+            } else {
+                $prepared = $wpdb->prepare( $sql, $user_id, $quiz_id );
+            }
+
+            $attempt = $wpdb->get_row( $prepared, ARRAY_A );
+
+            if ( ! empty( $attempt ) && ! empty( $attempt['activity_id'] ) ) {
+                break;
+            }
+        }
 
         if ( empty( $attempt ) || empty( $attempt['activity_id'] ) ) {
             return [ 'percentage' => null, 'timestamp' => null ];
@@ -112,7 +173,7 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
         );
 
         return [
-            'percentage' => is_numeric( $percentage ) ? (float) $percentage : null,
+            'percentage' => villegas_normalize_percentage_value( $percentage ),
             'timestamp'  => ! empty( $attempt['activity_completed'] ) ? (int) $attempt['activity_completed'] : null,
         ];
     }
@@ -184,9 +245,19 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
         $first_attempt = $first_quiz_id ? villegas_get_latest_quiz_attempt( $user_id, $first_quiz_id ) : [ 'percentage' => null, 'timestamp' => null ];
         $final_attempt = $final_quiz_id ? villegas_get_latest_quiz_attempt( $user_id, $final_quiz_id ) : [ 'percentage' => null, 'timestamp' => null ];
 
-        $current_percentage = isset( $quiz_data['percentage'] ) && is_numeric( $quiz_data['percentage'] )
-            ? (float) $quiz_data['percentage']
-            : null;
+        $current_percentage = null;
+
+        if ( array_key_exists( 'percentage', $quiz_data ) ) {
+            $current_percentage = villegas_normalize_percentage_value( $quiz_data['percentage'] );
+        }
+
+        if ( null === $current_percentage && isset( $quiz_data['score'], $quiz_data['total'] ) ) {
+            $total_questions = (float) $quiz_data['total'];
+
+            if ( $total_questions > 0 ) {
+                $current_percentage = ( (float) $quiz_data['score'] / $total_questions ) * 100;
+            }
+        }
 
         if ( $is_first_quiz && null !== $current_percentage ) {
             $first_attempt['percentage'] = $current_percentage;
