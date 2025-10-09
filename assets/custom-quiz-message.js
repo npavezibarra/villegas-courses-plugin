@@ -35,69 +35,79 @@ jQuery(document).on('learndash-quiz-finished', function () {
         return;
     }
 
-    var correctAnswers = parseInt(jQuery('.wpProQuiz_correct_answer').text(), 10);
-    var totalQuestions = parseInt(jQuery('.total-questions').text(), 10);
+    function getFinalPercentage(callback, attempts = 0) {
+        const correct = parseInt(jQuery('.wpProQuiz_correct_answer').text(), 10);
+        const total = parseInt(jQuery('.total-questions').text(), 10);
 
-    if (isNaN(correctAnswers) || totalQuestions <= 0) {
-        return;
+        if (!isNaN(correct) && total > 0) {
+            const pct = Math.round((correct / total) * 100);
+            callback(pct);
+        } else if (attempts < 10) {
+            setTimeout(function () {
+                getFinalPercentage(callback, attempts + 1);
+            }, 200);
+        } else {
+            console.warn('No se pudo obtener el puntaje final después de varios intentos.');
+            callback(0);
+        }
     }
 
-    var percentage = Math.round((correctAnswers / totalQuestions) * 100);
+    getFinalPercentage(function (percentage) {
+        if (quizData.type === 'first') {
+            var firstQuizNonce = quizData.firstQuizNonce || '';
 
-    if (quizData.type === 'first') {
-        var firstQuizNonce = quizData.firstQuizNonce || '';
-
-        if (!firstQuizNonce) {
-            console.error('Falta el nonce para enviar el correo del First Quiz.');
-            return;
-        }
-
-        jQuery.post(ajaxUrl, {
-            action: 'enviar_correo_first_quiz',
-            quiz_id: quizData.quizId,
-            user_id: quizData.userId || 0,
-            quiz_percentage: percentage,
-            nonce: firstQuizNonce
-        }).fail(function (response) {
-            console.error('Error al enviar correo First Quiz:', response);
-        });
-    }
-
-    if (quizData.type === 'final') {
-        var finalQuizNonce = quizData.finalQuizNonce || '';
-
-        if (!finalQuizNonce) {
-            console.error('Faltan datos para enviar el correo del Final Quiz. Abortando envío.');
-            return;
-        }
-
-        function intentarEnviar(reintentoCount) {
-            if (reintentoCount > 5) {
-                console.error('No se encontró intento tras varios reintentos. Abortando envío.');
+            if (!firstQuizNonce) {
+                console.error('Falta el nonce para enviar el correo del First Quiz.');
                 return;
             }
 
             jQuery.post(ajaxUrl, {
-                action: 'enviar_correo_final_quiz',
+                action: 'enviar_correo_first_quiz',
                 quiz_id: quizData.quizId,
+                user_id: quizData.userId || 0,
                 quiz_percentage: percentage,
-                nonce: finalQuizNonce
-            }, function (response) {
-                if (response.success) {
-                    return;
-                } else if (response.data === 'Intento no encontrado') {
-                    setTimeout(function () {
-                        intentarEnviar(reintentoCount + 1);
-                    }, 500);
-                } else {
-                    console.error('Error al enviar correo Final Quiz:', response);
-                }
+                nonce: firstQuizNonce
             }).fail(function (response) {
-                console.error('Error al comunicarse con AJAX del Final Quiz:', response);
+                console.error('Error al enviar correo First Quiz:', response);
             });
         }
 
-        intentarEnviar(0);
-    }
+        if (quizData.type === 'final') {
+            var finalQuizNonce = quizData.finalQuizNonce || '';
+
+            if (!finalQuizNonce) {
+                console.error('Faltan datos para enviar el correo del Final Quiz. Abortando envío.');
+                return;
+            }
+
+            function intentarEnviar(reintentoCount) {
+                if (reintentoCount > 5) {
+                    console.error('No se encontró intento tras varios reintentos. Abortando envío.');
+                    return;
+                }
+
+                jQuery.post(ajaxUrl, {
+                    action: 'enviar_correo_final_quiz',
+                    quiz_id: quizData.quizId,
+                    quiz_percentage: percentage,
+                    nonce: finalQuizNonce
+                }, function (response) {
+                    if (response.success) {
+                        return;
+                    } else if (response.data === 'Intento no encontrado') {
+                        setTimeout(function () {
+                            intentarEnviar(reintentoCount + 1);
+                        }, 500);
+                    } else {
+                        console.error('Error al enviar correo Final Quiz:', response);
+                    }
+                }).fail(function (response) {
+                    console.error('Error al comunicarse con AJAX del Final Quiz:', response);
+                });
+            }
+
+            intentarEnviar(0);
+        }
+    });
 });
 
