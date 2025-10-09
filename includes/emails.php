@@ -17,21 +17,23 @@ if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
 
 if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
     function villegas_generate_quickchart_url( float $value ): string {
-        $value = max( 0, min( 100, round( $value, 2 ) ) );
+        $percentage = max( 0, min( 100, round( (float) $value, 2 ) ) );
+        $remaining  = max( 0, 100 - $percentage );
 
         $config = [
             'type'    => 'doughnut',
             'data'    => [
                 'datasets' => [
                     [
-                        'data'            => [ $value, 100 - $value ],
-                        'backgroundColor' => [ '#f9c600', '#eeeeee' ],
+                        'data'            => [ $percentage, $remaining ],
+                        'backgroundColor' => [ '#f9c600', '#f2f2f2' ],
                         'borderWidth'     => 0,
+                        'cutout'          => '70%',
+                        'rotation'        => 270,
                     ],
                 ],
             ],
             'options' => [
-                'cutout'  => '10%',
                 'plugins' => [
                     'legend'        => [ 'display' => false ],
                     'tooltip'       => [ 'enabled' => false ],
@@ -39,15 +41,16 @@ if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
                     'doughnutlabel' => [
                         'labels' => [
                             [
-                                'text' => $value . '%',
-                                'font' => [
-                                    'size'   => 24,
-                                    'weight' => 'bold',
-                                ],
-                                'color' => '#333333',
+                                'text'  => $percentage . '%',
+                                'font'  => [ 'size' => 26, 'weight' => 'bold', 'family' => 'Helvetica, Arial, sans-serif' ],
+                                'color' => '#222222',
                             ],
                         ],
                     ],
+                ],
+                'cutoutPercentage' => 70,
+                'layout'           => [
+                    'padding' => 8,
                 ],
             ],
             'plugins' => [ 'doughnutlabel' ],
