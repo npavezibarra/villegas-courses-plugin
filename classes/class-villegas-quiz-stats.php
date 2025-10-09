@@ -91,4 +91,35 @@ class Villegas_Quiz_Stats {
 
         return $count > 0 ? ( $total / $count ) : null;
     }
+
+    /**
+     * Fetch the latest attempt percentage for a specific user and quiz.
+     *
+     * @param int $quiz_id LearnDash quiz post ID.
+     * @param int $user_id WP user ID.
+     * @return float|null Percentage of the latest attempt or null if not found.
+     */
+    public static function get_latest_attempt_percentage( $quiz_id, $user_id ) {
+        global $wpdb;
+
+        $table  = "{$wpdb->prefix}learndash_user_activity";
+        $result = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT activity_meta
+                 FROM $table
+                 WHERE user_id = %d AND activity_type = 'quiz' AND activity_post_id = %d
+                 ORDER BY activity_updated DESC LIMIT 1",
+                $user_id,
+                $quiz_id
+            )
+        );
+
+        if ( $result ) {
+            $meta = maybe_unserialize( $result );
+
+            return isset( $meta['percentage'] ) ? (float) $meta['percentage'] : null;
+        }
+
+        return null;
+    }
 }
