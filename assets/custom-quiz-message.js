@@ -53,7 +53,7 @@ jQuery(document).on('learndash-quiz-finished', function () {
         }
 
         jQuery.post(ajaxUrl, {
-            action: 'villegas_send_first_quiz_email',
+            action: 'enviar_correo_first_quiz',
             quiz_id: quizData.quizId,
             user_id: quizData.userId || 0,
             quiz_percentage: percentage,
