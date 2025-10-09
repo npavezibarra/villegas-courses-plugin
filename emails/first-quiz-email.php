@@ -97,13 +97,25 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $user_chart_url    = villegas_generate_quickchart_url( $user_score );
     $average_chart_url = villegas_generate_quickchart_url( $average_value );
 
-    $inline_styles  = '<style type="text/css">@media only screen and (max-width:480px){#villegas-email-graficas td{display:block !important;width:100% !important;}}</style>';
+    $inline_styles  = '<style type="text/css">
+  @media only screen and (max-width: 500px) {
+    #villegas-email-graficas td {
+      display: block !important;
+      width: 90% !important;
+      margin: 0 auto !important;
+      text-align: center !important;
+    }
+    #villegas-email-graficas h2 {
+      margin-top: 24px !important;
+    }
+  }
+</style>';
 
     $body  = $inline_styles;
     $body .= '<div id="villegas-email-wrapper" style="background-color:#f6f6f6;padding:32px 0;">';
     $body .= '<div id="villegas-email-card" style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
 
-    $body .= '<div id="villegas-email-encabezado" style="text-align:center;padding:28px 24px 0;">';
+    $body .= '<div id="villegas-email-encabezado" style="text-align:center;padding:0;">';
     if ( $logo_url ) {
         $body .= '<img src="' . esc_url( $logo_url ) . '" alt="Academia Villegas" style="width:100%;max-width:720px;height:200px;object-fit:cover;object-position:center;display:block;margin:0 auto;">';
     }
