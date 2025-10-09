@@ -15,23 +15,67 @@ if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
     require_once plugin_dir_path( __FILE__ ) . '../classes/class-villegas-quiz-stats.php';
 }
 
+if ( ! class_exists( 'Villegas_Quiz_Emails' ) ) {
+    require_once plugin_dir_path( __FILE__ ) . 'class-villegas-quiz-emails.php';
+}
+
+if ( ! function_exists( 'villegas_normalize_percentage_value' ) ) {
+    function villegas_normalize_percentage_value( $value ): ?float {
+        if ( null === $value ) {
+            return null;
+        }
+
+        if ( is_numeric( $value ) ) {
+            return (float) $value;
+        }
+
+        if ( is_string( $value ) ) {
+            $filtered = preg_replace( '/[^0-9.,-]/', '', $value );
+
+            if ( '' === $filtered ) {
+                return null;
+            }
+
+            $has_comma = false !== strpos( $filtered, ',' );
+            $has_dot   = false !== strpos( $filtered, '.' );
+
+            if ( $has_comma && ! $has_dot ) {
+                $filtered = str_replace( ',', '.', $filtered );
+            } else {
+                $filtered = str_replace( ',', '', $filtered );
+            }
+
+            if ( is_numeric( $filtered ) ) {
+                return (float) $filtered;
+            }
+        }
+
+        return null;
+    }
+}
+
 if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
-    function villegas_generate_quickchart_url( float $value ): string {
-        $value = max( 0, min( 100, round( $value, 2 ) ) );
+    function villegas_generate_quickchart_url( float $value, ?float $display_value = null ): string {
+        $clamped_value   = max( 0, min( 100, (float) $value ) );
+        $chart_value     = round( $clamped_value, 2 );
+        $label_source    = null !== $display_value ? max( 0, min( 100, (float) $display_value ) ) : $clamped_value;
+        $label_value_int = (int) round( $label_source );
+        $remaining       = max( 0, round( 100 - $chart_value, 2 ) );
 
         $config = [
             'type'    => 'doughnut',
             'data'    => [
                 'datasets' => [
                     [
-                        'data'            => [ $value, 100 - $value ],
-                        'backgroundColor' => [ '#f9c600', '#eeeeee' ],
+                        'data'            => [ $chart_value, $remaining ],
+                        'backgroundColor' => [ '#f9c600', '#f2f2f2' ],
                         'borderWidth'     => 0,
+                        'cutout'          => '70%',
+                        'rotation'        => 270,
                     ],
                 ],
             ],
             'options' => [
-                'cutout'  => '10%',
                 'plugins' => [
                     'legend'        => [ 'display' => false ],
                     'tooltip'       => [ 'enabled' => false ],
@@ -39,21 +83,129 @@ if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
                     'doughnutlabel' => [
                         'labels' => [
                             [
-                                'text' => $value . '%',
-                                'font' => [
-                                    'size'   => 24,
-                                    'weight' => 'bold',
-                                ],
-                                'color' => '#333333',
+                                'text'  => sprintf( '%d%%', $label_value_int ),
+                                'font'  => [ 'size' => 26, 'weight' => 'bold', 'family' => 'Helvetica, Arial, sans-serif' ],
+                                'color' => '#222222',
                             ],
                         ],
                     ],
+                ],
+                'cutoutPercentage' => 70,
+                'layout'           => [
+                    'padding' => 8,
                 ],
             ],
             'plugins' => [ 'doughnutlabel' ],
         ];
 
         return 'https://quickchart.io/chart?c=' . urlencode( wp_json_encode( $config ) );
+    }
+}
+
+if ( ! function_exists( 'villegas_get_latest_quiz_attempt_from_usermeta' ) ) {
+    function villegas_get_latest_quiz_attempt_from_usermeta( int $user_id, int $quiz_id ): array {
+        $user_id = absint( $user_id );
+        $quiz_id = absint( $quiz_id );
+
+        if ( ! $user_id || ! $quiz_id ) {
+            return [ 'percentage' => null, 'timestamp' => null ];
+        }
+
+        $raw_meta = get_user_meta( $user_id, '_sfwd-quizzes', true );
+
+        if ( empty( $raw_meta ) ) {
+            return [ 'percentage' => null, 'timestamp' => null ];
+        }
+
+        if ( is_string( $raw_meta ) ) {
+            $raw_meta = maybe_unserialize( $raw_meta );
+        }
+
+        if ( ! is_array( $raw_meta ) ) {
+            return [ 'percentage' => null, 'timestamp' => null ];
+        }
+
+        $latest_attempt = [
+            'percentage' => null,
+            'timestamp'  => null,
+        ];
+
+        foreach ( $raw_meta as $attempt ) {
+            if ( ! is_array( $attempt ) ) {
+                continue;
+            }
+
+            $candidate_ids = [];
+
+            if ( isset( $attempt['quiz'] ) ) {
+                $candidate_ids[] = absint( $attempt['quiz'] );
+            }
+
+            if ( isset( $attempt['quiz_post_id'] ) ) {
+                $candidate_ids[] = absint( $attempt['quiz_post_id'] );
+            }
+
+            if ( isset( $attempt['quiz_id'] ) ) {
+                $candidate_ids[] = absint( $attempt['quiz_id'] );
+            }
+
+            if ( isset( $attempt['quiz_pro_id'] ) ) {
+                $candidate_ids[] = absint( $attempt['quiz_pro_id'] );
+            }
+
+            if ( isset( $attempt['pro_quiz_id'] ) ) {
+                $candidate_ids[] = absint( $attempt['pro_quiz_id'] );
+            }
+
+            $candidate_ids = array_filter( $candidate_ids );
+
+            if ( empty( $candidate_ids ) || ! in_array( $quiz_id, $candidate_ids, true ) ) {
+                continue;
+            }
+
+            $timestamp = isset( $attempt['time'] ) ? (int) $attempt['time'] : 0;
+
+            $percentage = null;
+
+            if ( isset( $attempt['percentage'] ) ) {
+                $percentage = villegas_normalize_percentage_value( $attempt['percentage'] );
+            }
+
+            if ( null === $percentage && isset( $attempt['score'], $attempt['count'] ) ) {
+                $total_questions = (float) $attempt['count'];
+
+                if ( $total_questions > 0 ) {
+                    $percentage = ( (float) $attempt['score'] / $total_questions ) * 100;
+                }
+            }
+
+            if ( null === $percentage && isset( $attempt['points'], $attempt['total_points'] ) ) {
+                $total_points = (float) $attempt['total_points'];
+
+                if ( $total_points > 0 ) {
+                    $percentage = ( (float) $attempt['points'] / $total_points ) * 100;
+                }
+            }
+
+            $percentage = null !== $percentage ? max( 0.0, min( 100.0, (float) $percentage ) ) : null;
+
+            $should_replace = false;
+
+            if ( null === $latest_attempt['timestamp'] ) {
+                $should_replace = true;
+            } elseif ( null !== $percentage && null === $latest_attempt['percentage'] ) {
+                $should_replace = true;
+            } elseif ( $timestamp > (int) $latest_attempt['timestamp'] ) {
+                $should_replace = null === $latest_attempt['percentage'] || $percentage !== null;
+            }
+
+            if ( $should_replace ) {
+                $latest_attempt['percentage'] = $percentage;
+                $latest_attempt['timestamp']  = $timestamp ?: null;
+            }
+        }
+
+        return $latest_attempt;
     }
 }
 
@@ -71,27 +223,53 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
         $activity_table = $wpdb->prefix . 'learndash_user_activity';
         $meta_table     = $wpdb->prefix . 'learndash_user_activity_meta';
 
-        $attempt = $wpdb->get_row(
-            $wpdb->prepare(
-                "SELECT ua.activity_id, ua.activity_completed
-                 FROM {$activity_table} AS ua
-                 INNER JOIN {$meta_table} AS quiz_meta
-                    ON quiz_meta.activity_id = ua.activity_id
-                   AND quiz_meta.activity_meta_key = 'quiz'
-                   AND quiz_meta.activity_meta_value+0 = %d
-                 WHERE ua.user_id = %d
-                   AND ua.activity_type = 'quiz'
-                   AND ua.activity_completed IS NOT NULL
-                 ORDER BY ua.activity_completed DESC
-                 LIMIT 1",
-                $quiz_id,
-                $user_id
-            ),
-            ARRAY_A
-        );
+        $attempt         = [];
+        $query_templates = [
+            "SELECT ua.activity_id, ua.activity_completed"
+            . " FROM {$activity_table} AS ua"
+            . " WHERE ua.user_id = %d"
+            . "   AND ua.activity_type = 'quiz'"
+            . "   AND ua.activity_completed IS NOT NULL"
+            . "   AND ua.post_id = %d"
+            . " ORDER BY ua.activity_completed DESC"
+            . " LIMIT 1",
+            "SELECT ua.activity_id, ua.activity_completed"
+            . " FROM {$activity_table} AS ua"
+            . " WHERE ua.user_id = %d"
+            . "   AND ua.activity_type = 'quiz'"
+            . "   AND ua.activity_completed IS NOT NULL"
+            . "   AND ua.activity_post_id = %d"
+            . " ORDER BY ua.activity_completed DESC"
+            . " LIMIT 1",
+            "SELECT ua.activity_id, ua.activity_completed"
+            . " FROM {$activity_table} AS ua"
+            . " INNER JOIN {$meta_table} AS quiz_meta"
+            . "    ON quiz_meta.activity_id = ua.activity_id"
+            . "   AND quiz_meta.activity_meta_key = 'quiz'"
+            . "   AND quiz_meta.activity_meta_value+0 = %d"
+            . " WHERE ua.user_id = %d"
+            . "   AND ua.activity_type = 'quiz'"
+            . "   AND ua.activity_completed IS NOT NULL"
+            . " ORDER BY ua.activity_completed DESC"
+            . " LIMIT 1",
+        ];
+
+        foreach ( $query_templates as $index => $sql ) {
+            if ( 2 === $index ) {
+                $prepared = $wpdb->prepare( $sql, $quiz_id, $user_id );
+            } else {
+                $prepared = $wpdb->prepare( $sql, $user_id, $quiz_id );
+            }
+
+            $attempt = $wpdb->get_row( $prepared, ARRAY_A );
+
+            if ( ! empty( $attempt ) && ! empty( $attempt['activity_id'] ) ) {
+                break;
+            }
+        }
 
         if ( empty( $attempt ) || empty( $attempt['activity_id'] ) ) {
-            return [ 'percentage' => null, 'timestamp' => null ];
+            return villegas_get_latest_quiz_attempt_from_usermeta( $user_id, $quiz_id );
         }
 
         $percentage = $wpdb->get_var(
@@ -105,31 +283,81 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
             )
         );
 
-        return [
-            'percentage' => is_numeric( $percentage ) ? (float) $percentage : null,
+        $result = [
+            'percentage' => villegas_normalize_percentage_value( $percentage ),
             'timestamp'  => ! empty( $attempt['activity_completed'] ) ? (int) $attempt['activity_completed'] : null,
         ];
+
+        if ( null === $result['percentage'] || null === $result['timestamp'] ) {
+            $meta_attempt = villegas_get_latest_quiz_attempt_from_usermeta( $user_id, $quiz_id );
+
+            if ( null === $result['percentage'] && null !== $meta_attempt['percentage'] ) {
+                $result['percentage'] = $meta_attempt['percentage'];
+            }
+
+            if ( ( null === $result['timestamp'] || 0 === $result['timestamp'] ) && null !== $meta_attempt['timestamp'] ) {
+                $result['timestamp'] = $meta_attempt['timestamp'];
+            }
+        }
+
+        return $result;
     }
 }
 
 if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
     function villegas_get_quiz_debug_data( array $quiz_data, WP_User $user ): array {
-        $quiz_id = isset( $quiz_data['quiz'] ) ? $quiz_data['quiz'] : 0;
+        $quiz_raw    = isset( $quiz_data['quiz'] ) ? $quiz_data['quiz'] : 0;
+        $quiz_post_id = 0;
+        $quiz_pro_id  = 0;
+        $quiz_title   = '';
 
-        if ( $quiz_id instanceof WP_Post ) {
-            $quiz_id = $quiz_id->ID;
+        if ( $quiz_raw instanceof WP_Post ) {
+            $quiz_post_id = (int) $quiz_raw->ID;
+        } elseif ( is_object( $quiz_raw ) ) {
+            if ( method_exists( $quiz_raw, 'getId' ) ) {
+                $quiz_pro_id = (int) $quiz_raw->getId();
+            }
+
+            if ( method_exists( $quiz_raw, 'getPostId' ) ) {
+                $quiz_post_id = (int) $quiz_raw->getPostId();
+            }
+
+            if ( method_exists( $quiz_raw, 'getName' ) ) {
+                $quiz_title = (string) $quiz_raw->getName();
+            }
+        } else {
+            $quiz_post_id = absint( $quiz_raw );
         }
 
+        if ( ! $quiz_post_id && isset( $quiz_data['quiz_post_id'] ) ) {
+            $quiz_post_id = absint( $quiz_data['quiz_post_id'] );
+        }
+
+        if ( ! $quiz_pro_id && isset( $quiz_data['quiz_pro_id'] ) ) {
+            $quiz_pro_id = absint( $quiz_data['quiz_pro_id'] );
+        }
+
+        if ( ! $quiz_post_id && $quiz_pro_id && function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ) {
+            $quiz_post_id = (int) learndash_get_quiz_id_by_pro_quiz_id( $quiz_pro_id );
+        }
+
+        $quiz_id = $quiz_post_id ? $quiz_post_id : $quiz_pro_id;
         $quiz_id = absint( $quiz_id );
         $user_id = absint( $user->ID );
 
+        $resolved_title = $quiz_post_id ? get_the_title( $quiz_post_id ) : '';
+
+        if ( ! $resolved_title && $quiz_title ) {
+            $resolved_title = $quiz_title;
+        }
+
         $course_id = 0;
 
-        if ( $quiz_id ) {
-            $course_id = Villegas_Course::get_course_from_quiz( $quiz_id );
+        if ( $quiz_post_id ) {
+            $course_id = Villegas_Course::get_course_from_quiz( $quiz_post_id );
 
             if ( ! $course_id && function_exists( 'learndash_get_course_id' ) ) {
-                $course_id = (int) learndash_get_course_id( $quiz_id );
+                $course_id = (int) learndash_get_course_id( $quiz_post_id );
             }
         }
 
@@ -142,13 +370,53 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
         $first_attempt = $first_quiz_id ? villegas_get_latest_quiz_attempt( $user_id, $first_quiz_id ) : [ 'percentage' => null, 'timestamp' => null ];
         $final_attempt = $final_quiz_id ? villegas_get_latest_quiz_attempt( $user_id, $final_quiz_id ) : [ 'percentage' => null, 'timestamp' => null ];
 
-        $current_percentage = isset( $quiz_data['percentage'] ) && is_numeric( $quiz_data['percentage'] )
-            ? (float) $quiz_data['percentage']
-            : null;
+        if ( $first_quiz_id ) {
+            $legacy_first = Villegas_Quiz_Emails::get_last_attempt_data( $user_id, $first_quiz_id );
+            $legacy_first_percentage = villegas_normalize_percentage_value( $legacy_first['percentage'] ?? null );
+
+            if ( null !== $legacy_first_percentage ) {
+                $first_attempt['percentage'] = $legacy_first_percentage;
+            }
+
+            if ( ! empty( $legacy_first['timestamp'] ) ) {
+                $first_attempt['timestamp'] = (int) $legacy_first['timestamp'];
+            }
+        }
+
+        if ( $final_quiz_id ) {
+            $legacy_final = Villegas_Quiz_Emails::get_last_attempt_data( $user_id, $final_quiz_id );
+            $legacy_final_percentage = villegas_normalize_percentage_value( $legacy_final['percentage'] ?? null );
+
+            if ( null !== $legacy_final_percentage ) {
+                $final_attempt['percentage'] = $legacy_final_percentage;
+            }
+
+            if ( ! empty( $legacy_final['timestamp'] ) ) {
+                $final_attempt['timestamp'] = (int) $legacy_final['timestamp'];
+            }
+        }
+
+        $current_percentage = null;
+
+        if ( array_key_exists( 'percentage', $quiz_data ) ) {
+            $current_percentage = villegas_normalize_percentage_value( $quiz_data['percentage'] );
+        }
+
+        if ( null === $current_percentage && isset( $quiz_data['score'], $quiz_data['total'] ) ) {
+            $total_questions = (float) $quiz_data['total'];
+
+            if ( $total_questions > 0 ) {
+                $current_percentage = ( (float) $quiz_data['score'] / $total_questions ) * 100;
+            }
+        }
 
         if ( $is_first_quiz && null !== $current_percentage ) {
             $first_attempt['percentage'] = $current_percentage;
             $first_attempt['timestamp']  = $first_attempt['timestamp'] ?: time();
+        }
+
+        if ( null === $current_percentage && $is_first_quiz ) {
+            $current_percentage = villegas_normalize_percentage_value( $first_attempt['percentage'] ?? null );
         }
 
         if ( $is_final_quiz && null !== $current_percentage ) {
@@ -156,9 +424,15 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
             $final_attempt['timestamp']  = $final_attempt['timestamp'] ?: time();
         }
 
+        if ( $is_final_quiz && null === $current_percentage ) {
+            $current_percentage = villegas_normalize_percentage_value( $final_attempt['percentage'] ?? null );
+        }
+
         return [
             'quiz_id'             => $quiz_id,
-            'quiz_title'          => $quiz_id ? get_the_title( $quiz_id ) : '',
+            'quiz_post_id'        => $quiz_post_id,
+            'quiz_pro_id'         => $quiz_pro_id,
+            'quiz_title'          => $resolved_title,
             'course_id'           => $course_id,
             'course_title'        => $course_id ? get_the_title( $course_id ) : '',
             'first_quiz_id'       => $first_quiz_id,
