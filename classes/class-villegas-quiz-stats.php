@@ -102,24 +102,50 @@ class Villegas_Quiz_Stats {
     public static function get_latest_attempt_percentage( $quiz_id, $user_id ) {
         global $wpdb;
 
-        $table  = "{$wpdb->prefix}learndash_user_activity";
-        $result = $wpdb->get_var(
+        $quiz_id = absint( $quiz_id );
+        $user_id = absint( $user_id );
+
+        if ( ! $quiz_id || ! $user_id ) {
+            return null;
+        }
+
+        $activity_table = "{$wpdb->prefix}learndash_user_activity";
+        $meta_table     = "{$wpdb->prefix}learndash_user_activity_meta";
+
+        $activity_id = $wpdb->get_var(
             $wpdb->prepare(
-                "SELECT activity_meta
-                 FROM $table
-                 WHERE user_id = %d AND activity_type = 'quiz' AND activity_post_id = %d
-                 ORDER BY activity_updated DESC LIMIT 1",
-                $user_id,
-                $quiz_id
+                "SELECT ua.activity_id
+                 FROM {$activity_table} AS ua
+                 INNER JOIN {$meta_table} AS quiz_meta
+                    ON quiz_meta.activity_id = ua.activity_id
+                   AND quiz_meta.activity_meta_key = 'quiz'
+                   AND quiz_meta.activity_meta_value+0 = %d
+                 WHERE ua.user_id = %d
+                   AND ua.activity_type = 'quiz'
+                   AND ua.activity_completed IS NOT NULL
+                 ORDER BY ua.activity_completed DESC, ua.activity_id DESC
+                 LIMIT 1",
+                $quiz_id,
+                $user_id
             )
         );
 
-        if ( $result ) {
-            $meta = maybe_unserialize( $result );
-
-            return isset( $meta['percentage'] ) ? (float) $meta['percentage'] : null;
+        if ( ! $activity_id ) {
+            return null;
         }
 
-        return null;
+        $percentage = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT activity_meta_value+0
+                 FROM {$meta_table}
+                 WHERE activity_id = %d
+                   AND activity_meta_key = 'percentage'
+                 ORDER BY activity_meta_id DESC
+                 LIMIT 1",
+                (int) $activity_id
+            )
+        );
+
+        return is_numeric( $percentage ) ? (float) $percentage : null;
     }
 }

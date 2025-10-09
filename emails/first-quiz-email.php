@@ -14,7 +14,14 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $course_id = $debug['course_id'];
 
     $latest_attempt = Villegas_Quiz_Stats::get_latest_attempt_percentage( $quiz_id, $user->ID );
-    $user_score     = $latest_attempt ? (float) $latest_attempt : 0.0;
+
+    if ( null === $latest_attempt && isset( $debug['first_attempt']['percentage'] ) ) {
+        $latest_attempt = is_numeric( $debug['first_attempt']['percentage'] )
+            ? (float) $debug['first_attempt']['percentage']
+            : null;
+    }
+
+    $user_score = null !== $latest_attempt ? (float) $latest_attempt : 0.0;
 
     $average_score = null;
 
