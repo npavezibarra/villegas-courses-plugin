@@ -12,9 +12,18 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     $quiz_id       = $debug['quiz_id'];
     $quiz_post_id  = ! empty( $debug['quiz_post_id'] ) ? (int) $debug['quiz_post_id'] : $quiz_id;
+    $quiz_pro_id   = ! empty( $debug['quiz_pro_id'] ) ? (int) $debug['quiz_pro_id'] : 0;
     $course_id     = $debug['course_id'];
 
+    if ( ! $quiz_pro_id && $quiz_post_id ) {
+        $quiz_pro_id = villegas_resolve_quiz_pro_id( $quiz_post_id );
+    }
+
     $latest_attempt = $quiz_post_id ? Villegas_Quiz_Stats::get_latest_attempt_percentage( $quiz_post_id, $user->ID ) : null;
+
+    if ( null === $latest_attempt && $quiz_pro_id ) {
+        $latest_attempt = Villegas_Quiz_Stats::get_latest_attempt_percentage( $quiz_pro_id, $user->ID );
+    }
 
     $current_percentage = villegas_normalize_percentage_value( $debug['current_percentage'] ?? null );
 
@@ -32,6 +41,14 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     if ( null === $current_percentage && $quiz_post_id ) {
         $meta_attempt = villegas_get_latest_quiz_attempt_from_usermeta( $user->ID, $quiz_post_id );
+
+        if ( null !== $meta_attempt['percentage'] ) {
+            $current_percentage = villegas_normalize_percentage_value( $meta_attempt['percentage'] );
+        }
+    }
+
+    if ( null === $current_percentage && $quiz_pro_id ) {
+        $meta_attempt = villegas_get_latest_quiz_attempt_from_usermeta( $user->ID, $quiz_pro_id );
 
         if ( null !== $meta_attempt['percentage'] ) {
             $current_percentage = villegas_normalize_percentage_value( $meta_attempt['percentage'] );

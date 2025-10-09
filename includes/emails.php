@@ -102,6 +102,97 @@ if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
     }
 }
 
+if ( ! function_exists( 'villegas_resolve_quiz_pro_id' ) ) {
+    function villegas_resolve_quiz_pro_id( int $quiz_post_id ): int {
+        $quiz_post_id = absint( $quiz_post_id );
+
+        if ( ! $quiz_post_id ) {
+            return 0;
+        }
+
+        $pro_id = 0;
+
+        if ( function_exists( 'learndash_get_setting' ) ) {
+            $setting = learndash_get_setting( $quiz_post_id, 'quiz_pro' );
+
+            if ( is_numeric( $setting ) ) {
+                $pro_id = (int) $setting;
+            } elseif ( is_array( $setting ) ) {
+                foreach ( [ 'quiz_pro', 'quiz_pro_id' ] as $key ) {
+                    if ( isset( $setting[ $key ] ) && is_numeric( $setting[ $key ] ) ) {
+                        $pro_id = (int) $setting[ $key ];
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ( ! $pro_id ) {
+            $meta = get_post_meta( $quiz_post_id, '_sfwd-quiz', true );
+
+            if ( is_string( $meta ) ) {
+                $meta = maybe_unserialize( $meta );
+            }
+
+            if ( is_array( $meta ) ) {
+                foreach ( [ 'quiz_pro', 'quiz_pro_id', 'sfwd-quiz_quiz_pro', 'sfwd-quiz_quiz_pro_id' ] as $meta_key ) {
+                    if ( isset( $meta[ $meta_key ] ) && is_numeric( $meta[ $meta_key ] ) ) {
+                        $pro_id = (int) $meta[ $meta_key ];
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ( ! $pro_id ) {
+            $pro_id = (int) get_post_meta( $quiz_post_id, 'quiz_pro_id', true );
+        }
+
+        return $pro_id > 0 ? $pro_id : 0;
+    }
+}
+
+if ( ! function_exists( 'villegas_merge_quiz_attempt_data' ) ) {
+    function villegas_merge_quiz_attempt_data( array $base_attempt, array $candidate_attempt ): array {
+        $base_percentage      = array_key_exists( 'percentage', $base_attempt ) ? $base_attempt['percentage'] : null;
+        $base_timestamp       = array_key_exists( 'timestamp', $base_attempt ) ? (int) $base_attempt['timestamp'] : null;
+        $candidate_percentage = array_key_exists( 'percentage', $candidate_attempt ) ? $candidate_attempt['percentage'] : null;
+        $candidate_timestamp  = array_key_exists( 'timestamp', $candidate_attempt ) ? (int) $candidate_attempt['timestamp'] : null;
+
+        $has_candidate_percentage = null !== $candidate_percentage;
+
+        if ( $has_candidate_percentage ) {
+            if ( null === $base_percentage ) {
+                $base_attempt['percentage'] = $candidate_percentage;
+            } elseif ( $candidate_timestamp && $base_timestamp && $candidate_timestamp > $base_timestamp ) {
+                $base_attempt['percentage'] = $candidate_percentage;
+            } elseif ( $candidate_timestamp && ! $base_timestamp ) {
+                $base_attempt['percentage'] = $candidate_percentage;
+            }
+        }
+
+        if ( $candidate_timestamp ) {
+            if ( ! $base_timestamp || $candidate_timestamp > $base_timestamp ) {
+                $base_attempt['timestamp'] = $candidate_timestamp;
+
+                if ( $has_candidate_percentage ) {
+                    $base_attempt['percentage'] = $candidate_percentage;
+                }
+            }
+        }
+
+        if ( ! array_key_exists( 'percentage', $base_attempt ) ) {
+            $base_attempt['percentage'] = $has_candidate_percentage ? $candidate_percentage : null;
+        }
+
+        if ( ! array_key_exists( 'timestamp', $base_attempt ) ) {
+            $base_attempt['timestamp'] = $candidate_timestamp ?: null;
+        }
+
+        return $base_attempt;
+    }
+}
+
 if ( ! function_exists( 'villegas_get_latest_quiz_attempt_from_usermeta' ) ) {
     function villegas_get_latest_quiz_attempt_from_usermeta( int $user_id, int $quiz_id ): array {
         $user_id = absint( $user_id );
@@ -341,6 +432,10 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
             $quiz_post_id = (int) learndash_get_quiz_id_by_pro_quiz_id( $quiz_pro_id );
         }
 
+        if ( $quiz_post_id && ! $quiz_pro_id ) {
+            $quiz_pro_id = villegas_resolve_quiz_pro_id( $quiz_post_id );
+        }
+
         $quiz_id = $quiz_post_id ? $quiz_post_id : $quiz_pro_id;
         $quiz_id = absint( $quiz_id );
         $user_id = absint( $user->ID );
@@ -364,14 +459,41 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
         $first_quiz_id = $course_id ? Villegas_Course::get_first_quiz_id( $course_id ) : 0;
         $final_quiz_id = $course_id ? Villegas_Course::get_final_quiz_id( $course_id ) : 0;
 
+        $first_quiz_pro_id = $first_quiz_id ? villegas_resolve_quiz_pro_id( $first_quiz_id ) : 0;
+        $final_quiz_pro_id = $final_quiz_id ? villegas_resolve_quiz_pro_id( $final_quiz_id ) : 0;
+
         $is_first_quiz = $quiz_id && $first_quiz_id && (int) $quiz_id === (int) $first_quiz_id;
         $is_final_quiz = $quiz_id && $final_quiz_id && (int) $quiz_id === (int) $final_quiz_id;
 
         $first_attempt = $first_quiz_id ? villegas_get_latest_quiz_attempt( $user_id, $first_quiz_id ) : [ 'percentage' => null, 'timestamp' => null ];
+
+        if ( $first_quiz_pro_id ) {
+            $first_attempt = villegas_merge_quiz_attempt_data(
+                $first_attempt,
+                villegas_get_latest_quiz_attempt( $user_id, $first_quiz_pro_id )
+            );
+        }
+
         $final_attempt = $final_quiz_id ? villegas_get_latest_quiz_attempt( $user_id, $final_quiz_id ) : [ 'percentage' => null, 'timestamp' => null ];
+
+        if ( $final_quiz_pro_id ) {
+            $final_attempt = villegas_merge_quiz_attempt_data(
+                $final_attempt,
+                villegas_get_latest_quiz_attempt( $user_id, $final_quiz_pro_id )
+            );
+        }
 
         if ( $first_quiz_id ) {
             $legacy_first = Villegas_Quiz_Emails::get_last_attempt_data( $user_id, $first_quiz_id );
+
+            if ( $first_quiz_pro_id && ( 'None' === ( $legacy_first['percentage'] ?? 'None' ) || empty( $legacy_first['activity_id'] ) ) ) {
+                $legacy_first_pro = Villegas_Quiz_Emails::get_last_attempt_data( $user_id, $first_quiz_pro_id );
+
+                if ( 'None' !== ( $legacy_first_pro['percentage'] ?? 'None' ) || ! empty( $legacy_first_pro['activity_id'] ) ) {
+                    $legacy_first = $legacy_first_pro;
+                }
+            }
+
             $legacy_first_percentage = villegas_normalize_percentage_value( $legacy_first['percentage'] ?? null );
 
             if ( null !== $legacy_first_percentage ) {
@@ -385,6 +507,15 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
 
         if ( $final_quiz_id ) {
             $legacy_final = Villegas_Quiz_Emails::get_last_attempt_data( $user_id, $final_quiz_id );
+
+            if ( $final_quiz_pro_id && ( 'None' === ( $legacy_final['percentage'] ?? 'None' ) || empty( $legacy_final['activity_id'] ) ) ) {
+                $legacy_final_pro = Villegas_Quiz_Emails::get_last_attempt_data( $user_id, $final_quiz_pro_id );
+
+                if ( 'None' !== ( $legacy_final_pro['percentage'] ?? 'None' ) || ! empty( $legacy_final_pro['activity_id'] ) ) {
+                    $legacy_final = $legacy_final_pro;
+                }
+            }
+
             $legacy_final_percentage = villegas_normalize_percentage_value( $legacy_final['percentage'] ?? null );
 
             if ( null !== $legacy_final_percentage ) {
@@ -407,6 +538,22 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
 
             if ( $total_questions > 0 ) {
                 $current_percentage = ( (float) $quiz_data['score'] / $total_questions ) * 100;
+            }
+        }
+
+        if ( null === $current_percentage && $quiz_post_id ) {
+            $current_attempt = villegas_get_latest_quiz_attempt( $user_id, $quiz_post_id );
+
+            if ( null !== ( $current_attempt['percentage'] ?? null ) ) {
+                $current_percentage = $current_attempt['percentage'];
+            }
+        }
+
+        if ( null === $current_percentage && $quiz_pro_id ) {
+            $current_attempt = villegas_get_latest_quiz_attempt( $user_id, $quiz_pro_id );
+
+            if ( null !== ( $current_attempt['percentage'] ?? null ) ) {
+                $current_percentage = $current_attempt['percentage'];
             }
         }
 
@@ -436,7 +583,9 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
             'course_id'           => $course_id,
             'course_title'        => $course_id ? get_the_title( $course_id ) : '',
             'first_quiz_id'       => $first_quiz_id,
+            'first_quiz_pro_id'   => $first_quiz_pro_id,
             'final_quiz_id'       => $final_quiz_id,
+            'final_quiz_pro_id'   => $final_quiz_pro_id,
             'is_first_quiz'       => $is_first_quiz,
             'is_final_quiz'       => $is_final_quiz,
             'first_attempt'       => $first_attempt,
