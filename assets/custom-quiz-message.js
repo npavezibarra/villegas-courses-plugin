@@ -107,22 +107,32 @@ let villegasFirstQuizEmailSent = false;
         }
 
         let attempts = 0;
-        const maxAttempts = 10;
-        const retryDelay = 700; // ms between attempts
+        const maxAttempts = 12;
+        const retryDelay = 800;
 
         function detectAndSend() {
             attempts++;
 
-            const userNode = document.querySelector('#radial-chart .apexcharts-text tspan');
-            const avgNode = document.querySelector('#radial-chart-promedio .apexcharts-text tspan');
+            const userTextEl =
+                document.querySelector('#radial-chart .apexcharts-text tspan') ||
+                document.querySelector('#radial-chart .apexcharts-datalabel-label') ||
+                document.querySelector('#radial-chart .apexcharts-datalabel-value') ||
+                document.querySelector('#radial-chart text.apexcharts-text') ||
+                null;
 
-            const userScore = userNode ? parseFloat(userNode.textContent.replace('%', '')) : null;
-            const avgScore = avgNode ? parseFloat(avgNode.textContent.replace('%', '')) : null;
+            const avgTextEl =
+                document.querySelector('#radial-chart-promedio .apexcharts-text tspan') ||
+                document.querySelector('#radial-chart-promedio .apexcharts-datalabel-label') ||
+                document.querySelector('#radial-chart-promedio .apexcharts-datalabel-value') ||
+                document.querySelector('#radial-chart-promedio text.apexcharts-text') ||
+                null;
+
+            const userScore = userTextEl ? parseFloat(userTextEl.textContent.replace('%', '').trim()) : null;
+            const avgScore = avgTextEl ? parseFloat(avgTextEl.textContent.replace('%', '').trim()) : null;
 
             if (!isNaN(userScore) && !isNaN(avgScore)) {
                 villegasFirstQuizEmailSent = true;
-                console.info('[FirstQuizEmail] Detected donuts after ' + attempts + ' attempt(s).');
-                console.log('[FirstQuizEmail] Final computed:', { userScore, avgScore });
+                console.log(`[FirstQuizEmail] ✅ Final computed (after ${attempts}):`, { userScore, avgScore });
 
                 $.post(ajaxUrl, {
                     action: 'enviar_correo_first_quiz_rendered',
@@ -144,14 +154,14 @@ let villegasFirstQuizEmailSent = false;
             }
 
             if (attempts < maxAttempts) {
-                console.warn(`[FirstQuizEmail] Attempt ${attempts}: still no chart values. Retrying in ${retryDelay}ms...`);
+                console.warn(`[FirstQuizEmail] Attempt ${attempts}: Donut values not found yet. Retrying...`);
                 setTimeout(detectAndSend, retryDelay);
             } else {
-                console.error('[FirstQuizEmail] No se pudo obtener el puntaje final después de varios intentos.');
+                console.error('[FirstQuizEmail] ❌ No se pudo obtener el puntaje final después de varios intentos.');
             }
         }
 
-        setTimeout(detectAndSend, 800);
+        setTimeout(detectAndSend, 1000);
     });
 })(jQuery);
 
