@@ -164,7 +164,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
         // Check access and completion status
         if ($course_id && is_user_logged_in()) {
-            $status = learndash_is_item_complete($user_id, $course_id, get_the_ID()) ? 'complete' : 'incomplete';
+            $status = learndash_is_item_complete($user_id, get_the_ID(), $course_id) ? 'complete' : 'incomplete';
 
             // Display the status bubble
             if ($status === 'complete') {
