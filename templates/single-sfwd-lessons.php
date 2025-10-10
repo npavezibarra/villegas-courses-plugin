@@ -164,16 +164,15 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
         // Check access and completion status
         if ($course_id && is_user_logged_in()) {
-            $status = learndash_is_item_complete($user_id, get_the_ID(), $course_id) ? 'complete' : 'incomplete';
+            $is_complete = learndash_is_lesson_complete($user_id, get_the_ID(), $course_id);
 
             // Display the status bubble
-            if ($status === 'complete') {
+            if ($is_complete) {
                 echo '<span id="status-complete" style="margin-left: 10px;">VISTO</span>';
             } else {
                 echo '<span id="status-incomplete" style="margin-left: 10px;">NO VISTO</span>';
             }
-            
-    }
+        }
         ?>
     </h3>
     <p id="pertecene-curso">
