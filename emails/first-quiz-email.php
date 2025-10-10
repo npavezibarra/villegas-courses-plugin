@@ -4,9 +4,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user ): array {
+    error_log( '--- [FirstQuizEmail] Building template ---' );
+    error_log( '[FirstQuizEmail] Incoming quiz_data=' . print_r( $quiz_data, true ) );
+
     $debug = villegas_get_quiz_debug_data( $quiz_data, $user );
+    error_log( '[FirstQuizEmail] Debug data (partial)=' . print_r( array_slice( $debug, 0, 3, true ), true ) );
 
     if ( empty( $debug['is_first_quiz'] ) ) {
+        error_log( '[FirstQuizEmail] Not first quiz, aborting.' );
         return [ 'subject' => '', 'body' => '' ];
     }
 
@@ -15,6 +20,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $course_id    = $debug['course_id'];
 
     $current_percentage = villegas_normalize_percentage_value( $quiz_data['percentage'] ?? null );
+    error_log( '[FirstQuizEmail] Normalized percentage=' . var_export( $current_percentage, true ) );
 
     $user_score = null !== $current_percentage ? $current_percentage : 0.0;
     $user_score = max( 0.0, min( 100.0, $user_score ) );

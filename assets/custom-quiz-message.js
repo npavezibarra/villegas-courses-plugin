@@ -46,6 +46,7 @@ jQuery(document).on('learndash-quiz-finished', function () {
 
     // Wait for LearnDash DOM update before sending the email
     getFinalPercentage(function (percentage) {
+        console.log('[FirstQuizEmail] Final computed percentage:', percentage);
         // --- FIRST QUIZ ---
         if (quizData.type === 'first') {
             const firstQuizNonce = quizData.firstQuizNonce || '';
@@ -53,15 +54,26 @@ jQuery(document).on('learndash-quiz-finished', function () {
                 console.error('Falta el nonce para enviar el correo del First Quiz.');
                 return;
             }
+            console.log('[FirstQuizEmail] Sending AJAX with data:', {
+                action: 'enviar_correo_first_quiz',
+                quiz_id: quizData.quizId,
+                user_id: quizData.userId || 0,
+                quiz_percentage: percentage,
+                nonce: firstQuizNonce
+            });
             jQuery.post(ajaxUrl, {
                 action: 'enviar_correo_first_quiz',
                 quiz_id: quizData.quizId,
                 user_id: quizData.userId || 0,
                 quiz_percentage: percentage,
                 nonce: firstQuizNonce
-            }).fail(function (response) {
-                console.error('Error al enviar correo First Quiz:', response);
-            });
+            })
+                .done(function (response) {
+                    console.log('[FirstQuizEmail] AJAX response:', response);
+                })
+                .fail(function (response) {
+                    console.error('Error al enviar correo First Quiz:', response);
+                });
         }
 
         // --- FINAL QUIZ (keep original logic) ---
