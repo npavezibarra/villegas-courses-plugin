@@ -82,6 +82,25 @@ function my_custom_ld_course_styles() {
 }
 add_action('wp_enqueue_scripts', 'my_custom_ld_course_styles');
 
+add_action('wp_enqueue_scripts', function () {
+    if ( is_singular('sfwd-lessons') ) {
+        wp_enqueue_script(
+            'vil-lesson-navigation-mobile',
+            plugin_dir_url(__FILE__) . 'assets/js/lesson-navigation-mobile.js',
+            [],
+            '1.0',
+            true
+        );
+
+        wp_enqueue_style(
+            'vil-lesson-navigation-mobile',
+            plugin_dir_url(__FILE__) . 'assets/css/lesson-navigation-mobile.css',
+            [],
+            '1.0'
+        );
+    }
+});
+
 add_action('wp_enqueue_scripts', 'villegas_enqueue_profile_picture_script');
 function villegas_enqueue_profile_picture_script() {
     if (is_account_page()) {
