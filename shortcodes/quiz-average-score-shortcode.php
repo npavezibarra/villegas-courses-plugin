@@ -41,10 +41,10 @@ function villegas_quiz_average_score_shortcode( $atts ): string {
     $average = Villegas_Quiz_Stats::get_average_percentage( $quiz_id );
 
     $has_data      = null !== $average;
-    $percent_value = $has_data ? min( 100, max( 0, round( $average, $decimals ) ) ) : 0;
+    $percent_value = $has_data ? Villegas_Quiz_Stats::format_percentage( (float) $average ) : 0;
 
     $label = $has_data
-        ? sprintf( '%s%%', number_format_i18n( $percent_value, $decimals ) )
+        ? sprintf( '%s%%', number_format_i18n( $percent_value ) )
         : __( 'No data', 'villegas-courses' );
 
     $classes = [ 'wpProQuiz_pointsChart', 'wpProQuiz_pointsChart--average' ];

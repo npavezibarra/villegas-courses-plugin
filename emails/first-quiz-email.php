@@ -33,8 +33,8 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     $average_value = null !== $average_score ? max( 0.0, min( 100.0, (float) $average_score ) ) : 0.0;
 
-    $user_display_percent    = round( $user_score );
-    $average_display_percent = null !== $average_score ? round( (float) $average_score ) : 0;
+    $user_display_percent    = Villegas_Quiz_Stats::format_percentage( $user_score );
+    $average_display_percent = null !== $average_score ? Villegas_Quiz_Stats::format_percentage( (float) $average_score ) : 0;
 
     $subject = sprintf(
         __( '✔️ Primer quiz completado: %s', 'villegas-courses' ),

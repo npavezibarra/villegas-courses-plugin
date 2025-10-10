@@ -4,6 +4,16 @@
  */
 class Villegas_Quiz_Stats {
     /**
+     * Format a percentage value consistently across all displays.
+     *
+     * @param float $value Raw percentage value.
+     * @return int Rounded integer representation of the percentage.
+     */
+    public static function format_percentage( float $value ): int {
+        return (int) round( $value );
+    }
+
+    /**
      * Fetch all attempts recorded for a LearnDash quiz across every user.
      *
      * @param int $quiz_id LearnDash quiz post ID.
