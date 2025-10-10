@@ -25,11 +25,19 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $user_score = null !== $current_percentage ? $current_percentage : 0.0;
     $user_score = max( 0.0, min( 100.0, $user_score ) );
 
-    $average_score = null;
+    $stats_quiz_id = 0;
 
-    if ( $quiz_post_id ) {
-        $average_score = Villegas_Quiz_Stats::get_average_percentage( $quiz_post_id );
+    if ( ! empty( $debug['quiz_post_id'] ) ) {
+        $stats_quiz_id = (int) $debug['quiz_post_id'];
+    } elseif ( ! empty( $debug['quiz_pro_id'] ) && function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ) {
+        $stats_quiz_id = (int) learndash_get_quiz_id_by_pro_quiz_id( (int) $debug['quiz_pro_id'] );
     }
+
+    if ( ! $stats_quiz_id ) {
+        $stats_quiz_id = (int) $quiz_id;
+    }
+
+    $average_score = Villegas_Quiz_Stats::get_average_percentage( $stats_quiz_id );
 
     $average_value = null !== $average_score ? max( 0.0, min( 100.0, (float) $average_score ) ) : 0.0;
 
