@@ -232,8 +232,31 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             }
             ?>
         </div>
-    </div>
 </div>
+</div>
+
+<?php if ( is_singular('sfwd-lessons') ) : ?>
+  <!-- Backdrop (hidden by default) -->
+  <div id="vil-lesson-backdrop" class="vil-lesson-backdrop" aria-hidden="true"></div>
+
+  <!-- Floating hamburger (mobile only via CSS) -->
+  <button
+    id="vil-lesson-toggle"
+    class="vil-lesson-btn"
+    type="button"
+    aria-controls="lesson-navigation"
+    aria-expanded="false"
+    aria-label="Abrir menú de lecciones"
+  >
+    <!-- simple hamburger -->
+    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <line x1="3" y1="6"  x2="21" y2="6"></line>
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </button>
+<?php endif; ?>
 
 <?php
 // Load the default Twenty Twenty-Four footer template part
