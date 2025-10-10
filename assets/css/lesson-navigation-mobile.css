@@ -55,16 +55,16 @@
     transform: rotate(90deg);
   }
 
-  /* When open: make the existing #lesson-navigation a full-screen overlay */
+  /* When open: make the existing #lesson-navigation a centered overlay */
   body.vil-nav-open #lesson-navigation {
     display: block;
     position: fixed;
-    top: 0;
-    bottom: 0;
+    top: 50%;
     left: 50%;
     width: 88%;
     max-width: 88%;
-    transform: translateX(-50%);
+    height: 60vh;
+    transform: translate(-50%, -50%);
     z-index: 9999;
     overflow-y: auto;
     padding: 16px;
@@ -89,7 +89,18 @@
     animation: vilSlideIn .25s ease-out;
   }
   @keyframes vilSlideIn {
-    from { transform: translate(-50%, 24px); opacity: 0; }
-    to   { transform: translate(-50%, 0);    opacity: 1; }
+    from { transform: translate(-50%, -35%); opacity: 0; }
+    to   { transform: translate(-50%, -50%); opacity: 1; }
+  }
+
+  footer {
+    display: none;
+  }
+}
+
+/* Desktop layout: keep normal style */
+@media (min-width: 971px) {
+  #lesson-navigation {
+    margin-top: 20px;
   }
 }
