@@ -113,26 +113,35 @@ let villegasFirstQuizEmailSent = false;
         function detectAndSend() {
             attempts++;
 
-            const userTextEl =
-                document.querySelector('#radial-chart .apexcharts-text tspan') ||
-                document.querySelector('#radial-chart .apexcharts-datalabel-label') ||
-                document.querySelector('#radial-chart .apexcharts-datalabel-value') ||
-                document.querySelector('#radial-chart text.apexcharts-text') ||
-                null;
+            const userContainer = document.querySelector('#radial-chart');
+            const avgContainer = document.querySelector('#radial-chart-promedio');
 
-            const avgTextEl =
-                document.querySelector('#radial-chart-promedio .apexcharts-text tspan') ||
-                document.querySelector('#radial-chart-promedio .apexcharts-datalabel-label') ||
-                document.querySelector('#radial-chart-promedio .apexcharts-datalabel-value') ||
-                document.querySelector('#radial-chart-promedio text.apexcharts-text') ||
-                null;
+            function extractPercentage(container) {
+                if (!container) {
+                    return null;
+                }
 
-            const userScore = userTextEl ? parseFloat(userTextEl.textContent.replace('%', '').trim()) : null;
-            const avgScore = avgTextEl ? parseFloat(avgTextEl.textContent.replace('%', '').trim()) : null;
+                const textNodes = Array.from(container.querySelectorAll('*'))
+                    .map(function (el) { return (el.textContent || '').trim(); })
+                    .filter(function (t) { return /^\d{1,3}(\.\d+)?%?$/.test(t); });
+
+                if (!textNodes.length) {
+                    return null;
+                }
+
+                const numericValues = textNodes
+                    .map(function (t) { return parseFloat(t.replace('%', '')); })
+                    .filter(function (n) { return !isNaN(n); });
+
+                return numericValues.length ? Math.max.apply(Math, numericValues) : null;
+            }
+
+            const userScore = extractPercentage(userContainer);
+            const avgScore = extractPercentage(avgContainer);
 
             if (!isNaN(userScore) && !isNaN(avgScore)) {
                 villegasFirstQuizEmailSent = true;
-                console.log(`[FirstQuizEmail] ✅ Final computed (after ${attempts}):`, { userScore, avgScore });
+                console.log(`[FirstQuizEmail] ✅ Final computed (after ${attempts}):`, { userScore: userScore, avgScore: avgScore });
 
                 $.post(ajaxUrl, {
                     action: 'enviar_correo_first_quiz_rendered',
@@ -154,7 +163,7 @@ let villegasFirstQuizEmailSent = false;
             }
 
             if (attempts < maxAttempts) {
-                console.warn(`[FirstQuizEmail] Attempt ${attempts}: Donut values not found yet. Retrying...`);
+                console.warn(`[FirstQuizEmail] Attempt ${attempts}: values not found. Retrying...`);
                 setTimeout(detectAndSend, retryDelay);
             } else {
                 console.error('[FirstQuizEmail] ❌ No se pudo obtener el puntaje final después de varios intentos.');
