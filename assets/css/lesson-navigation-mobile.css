@@ -1,4 +1,12 @@
 /* Base: nothing changes on desktop */
+#lesson-navigation {
+  border-right: 1px solid #000000;
+}
+
+li.course-section-header {
+  border-top: 1px solid #000000 !important;
+}
+
 .vil-lesson-btn,
 .vil-lesson-backdrop { display: none; }
 
@@ -81,7 +89,7 @@
 
   /* Requested list header tweak for mobile overlay */
   body.vil-nav-open li.course-section-header {
-    border-top: none;
+    border-top: none !important;
   }
 
   /* Small slide-in effect */
