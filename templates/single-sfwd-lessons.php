@@ -53,6 +53,23 @@
         .lesson-item.current-lesson .lesson-circle {
             background-color: #dfdfdf;
         }
+
+        /* Apply spacing for the header group rendered by the site editor */
+        body.single-sfwd-lessons .wp-block-group.alignwide.has-base-background-color.has-background.has-global-padding.is-layout-constrained.wp-block-group-is-layout-constrained {
+            border-bottom: 1px solid black !important;
+        }
+
+        /* Ensure the main content group keeps the lesson nav and content apart */
+        body.single-sfwd-lessons .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-block-group-is-layout-flex {
+            justify-content: space-between;
+        }
+
+        /* For screen sizes below 1020px */
+        @media screen and (max-width: 1020px) {
+            body.single-sfwd-lessons .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-block-group-is-layout-flex {
+                justify-content: center;
+            }
+        }
     </style>
 </head>
 
@@ -62,7 +79,7 @@
 echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
 ?>
 
-<div id="lesson-wrapper">
+<div id="lesson-wrapper" class="my-container-class">
     <!-- Lesson Navigation -->
     <div id="lesson-navigation">
         <h3>Contenido del curso</h3>
