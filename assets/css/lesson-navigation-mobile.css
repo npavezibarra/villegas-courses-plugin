@@ -75,6 +75,10 @@
     border: 1px solid black;
   }
 
+  #lesson-main-content iframe {
+    height: 100% !important;
+  }
+
   /* Requested list header tweak for mobile overlay */
   body.vil-nav-open li.course-section-header {
     border-top: none;
