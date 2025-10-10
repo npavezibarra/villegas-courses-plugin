@@ -98,8 +98,8 @@
   }
 }
 
-/* Desktop layout: keep normal style */
-@media (min-width: 971px) {
+/* Small-screen layout: keep margin on the overlay container */
+@media (max-width: 971px) {
   #lesson-navigation {
     margin-top: 20px;
   }
