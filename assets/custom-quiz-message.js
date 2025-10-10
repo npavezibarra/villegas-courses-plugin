@@ -107,70 +107,57 @@ let villegasFirstQuizEmailSent = false;
         }
 
         let attempts = 0;
-        const maxAttempts = 12;
-        const retryDelay = 800;
+        const maxAttempts = 20;
+        const retryDelay = 500;
 
-        function detectAndSend() {
+        function detectPointsLabels() {
             attempts++;
 
-            const userContainer = document.querySelector('#radial-chart');
-            const avgContainer = document.querySelector('#radial-chart-promedio');
+            const labels = document.querySelectorAll('.wpProQuiz_pointsChart__label');
 
-            function extractPercentage(container) {
-                if (!container) {
-                    return null;
-                }
+            if (labels.length >= 2) {
+                const userLabel = labels[0];
+                const avgLabel = labels[1];
 
-                const textNodes = Array.from(container.querySelectorAll('*'))
-                    .map(function (el) { return (el.textContent || '').trim(); })
-                    .filter(function (t) { return /^\d{1,3}(\.\d+)?%?$/.test(t); });
+                const userScore = parseFloat(userLabel.textContent.replace('%', '').trim());
+                const avgScore = parseFloat(avgLabel.textContent.replace('%', '').trim());
 
-                if (!textNodes.length) {
-                    return null;
-                }
-
-                const numericValues = textNodes
-                    .map(function (t) { return parseFloat(t.replace('%', '')); })
-                    .filter(function (n) { return !isNaN(n); });
-
-                return numericValues.length ? Math.max.apply(Math, numericValues) : null;
-            }
-
-            const userScore = extractPercentage(userContainer);
-            const avgScore = extractPercentage(avgContainer);
-
-            if (!isNaN(userScore) && !isNaN(avgScore)) {
-                villegasFirstQuizEmailSent = true;
-                console.log(`[FirstQuizEmail] ✅ Final computed (after ${attempts}):`, { userScore: userScore, avgScore: avgScore });
-
-                $.post(ajaxUrl, {
-                    action: 'enviar_correo_first_quiz_rendered',
-                    quiz_id: quizData.quizId,
-                    user_id: quizData.userId,
-                    user_score: userScore,
-                    average_score: avgScore,
-                    nonce: nonce
-                })
-                    .done(function (res) {
-                        console.info('[FirstQuizEmail] AJAX success:', res);
-                    })
-                    .fail(function (err) {
-                        console.error('[FirstQuizEmail] AJAX failed:', err);
-                        villegasFirstQuizEmailSent = false;
+                if (!isNaN(userScore) && !isNaN(avgScore)) {
+                    villegasFirstQuizEmailSent = true;
+                    console.log(`[FirstQuizEmail] ✅ Found wpProQuiz_pointsChart__label values after ${attempts} attempt(s):`, {
+                        userScore: userScore,
+                        avgScore: avgScore
                     });
 
-                return;
+                    $.post(ajaxUrl, {
+                        action: 'enviar_correo_first_quiz_rendered',
+                        quiz_id: quizData.quizId,
+                        user_id: quizData.userId,
+                        user_score: userScore,
+                        average_score: avgScore,
+                        nonce: nonce
+                    })
+                        .done(function (res) {
+                            console.info('[FirstQuizEmail] AJAX success:', res);
+                        })
+                        .fail(function (err) {
+                            console.error('[FirstQuizEmail] AJAX failed:', err);
+                            villegasFirstQuizEmailSent = false;
+                        });
+
+                    return;
+                }
             }
 
             if (attempts < maxAttempts) {
-                console.warn(`[FirstQuizEmail] Attempt ${attempts}: values not found. Retrying...`);
-                setTimeout(detectAndSend, retryDelay);
+                console.warn(`[FirstQuizEmail] Attempt ${attempts}: .wpProQuiz_pointsChart__label not ready. Retrying...`);
+                setTimeout(detectPointsLabels, retryDelay);
             } else {
-                console.error('[FirstQuizEmail] ❌ No se pudo obtener el puntaje final después de varios intentos.');
+                console.error('[FirstQuizEmail] ❌ No se pudo obtener las etiquetas wpProQuiz_pointsChart__label después de varios intentos.');
             }
         }
 
-        setTimeout(detectAndSend, 1000);
+        setTimeout(detectPointsLabels, 1000);
     });
 })(jQuery);
 
