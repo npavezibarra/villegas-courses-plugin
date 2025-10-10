@@ -6,7 +6,11 @@
 @media (max-width: 970px) {
 
   /* Hide the sidebar by default on mobile */
-  #lesson-navigation { display: none; }
+  #lesson-navigation {
+    display: none;
+    max-width: 88%;
+    margin: auto;
+  }
 
   /* Floating hamburger button (bottom-left) */
   .vil-lesson-btn {
@@ -24,8 +28,13 @@
     box-shadow: 0 4px 12px rgba(0,0,0,.18);
     z-index: 10000;
     cursor: pointer;
+    transition: transform .2s ease;
   }
   .vil-lesson-btn:active { transform: scale(.97); }
+
+  .vil-lesson-btn svg {
+    transition: transform .2s ease;
+  }
 
   /* Backdrop */
   .vil-lesson-backdrop {
@@ -42,11 +51,20 @@
   /* When open: show backdrop */
   body.vil-nav-open .vil-lesson-backdrop { display: block; }
 
+  body.vil-nav-open .vil-lesson-btn svg {
+    transform: rotate(90deg);
+  }
+
   /* When open: make the existing #lesson-navigation a full-screen overlay */
   body.vil-nav-open #lesson-navigation {
     display: block;
     position: fixed;
-    inset: 0;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: 88%;
+    max-width: 88%;
+    transform: translateX(-50%);
     z-index: 9999;
     overflow-y: auto;
     padding: 16px;
@@ -67,7 +85,7 @@
     animation: vilSlideIn .25s ease-out;
   }
   @keyframes vilSlideIn {
-    from { transform: translateY(24px); opacity: 0; }
-    to   { transform: translateY(0);    opacity: 1; }
+    from { transform: translate(-50%, 24px); opacity: 0; }
+    to   { transform: translate(-50%, 0);    opacity: 1; }
   }
 }
