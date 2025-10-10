@@ -15,36 +15,29 @@ function villegas_enviar_correo_first_quiz_rendered() {
 
     $req = wp_unslash( $_POST );
 
-    $quiz_id       = isset( $req['quiz_id'] ) ? (int) $req['quiz_id'] : 0;
-    $user_id       = isset( $req['user_id'] ) ? (int) $req['user_id'] : 0;
-    $user_score    = isset( $req['user_score'] ) ? (float) $req['user_score'] : 0;
-    $average_score = isset( $req['average_score'] ) ? (float) $req['average_score'] : 0;
-
-    if ( ! is_user_logged_in() ) {
-        wp_send_json_error( 'No autorizado' );
-    }
-
-    $current_user_id = get_current_user_id();
-    if ( $current_user_id !== $user_id ) {
-        wp_send_json_error( 'Usuario no autorizado' );
-    }
+    $quiz_id    = (int) ( $req['quiz_id'] ?? 0 );
+    $user_id    = (int) ( $req['user_id'] ?? 0 );
+    $user_score = (float) ( $req['user_score'] ?? 0 );
+    $avg_score  = (float) ( $req['average_score'] ?? 0 );
 
     if ( ! $quiz_id || ! $user_id ) {
+        error_log( '[EmailSync] Missing quiz_id or user_id.' );
         wp_send_json_error( 'Missing quiz or user.' );
     }
 
     $user = get_userdata( $user_id );
     if ( ! $user ) {
+        error_log( '[EmailSync] User not found: ' . $user_id );
         wp_send_json_error( 'User not found.' );
     }
 
-    error_log( sprintf( '[EmailSync] Sending rendered-data email. User: %d | Quiz: %d | Scores: %s/%s', $user_id, $quiz_id, $user_score, $average_score ) );
-
     $quiz_data = [
         'percentage' => $user_score,
-        'average'    => $average_score,
+        'average'    => $avg_score,
         'quiz_id'    => $quiz_id,
     ];
+
+    error_log( "[EmailSync] Sending rendered-data email | user={$user_id}, quiz={$quiz_id}, user_score={$user_score}, avg_score={$avg_score}" );
 
     $email = villegas_get_first_quiz_email_content( $quiz_data, $user );
 
@@ -58,6 +51,8 @@ function villegas_enviar_correo_first_quiz_rendered() {
         $email['body'],
         [ 'Content-Type: text/html; charset=UTF-8' ]
     );
+
+    error_log( '[EmailSync] wp_mail result=' . var_export( $sent, true ) );
 
     if ( $sent ) {
         wp_send_json_success( 'Rendered-data email sent' );

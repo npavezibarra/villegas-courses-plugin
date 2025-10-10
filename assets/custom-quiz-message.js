@@ -84,70 +84,74 @@ jQuery(document).on('learndash-quiz-finished', function () {
 
 let villegasFirstQuizEmailSent = false;
 
-document.addEventListener('learndash-show-quiz-results', function () {
-    if (villegasFirstQuizEmailSent) {
-        return;
-    }
-
-    if (typeof quizData === 'undefined' || quizData.type !== 'first') {
-        return;
-    }
-
-    const ajaxConfig = window.villegasAjax || {};
-    const ajaxUrl = ajaxConfig.ajaxUrl || window.ajaxurl || '';
-    if (!ajaxUrl) {
-        console.error('[EmailSync] Missing AJAX URL when trying to send rendered first quiz email.');
-        return;
-    }
-
-    const nonce = quizData.firstQuizNonce || '';
-    if (!nonce) {
-        console.error('[EmailSync] Missing nonce for rendered-data first quiz email.');
-        return;
-    }
-
-    const resultBox = document.querySelector('#ld-quiz-result');
-    if (!resultBox) {
-        return;
-    }
-
-    const extractPercentage = (selector) => {
-        const el = document.querySelector(selector);
-        if (!el) {
-            return null;
+(function ($) {
+    $(document).on('learndash-quiz-finished', function () {
+        if (villegasFirstQuizEmailSent) {
+            return;
         }
 
-        const raw = el.textContent || '';
-        const cleaned = raw.replace(/[^0-9.,-]/g, '').replace(',', '.');
-        const value = parseFloat(cleaned);
+        if (typeof quizData === 'undefined' || quizData.type !== 'first') {
+            return;
+        }
 
-        return Number.isFinite(value) ? value : null;
-    };
+        const ajaxUrl = (window.villegasAjax && window.villegasAjax.ajaxUrl) || window.ajaxurl || '';
+        if (!ajaxUrl) {
+            console.error('[FirstQuizEmail] No AJAX URL available.');
+            return;
+        }
 
-    const userScore = extractPercentage('#radial-chart .apexcharts-text tspan');
-    const avgScore = extractPercentage('#radial-chart-promedio .apexcharts-text tspan');
+        const nonce = quizData.firstQuizNonce || '';
+        if (!nonce) {
+            console.error('[FirstQuizEmail] Missing nonce for rendered first quiz email.');
+            return;
+        }
 
-    if (userScore === null) {
-        console.warn('[EmailSync] Unable to read rendered user score. Aborting email send.');
-        return;
-    }
+        let attempts = 0;
+        const maxAttempts = 10;
+        const retryDelay = 700; // ms between attempts
 
-    villegasFirstQuizEmailSent = true;
+        function detectAndSend() {
+            attempts++;
 
-    console.log('[EmailSync] Detected Final Rendered Scores:', { userScore, avgScore });
+            const userNode = document.querySelector('#radial-chart .apexcharts-text tspan');
+            const avgNode = document.querySelector('#radial-chart-promedio .apexcharts-text tspan');
 
-    jQuery.post(ajaxUrl, {
-        action: 'enviar_correo_first_quiz_rendered',
-        quiz_id: quizData.quizId,
-        user_id: quizData.userId,
-        user_score: userScore,
-        average_score: avgScore !== null ? avgScore : '',
-        nonce: nonce
-    }).done(function (res) {
-        console.log('[EmailSync] Rendered-data email response:', res);
-    }).fail(function (err) {
-        console.error('[EmailSync] Rendered-data email failed:', err);
-        villegasFirstQuizEmailSent = false;
+            const userScore = userNode ? parseFloat(userNode.textContent.replace('%', '')) : null;
+            const avgScore = avgNode ? parseFloat(avgNode.textContent.replace('%', '')) : null;
+
+            if (!isNaN(userScore) && !isNaN(avgScore)) {
+                villegasFirstQuizEmailSent = true;
+                console.info('[FirstQuizEmail] Detected donuts after ' + attempts + ' attempt(s).');
+                console.log('[FirstQuizEmail] Final computed:', { userScore, avgScore });
+
+                $.post(ajaxUrl, {
+                    action: 'enviar_correo_first_quiz_rendered',
+                    quiz_id: quizData.quizId,
+                    user_id: quizData.userId,
+                    user_score: userScore,
+                    average_score: avgScore,
+                    nonce: nonce
+                })
+                    .done(function (res) {
+                        console.info('[FirstQuizEmail] AJAX success:', res);
+                    })
+                    .fail(function (err) {
+                        console.error('[FirstQuizEmail] AJAX failed:', err);
+                        villegasFirstQuizEmailSent = false;
+                    });
+
+                return;
+            }
+
+            if (attempts < maxAttempts) {
+                console.warn(`[FirstQuizEmail] Attempt ${attempts}: still no chart values. Retrying in ${retryDelay}ms...`);
+                setTimeout(detectAndSend, retryDelay);
+            } else {
+                console.error('[FirstQuizEmail] No se pudo obtener el puntaje final después de varios intentos.');
+            }
+        }
+
+        setTimeout(detectAndSend, 800);
     });
-});
+})(jQuery);
 
