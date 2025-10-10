@@ -113,10 +113,7 @@ body.vil-nav-open li.course-section-header {
   }
 }
 
-/* Desktop layout: keep normal style */
-div#lesson-navigation {
-  margin-top: 20px;
-}
+
 
 /* Mobile overlay behavior */
 @media (max-width: 970px) {
