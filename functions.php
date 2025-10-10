@@ -18,6 +18,7 @@ if ( ! class_exists( 'Villegas_Course' ) ) {
 
 require_once plugin_dir_path( __FILE__ ) . 'includes/emails.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/first-quiz-email-ajax.php';
+require_once plugin_dir_path( __FILE__ ) . 'includes/first-quiz-email-rendered.php';
 
 function allow_pending_role_users_access_quiz( $has_access, $post_id, $user_id ) {
     // Get the user's role(s)

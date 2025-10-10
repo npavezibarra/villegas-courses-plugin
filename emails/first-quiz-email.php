@@ -16,7 +16,15 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     }
 
     $quiz_id      = $debug['quiz_id'];
-    $quiz_post_id = ! empty( $debug['quiz_post_id'] ) ? (int) $debug['quiz_post_id'] : $quiz_id;
+    $quiz_post_id = ! empty( $debug['quiz_post_id'] ) ? (int) $debug['quiz_post_id'] : 0;
+
+    if ( ! $quiz_post_id && ! empty( $debug['quiz_id'] ) ) {
+        $potential_post_id = (int) $debug['quiz_id'];
+
+        if ( $potential_post_id && 'sfwd-quiz' === get_post_type( $potential_post_id ) ) {
+            $quiz_post_id = $potential_post_id;
+        }
+    }
     $course_id    = $debug['course_id'];
 
     $current_percentage = villegas_normalize_percentage_value( $quiz_data['percentage'] ?? null );
@@ -25,10 +33,38 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $user_score = null !== $current_percentage ? $current_percentage : 0.0;
     $user_score = max( 0.0, min( 100.0, $user_score ) );
 
-    $average_score = null;
+    $stats_quiz_id = 0;
 
-    if ( $quiz_post_id ) {
-        $average_score = Villegas_Quiz_Stats::get_average_percentage( $quiz_post_id );
+    if ( ! empty( $debug['quiz_post_id'] ) ) {
+        $stats_quiz_id = (int) $debug['quiz_post_id'];
+    } elseif ( ! empty( $debug['quiz_pro_id'] ) && function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ) {
+        $stats_quiz_id = (int) learndash_get_quiz_id_by_pro_quiz_id( (int) $debug['quiz_pro_id'] );
+    }
+
+    if ( ! $stats_quiz_id ) {
+        $stats_quiz_id = (int) $quiz_id;
+    }
+
+    if ( $stats_quiz_id && 'sfwd-quiz' !== get_post_type( $stats_quiz_id ) && function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ) {
+        $resolved_stats_id = (int) learndash_get_quiz_id_by_pro_quiz_id( $stats_quiz_id );
+
+        if ( $resolved_stats_id ) {
+            $stats_quiz_id = $resolved_stats_id;
+        }
+    }
+
+    if ( $quiz_post_id && 'sfwd-quiz' === get_post_type( $quiz_post_id ) ) {
+        $stats_quiz_id = $quiz_post_id;
+    }
+
+    $incoming_average = array_key_exists( 'average', $quiz_data )
+        ? villegas_normalize_percentage_value( $quiz_data['average'] )
+        : null;
+
+    if ( null !== $incoming_average ) {
+        $average_score = $incoming_average;
+    } else {
+        $average_score = Villegas_Quiz_Stats::get_average_percentage( $stats_quiz_id );
     }
 
     $average_value = null !== $average_score ? max( 0.0, min( 100.0, (float) $average_score ) ) : 0.0;
@@ -120,15 +156,20 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
       margin-top: 24px !important;
     }
   }
+
+  div[id$="villegas-email-card"] {
+    border-radius: 8px;
+    overflow: hidden;
+  }
 </style>';
 
     $body  = $inline_styles;
     $body .= '<div id="villegas-email-wrapper" style="background-color:#f6f6f6;padding:32px 0;">';
-    $body .= '<div id="villegas-email-card" style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
+    $body .= '<div id="villegas-email-card" style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
 
     $body .= '<div id="villegas-email-encabezado" style="text-align:center;padding:0;">';
     if ( $logo_url ) {
-        $body .= '<img src="' . esc_url( $logo_url ) . '" alt="Academia Villegas" style="width:100%;max-width:720px;height:200px;object-fit:cover;object-position:center;display:block;margin:0 auto;">';
+        $body .= '<img src="' . esc_url( $logo_url ) . '" alt="Academia Villegas" style="width:100%;max-width:720px;height:200px;object-fit:cover;object-position:center;display:block;margin:0 auto;border-top-left-radius:8px;border-top-right-radius:8px;">';
     }
     $body .= '</div>';
 

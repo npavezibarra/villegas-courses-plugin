@@ -47,85 +47,6 @@ jQuery(document).on('learndash-quiz-finished', function () {
     // Wait for LearnDash DOM update before sending the email
     getFinalPercentage(function (percentage) {
         console.log('[FirstQuizEmail] Final computed percentage:', percentage);
-        // --- FIRST QUIZ ---
-        if (quizData.type === 'first') {
-            const firstQuizNonce = quizData.firstQuizNonce || '';
-            const activityNonce = quizData.activityNonce || '';
-
-            if (!firstQuizNonce || !activityNonce) {
-                console.error('[FirstQuizEmail] Missing ajaxUrl/nonce(s).', {
-                    ajaxUrl: !!ajaxUrl,
-                    firstQuizNonce: !!firstQuizNonce,
-                    activityNonce: !!activityNonce
-                });
-                return;
-            }
-
-            let tries = 0;
-            const maxTries = 15;
-
-            function poll() {
-                tries++;
-
-                jQuery.post(ajaxUrl, {
-                    action: 'villegas_get_latest_quiz_result',
-                    quiz_id: quizData.quizId,
-                    user_id: quizData.userId || 0,
-                    nonce: activityNonce
-                }).done(function (res) {
-                    console.log('[FirstQuizEmail][poll] try=', tries, res);
-
-                    if (!res || !res.success || !res.data) {
-                        if (tries < maxTries) {
-                            return setTimeout(poll, 1000);
-                        }
-
-                        console.warn('[FirstQuizEmail][poll] bad response; giving up');
-                        return;
-                    }
-
-                    const data = res.data;
-
-                    if (
-                        data.status === 'ready' &&
-                        typeof data.percentage !== 'undefined' &&
-                        data.percentage !== null
-                    ) {
-                        const pctRounded = Math.round(Number(data.percentage));
-                        console.log('[FirstQuizEmail] READY. percentage=', data.percentage, 'rounded=', pctRounded);
-
-                        jQuery.post(ajaxUrl, {
-                            action: 'enviar_correo_first_quiz',
-                            quiz_id: quizData.quizId,
-                            user_id: quizData.userId || 0,
-                            quiz_percentage: pctRounded,
-                            nonce: firstQuizNonce
-                        }).done(function (emailRes) {
-                            console.log('[FirstQuizEmail] Email AJAX response:', emailRes);
-                        }).fail(function (err) {
-                            console.error('[FirstQuizEmail] Email AJAX failed:', err);
-                        });
-                    } else {
-                        const wait = data.retry_after ? data.retry_after * 1000 : 1500;
-
-                        if (tries < maxTries) {
-                            return setTimeout(poll, wait);
-                        }
-
-                        console.warn('[FirstQuizEmail][poll] not ready after max tries; last=', data);
-                    }
-                }).fail(function (err) {
-                    console.error('[FirstQuizEmail][poll] AJAX error:', err);
-
-                    if (tries < maxTries) {
-                        return setTimeout(poll, 1500);
-                    }
-                });
-            }
-
-            poll();
-        }
-
         // --- FINAL QUIZ (keep original logic) ---
         if (quizData.type === 'final') {
             const finalQuizNonce = quizData.finalQuizNonce || '';
@@ -160,4 +81,83 @@ jQuery(document).on('learndash-quiz-finished', function () {
         }
     });
 });
+
+let villegasFirstQuizEmailSent = false;
+
+(function ($) {
+    $(document).on('learndash-quiz-finished', function () {
+        if (villegasFirstQuizEmailSent) {
+            return;
+        }
+
+        if (typeof quizData === 'undefined' || quizData.type !== 'first') {
+            return;
+        }
+
+        const ajaxUrl = (window.villegasAjax && window.villegasAjax.ajaxUrl) || window.ajaxurl || '';
+        if (!ajaxUrl) {
+            console.error('[FirstQuizEmail] No AJAX URL available.');
+            return;
+        }
+
+        const nonce = quizData.firstQuizNonce || '';
+        if (!nonce) {
+            console.error('[FirstQuizEmail] Missing nonce for rendered first quiz email.');
+            return;
+        }
+
+        let attempts = 0;
+        const maxAttempts = 20;
+        const retryDelay = 500;
+
+        function detectPointsLabels() {
+            attempts++;
+
+            const labels = document.querySelectorAll('.wpProQuiz_pointsChart__label');
+
+            if (labels.length >= 2) {
+                const userLabel = labels[0];
+                const avgLabel = labels[1];
+
+                const userScore = parseFloat(userLabel.textContent.replace('%', '').trim());
+                const avgScore = parseFloat(avgLabel.textContent.replace('%', '').trim());
+
+                if (!isNaN(userScore) && !isNaN(avgScore)) {
+                    villegasFirstQuizEmailSent = true;
+                    console.log(`[FirstQuizEmail] ✅ Found wpProQuiz_pointsChart__label values after ${attempts} attempt(s):`, {
+                        userScore: userScore,
+                        avgScore: avgScore
+                    });
+
+                    $.post(ajaxUrl, {
+                        action: 'enviar_correo_first_quiz_rendered',
+                        quiz_id: quizData.quizId,
+                        user_id: quizData.userId,
+                        user_score: userScore,
+                        average_score: avgScore,
+                        nonce: nonce
+                    })
+                        .done(function (res) {
+                            console.info('[FirstQuizEmail] AJAX success:', res);
+                        })
+                        .fail(function (err) {
+                            console.error('[FirstQuizEmail] AJAX failed:', err);
+                            villegasFirstQuizEmailSent = false;
+                        });
+
+                    return;
+                }
+            }
+
+            if (attempts < maxAttempts) {
+                console.warn(`[FirstQuizEmail] Attempt ${attempts}: .wpProQuiz_pointsChart__label not ready. Retrying...`);
+                setTimeout(detectPointsLabels, retryDelay);
+            } else {
+                console.error('[FirstQuizEmail] ❌ No se pudo obtener las etiquetas wpProQuiz_pointsChart__label después de varios intentos.');
+            }
+        }
+
+        setTimeout(detectPointsLabels, 1000);
+    });
+})(jQuery);
 
