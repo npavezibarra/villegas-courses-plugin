@@ -84,7 +84,7 @@ if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
                         'labels' => [
                             [
                                 'text'  => sprintf( '%d%%', $label_value_int ),
-                                'font'  => [ 'size' => 26, 'weight' => 'bold', 'family' => 'Helvetica, Arial, sans-serif' ],
+                                'font'  => [ 'size' => 34, 'weight' => 'bold', 'family' => 'Helvetica, Arial, sans-serif' ],
                                 'color' => '#222222',
                             ],
                         ],

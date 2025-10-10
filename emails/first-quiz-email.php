@@ -16,7 +16,15 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     }
 
     $quiz_id      = $debug['quiz_id'];
-    $quiz_post_id = ! empty( $debug['quiz_post_id'] ) ? (int) $debug['quiz_post_id'] : $quiz_id;
+    $quiz_post_id = ! empty( $debug['quiz_post_id'] ) ? (int) $debug['quiz_post_id'] : 0;
+
+    if ( ! $quiz_post_id && ! empty( $debug['quiz_id'] ) ) {
+        $potential_post_id = (int) $debug['quiz_id'];
+
+        if ( $potential_post_id && 'sfwd-quiz' === get_post_type( $potential_post_id ) ) {
+            $quiz_post_id = $potential_post_id;
+        }
+    }
     $course_id    = $debug['course_id'];
 
     $current_percentage = villegas_normalize_percentage_value( $quiz_data['percentage'] ?? null );
@@ -35,6 +43,18 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     if ( ! $stats_quiz_id ) {
         $stats_quiz_id = (int) $quiz_id;
+    }
+
+    if ( $stats_quiz_id && 'sfwd-quiz' !== get_post_type( $stats_quiz_id ) && function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ) {
+        $resolved_stats_id = (int) learndash_get_quiz_id_by_pro_quiz_id( $stats_quiz_id );
+
+        if ( $resolved_stats_id ) {
+            $stats_quiz_id = $resolved_stats_id;
+        }
+    }
+
+    if ( $quiz_post_id && 'sfwd-quiz' === get_post_type( $quiz_post_id ) ) {
+        $stats_quiz_id = $quiz_post_id;
     }
 
     $average_score = Villegas_Quiz_Stats::get_average_percentage( $stats_quiz_id );
