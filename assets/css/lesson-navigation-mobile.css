@@ -88,8 +88,8 @@ li.course-section-header {
   }
 
   /* Requested list header tweak for mobile overlay */
-  body.vil-nav-open li.course-section-header {
-    border-top: none !important;
+body.vil-nav-open li.course-section-header {
+    border-top: none;
   }
 
   /* Small slide-in effect */
@@ -110,5 +110,36 @@ li.course-section-header {
 @media (max-width: 971px) {
   #lesson-navigation {
     margin-top: 20px;
+  }
+}
+
+/* Desktop layout: keep normal style */
+div#lesson-navigation {
+  margin-top: 20px;
+}
+
+/* Mobile overlay behavior */
+@media (max-width: 970px) {
+  body.vil-nav-open #lesson-navigation {
+    display: block;
+    position: fixed;
+    top: 50%;                        /* vertical center */
+    left: 50%;
+    width: 88%;
+    max-width: 88%;
+    height: 60vh;                    /* 60% of viewport height */
+    transform: translate(-50%, -50%);/* perfectly centered */
+    z-index: 9999;
+    overflow-y: auto;                /* scroll internal content only */
+    padding: 16px;
+    box-shadow: none;
+    background: #ffffff;
+    border-radius: 0;
+    border: 1px solid black;
+  }
+
+  /* optional visual refinement for lesson section header */
+  body.vil-nav-open li.course-section-header {
+    border-top: none;
   }
 }
