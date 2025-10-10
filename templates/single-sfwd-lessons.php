@@ -11,22 +11,16 @@
         /* Styles for the layout */
         #lesson-wrapper {
             display: flex;
+            flex-direction: column;
             width: 100%;
             max-width: 1280px;
             margin: 0 auto;
-        }
-
-        #lesson-navigation {
-            width: 30%;
-            padding: 20px 0px;
-            background-color: #f9f9f9;
-            border-right: 1px solid #ddd;
-            overflow-y: auto;
+            gap: 20px;
+            padding: 20px;
         }
 
         #lesson-content {
-            width: 70%;
-            padding: 20px;
+            width: 100%;
         }
 
         .lesson-item {
@@ -64,10 +58,14 @@
             justify-content: space-between;
         }
 
-        /* For screen sizes below 1020px */
-        @media screen and (max-width: 1020px) {
-            body.single-sfwd-lessons .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-block-group-is-layout-flex {
-                justify-content: center;
+        @media screen and (min-width: 1024px) {
+            #lesson-wrapper {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+
+            #lesson-content {
+                width: 70%;
             }
         }
     </style>
@@ -80,90 +78,125 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 ?>
 
 <div id="lesson-wrapper" class="my-container-class">
-    <!-- Lesson Navigation -->
-    <div id="lesson-navigation">
-        <h3>Contenido del curso</h3>
-        <?php
-        // Navigation logic
-        if (is_singular('sfwd-lessons')) {
-            $course_id = learndash_get_course_id();
-            $current_lesson_id = get_the_ID();
-            $user_id = get_current_user_id();
+    <?php if (is_singular('sfwd-lessons')) : ?>
+        <!-- Backdrop -->
+        <div id="menu-backdrop"
+             class="fixed inset-0 bg-black bg-opacity-40 z-10 hidden transition-opacity duration-300"></div>
 
-            if ($course_id) {
-                // Get lessons
-                $lessons_query = new WP_Query(array(
-                    'post_type' => 'sfwd-lessons',
-                    'meta_key' => 'course_id',
-                    'meta_value' => $course_id,
-                    'orderby' => 'menu_order',
-                    'order' => 'ASC',
-                    'posts_per_page' => -1,
-                ));
+        <!-- Lesson Navigation -->
+        <div id="lesson-navigation"
+             class="fixed top-4 right-4 bg-gray-200 w-11/12 max-w-sm max-h-[80vh] rounded-xl shadow-2xl p-4
+                overflow-y-auto z-20 transition-all duration-300 transform opacity-0 -translate-y-96 invisible
+                md:static md:w-1/3 md:max-h-full md:opacity-100 md:translate-y-0 md:visible md:block">
+            <h3 class="text-xl font-semibold mb-3 border-b pb-2 border-gray-300 text-gray-800">Contenido del curso</h3>
+            <ul class="list-none pl-0 space-y-2">
+                <?php
+                $course_id = learndash_get_course_id();
+                $current_lesson_id = get_the_ID();
+                $user_id = get_current_user_id();
 
-                // Section headers
-                $course_builder_meta = get_post_meta($course_id, 'course_sections', true);
-                $section_headers = json_decode($course_builder_meta, true);
+                if ($course_id) {
+                    $lessons_query = new WP_Query(array(
+                        'post_type' => 'sfwd-lessons',
+                        'meta_key' => 'course_id',
+                        'meta_value' => $course_id,
+                        'orderby' => 'menu_order',
+                        'order' => 'ASC',
+                        'posts_per_page' => -1,
+                    ));
 
-                echo '<ul style="list-style-type: none; padding-left: 0;">';
+                    $course_builder_meta = get_post_meta($course_id, 'course_sections', true);
+                    $section_headers = json_decode($course_builder_meta, true);
 
-                $lessons = $lessons_query->posts;
-                $lesson_index = 0;
+                    $lessons = $lessons_query->posts;
+                    $lesson_index = 0;
 
-                for ($step_index = 0; $step_index < count($lessons) + count($section_headers); $step_index++) {
-                    $current_section = array_filter($section_headers, function ($header) use ($step_index) {
-                        return isset($header['order']) && $header['order'] == $step_index;
-                    });
+                    $total_steps = count($lessons) + count($section_headers);
 
-                    if (!empty($current_section)) {
-                        $current_section = reset($current_section);
-                        echo '<li class="course-section-header" style="margin-bottom: 10px; padding: 10px;">';
-                        echo '<h4>' . esc_html($current_section['post_title']) . '</h4>';
-                        echo '</li>';
-                        continue;
+                    for ($step_index = 0; $step_index < $total_steps; $step_index++) {
+                        $current_section = array_filter($section_headers ?? array(), function ($header) use ($step_index) {
+                            return isset($header['order']) && (int) $header['order'] === $step_index;
+                        });
+
+                        if (!empty($current_section)) {
+                            $current_section = reset($current_section);
+                            echo '<li class="course-section-header text-sm font-semibold uppercase tracking-wide text-gray-600 pt-4">';
+                            echo esc_html($current_section['post_title']);
+                            echo '</li>';
+                            continue;
+                        }
+
+                        if ($lesson_index < count($lessons)) {
+                            $lesson_post = $lessons[$lesson_index];
+                            $is_completed = learndash_is_lesson_complete($user_id, $lesson_post->ID, $course_id);
+                            $current_lesson_class = ($lesson_post->ID == $current_lesson_id) ? 'current-lesson' : '';
+
+                            $item_classes = array(
+                                'lesson-item',
+                                $is_completed ? 'completed' : 'not-completed',
+                                $current_lesson_class,
+                                'flex',
+                                'items-center',
+                                'gap-3',
+                                'rounded-lg',
+                                'px-3',
+                                'py-2',
+                                'transition',
+                                'duration-200',
+                            );
+
+                            echo '<li class="' . esc_attr(implode(' ', array_filter($item_classes))) . '">';
+                            echo '<span class="lesson-circle"></span>';
+                            echo '<a class="text-gray-800 hover:text-orange-500 font-medium" href="' . esc_url(get_permalink($lesson_post->ID)) . '">';
+                            echo esc_html($lesson_post->post_title);
+                            echo '</a>';
+                            echo '</li>';
+                            $lesson_index++;
+                        }
                     }
 
-                    if ($lesson_index < count($lessons)) {
-                        $lesson_post = $lessons[$lesson_index];
-                        $is_completed = learndash_is_lesson_complete($user_id, $lesson_post->ID, $course_id);
-                        $current_lesson_class = ($lesson_post->ID == $current_lesson_id) ? 'current-lesson' : '';
+                    wp_reset_postdata();
 
-                        echo '<li class="lesson-item ' . ($is_completed ? 'completed' : 'not-completed') . ' ' . esc_attr($current_lesson_class) . '">';
-                        echo '<span class="lesson-circle"></span>';
-                        echo '<a href="' . esc_url(get_permalink($lesson_post->ID)) . '">' . esc_html($lesson_post->post_title) . '</a>';
-                        echo '</li>';
-                        $lesson_index++;
+                    $quiz_query = new WP_Query(array(
+                        'post_type' => 'sfwd-quiz',
+                        'meta_key' => 'course_id',
+                        'meta_value' => $course_id,
+                        'orderby' => 'menu_order',
+                        'order' => 'ASC',
+                        'posts_per_page' => -1,
+                    ));
+
+                    if ($quiz_query->have_posts()) {
+                        while ($quiz_query->have_posts()) {
+                            $quiz_query->the_post();
+                            echo '<li class="lesson-item flex items-center gap-3 rounded-lg px-3 py-2">';
+                            echo '<img src="https://cdn-icons-png.flaticon.com/512/3965/3965068.png" alt="Icono Examen" class="w-5 h-5">';
+                            echo '<a class="text-gray-800 hover:text-orange-500 font-medium" href="' . esc_url(get_permalink(get_the_ID())) . '">';
+                            echo esc_html(get_the_title());
+                            echo '</a>';
+                            echo '</li>';
+                        }
                     }
+
+                    wp_reset_postdata();
                 }
+                ?>
+            </ul>
+        </div>
 
-                wp_reset_postdata();
-
-                // Quizzes
-                $quiz_query = new WP_Query(array(
-                    'post_type' => 'sfwd-quiz',
-                    'meta_key' => 'course_id',
-                    'meta_value' => $course_id,
-                    'orderby' => 'menu_order',
-                    'order' => 'ASC',
-                    'posts_per_page' => -1,
-                ));
-
-                if ($quiz_query->have_posts()) {
-                    while ($quiz_query->have_posts()) {
-                        $quiz_query->the_post();
-                        echo '<li class="lesson-item" style="display: flex; align-items: center; margin-bottom: 5px;">';
-                        echo '<img src="https://cdn-icons-png.flaticon.com/512/3965/3965068.png" alt="Icono Examen" style="width: 20px; height: 20px; margin-right: 10px;">';
-                        echo '<a href="' . esc_url(get_permalink(get_the_ID())) . '" style="text-decoration: none; color: #333;">' . esc_html(get_the_title()) . '</a>';
-                        echo '</li>';
-                    }
-                }
-                
-
-                echo '</ul>';
-            }
-        }
-        ?>
-    </div>
+        <!-- Floating Button -->
+        <button id="lesson-menu-toggle"
+                class="fixed bottom-6 left-6 w-14 h-14 bg-white rounded-full shadow-xl flex items-center justify-center
+                   cursor-pointer hover:shadow-2xl transition duration-300 ease-in-out transform active:scale-95 z-50 md:hidden">
+            <svg id="menu-icon" class="h-6 w-6 text-gray-800 transition-transform duration-300 ease-in-out"
+                 viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+        </button>
+    <?php endif; ?>
 
     <!-- Lesson Content -->
     <div id="lesson-content">

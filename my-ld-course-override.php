@@ -592,3 +592,17 @@ function el_villegas_override_single_quiz_template( $filepath, $name, $args, $ec
     }
     return $filepath;
 }
+
+add_action('wp_enqueue_scripts', function () {
+    if ( is_singular('sfwd-lessons') ) {
+        wp_enqueue_script('tailwind-cdn', 'https://cdn.tailwindcss.com', [], null, false);
+
+        wp_enqueue_script(
+            'villegas-lesson-navigation-tailwind',
+            plugin_dir_url(__FILE__) . 'assets/js/lesson-navigation-tailwind.js',
+            [],
+            '1.0',
+            true
+        );
+    }
+});
