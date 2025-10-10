@@ -33,6 +33,24 @@ function villegas_enviar_correo_first_quiz_handler() {
 
     error_log( sprintf( '[FirstQuizEmail] Received via AJAX → quiz_id=%d, user_id=%d, percentage=%s', $quiz_id, $requested_user, $quiz_percentage ) );
 
+    // Attempt recovery if the browser could not deliver a real percentage yet.
+    if ( $quiz_percentage <= 0 ) {
+        error_log( '[FirstQuizEmail] Percentage was <= 0 from JS. Trying DB fallback...' );
+
+        if ( function_exists( 'politeia_get_latest_completed_quiz_attempt' ) ) {
+            $attempt = politeia_get_latest_completed_quiz_attempt( $requested_user, $quiz_id );
+
+            if ( $attempt && isset( $attempt['percentage'] ) && is_numeric( $attempt['percentage'] ) ) {
+                $quiz_percentage = (float) $attempt['percentage'];
+                error_log( '[FirstQuizEmail] Fallback succeeded. Using percentage=' . $quiz_percentage );
+            } else {
+                error_log( '[FirstQuizEmail] Fallback failed (no attempt or percentage).' );
+            }
+        } else {
+            error_log( '[FirstQuizEmail] Fallback function not available.' );
+        }
+    }
+
     if ( ! $quiz_id || ! $requested_user ) {
         error_log( '[FirstQuizEmail] Missing quiz_id or user_id.' );
         wp_send_json_error( 'Datos incompletos' );
