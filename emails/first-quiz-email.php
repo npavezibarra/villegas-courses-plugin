@@ -120,6 +120,11 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
       margin-top: 24px !important;
     }
   }
+
+  div[id$="villegas-email-card"] {
+    border-radius: 8px;
+    overflow: hidden;
+  }
 </style>';
 
     $body  = $inline_styles;
