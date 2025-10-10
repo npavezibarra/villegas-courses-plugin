@@ -54,21 +54,21 @@
             background-color: #dfdfdf;
         }
 
-        /* Apply these styles to the main content container within the body */
-        body.single-sfwd-lessons .my-container-class {
-            display: flex;
+        /* Apply spacing for the header group rendered by the site editor */
+        body.single-sfwd-lessons .wp-block-group.alignwide.has-base-background-color.has-background.has-global-padding.is-layout-constrained.wp-block-group-is-layout-constrained {
+            border-bottom: 1px solid black !important;
+        }
+
+        /* Ensure the main content group keeps the lesson nav and content apart */
+        body.single-sfwd-lessons .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-block-group-is-layout-flex {
             justify-content: space-between;
         }
 
         /* For screen sizes below 1020px */
         @media screen and (max-width: 1020px) {
-            body.single-sfwd-lessons .my-container-class {
+            body.single-sfwd-lessons .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-block-group-is-layout-flex {
                 justify-content: center;
             }
-        }
-
-        body.single-sfwd-lessons header > div {
-            border-bottom: 1px solid black;
         }
     </style>
 </head>
