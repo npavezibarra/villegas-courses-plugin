@@ -53,6 +53,23 @@
         .lesson-item.current-lesson .lesson-circle {
             background-color: #dfdfdf;
         }
+
+        /* Apply these styles to the main content container within the body */
+        body.single-sfwd-lessons .my-container-class {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* For screen sizes below 1020px */
+        @media screen and (max-width: 1020px) {
+            body.single-sfwd-lessons .my-container-class {
+                justify-content: center;
+            }
+        }
+
+        body.single-sfwd-lessons header > div {
+            border-bottom: 1px solid black;
+        }
     </style>
 </head>
 
@@ -62,7 +79,7 @@
 echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
 ?>
 
-<div id="lesson-wrapper">
+<div id="lesson-wrapper" class="my-container-class">
     <!-- Lesson Navigation -->
     <div id="lesson-navigation">
         <h3>Contenido del curso</h3>
