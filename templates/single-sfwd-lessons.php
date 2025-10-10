@@ -20,8 +20,12 @@
             width: 30%;
             padding: 20px 0px;
             background-color: #f9f9f9;
-            border-right: 1px solid #ddd;
+            border-right: 1px solid #000000;
             overflow-y: auto;
+        }
+
+        li.course-section-header {
+            border-top: 1px solid #000000 !important;
         }
 
         #lesson-content {
@@ -68,6 +72,12 @@
         @media screen and (max-width: 1020px) {
             body.single-sfwd-lessons .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-block-group-is-layout-flex {
                 justify-content: center;
+            }
+        }
+
+        @media (max-width: 971px) {
+            #lesson-navigation {
+                margin-top: 20px;
             }
         }
     </style>
