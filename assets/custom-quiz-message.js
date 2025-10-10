@@ -1,66 +1,58 @@
 document.addEventListener("DOMContentLoaded", function () {
     const startQuizButton = document.querySelector('.wpProQuiz_button[name="startQuiz"]');
-
-    if (
-        startQuizButton &&
-        typeof quizData !== 'undefined' &&
-        !document.getElementById('quiz-start-message')
-    ) {
+    if (startQuizButton && typeof quizData !== 'undefined' && !document.getElementById('quiz-start-message')) {
         const messageDiv = document.createElement('div');
         messageDiv.className = 'custom-quiz-message';
         messageDiv.id = 'quiz-start-message';
-
         const messageContent = `
             <a id="back-to-course-link" href="${document.referrer}" class="back-to-course-link">Volver al curso</a>
             <div id="quiz-start-paragraph">
                 ${quizData.description || '<p style="color:red;">(Falta la descripción del quiz)</p>'}
             </div>
         `;
-
         messageDiv.innerHTML = messageContent;
         startQuizButton.parentNode.insertBefore(messageDiv, startQuizButton);
     }
 });
 
-jQuery(document).on('learndash-quiz-finished', function () {
-    if (typeof quizData === 'undefined') {
-        return;
+/**
+ * Espera hasta que LearnDash haya actualizado el DOM con las respuestas correctas.
+ */
+function getFinalPercentage(callback, attempts = 0) {
+    const correct = parseInt(jQuery('.wpProQuiz_correct_answer').text(), 10);
+    const total = parseInt(jQuery('.total-questions').text(), 10);
+
+    if (!isNaN(correct) && total > 0) {
+        const pct = Math.round((correct / total) * 100);
+        callback(pct);
+    } else if (attempts < 10) {
+        // Retry every 200 ms (total up to ~2 s)
+        setTimeout(() => getFinalPercentage(callback, attempts + 1), 200);
+    } else {
+        console.warn('No se pudo obtener el puntaje final después de varios intentos.');
+        callback(0);
     }
+}
 
-    var ajaxConfig = window.villegasAjax || {};
-    var ajaxUrl = ajaxConfig.ajaxUrl || window.ajaxurl || '';
+jQuery(document).on('learndash-quiz-finished', function () {
+    if (typeof quizData === 'undefined') return;
 
+    const ajaxConfig = window.villegasAjax || {};
+    const ajaxUrl = ajaxConfig.ajaxUrl || window.ajaxurl || '';
     if (!ajaxUrl) {
         console.error('No se pudo determinar la URL de AJAX para enviar los correos de quiz.');
         return;
     }
 
-    function getFinalPercentage(callback, attempts = 0) {
-        const correct = parseInt(jQuery('.wpProQuiz_correct_answer').text(), 10);
-        const total = parseInt(jQuery('.total-questions').text(), 10);
-
-        if (!isNaN(correct) && total > 0) {
-            const pct = Math.round((correct / total) * 100);
-            callback(pct);
-        } else if (attempts < 10) {
-            setTimeout(function () {
-                getFinalPercentage(callback, attempts + 1);
-            }, 200);
-        } else {
-            console.warn('No se pudo obtener el puntaje final después de varios intentos.');
-            callback(0);
-        }
-    }
-
+    // Wait for LearnDash DOM update before sending the email
     getFinalPercentage(function (percentage) {
+        // --- FIRST QUIZ ---
         if (quizData.type === 'first') {
-            var firstQuizNonce = quizData.firstQuizNonce || '';
-
+            const firstQuizNonce = quizData.firstQuizNonce || '';
             if (!firstQuizNonce) {
                 console.error('Falta el nonce para enviar el correo del First Quiz.');
                 return;
             }
-
             jQuery.post(ajaxUrl, {
                 action: 'enviar_correo_first_quiz',
                 quiz_id: quizData.quizId,
@@ -72,13 +64,10 @@ jQuery(document).on('learndash-quiz-finished', function () {
             });
         }
 
+        // --- FINAL QUIZ (keep original logic) ---
         if (quizData.type === 'final') {
-            var finalQuizNonce = quizData.finalQuizNonce || '';
-
-            if (!finalQuizNonce) {
-                console.error('Faltan datos para enviar el correo del Final Quiz. Abortando envío.');
-                return;
-            }
+            const finalQuizNonce = quizData.finalQuizNonce || '';
+            if (!finalQuizNonce) return;
 
             function intentarEnviar(reintentoCount) {
                 if (reintentoCount > 5) {
@@ -92,9 +81,8 @@ jQuery(document).on('learndash-quiz-finished', function () {
                     quiz_percentage: percentage,
                     nonce: finalQuizNonce
                 }, function (response) {
-                    if (response.success) {
-                        return;
-                    } else if (response.data === 'Intento no encontrado') {
+                    if (response.success) return;
+                    if (response.data === 'Intento no encontrado') {
                         setTimeout(function () {
                             intentarEnviar(reintentoCount + 1);
                         }, 500);
