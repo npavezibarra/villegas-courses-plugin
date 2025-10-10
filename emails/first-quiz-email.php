@@ -57,7 +57,15 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         $stats_quiz_id = $quiz_post_id;
     }
 
-    $average_score = Villegas_Quiz_Stats::get_average_percentage( $stats_quiz_id );
+    $incoming_average = array_key_exists( 'average', $quiz_data )
+        ? villegas_normalize_percentage_value( $quiz_data['average'] )
+        : null;
+
+    if ( null !== $incoming_average ) {
+        $average_score = $incoming_average;
+    } else {
+        $average_score = Villegas_Quiz_Stats::get_average_percentage( $stats_quiz_id );
+    }
 
     $average_value = null !== $average_score ? max( 0.0, min( 100.0, (float) $average_score ) ) : 0.0;
 

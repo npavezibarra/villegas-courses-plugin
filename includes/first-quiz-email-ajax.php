@@ -12,8 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
  * FIRST QUIZ – SEND EMAIL WITH REAL-TIME SCORE (AJAX)
  * ----------------------------------------------------------
  */
-add_action( 'wp_ajax_enviar_correo_first_quiz', 'villegas_enviar_correo_first_quiz_handler' );
-add_action( 'wp_ajax_nopriv_enviar_correo_first_quiz', 'villegas_enviar_correo_first_quiz_handler' );
+// The rendered-results handler supersedes this legacy hook. Keep the function
+// available for potential reuse, but stop registering the AJAX action so the
+// email only fires after the ApexCharts donuts finish rendering.
+// add_action( 'wp_ajax_enviar_correo_first_quiz', 'villegas_enviar_correo_first_quiz_handler' );
+// add_action( 'wp_ajax_nopriv_enviar_correo_first_quiz', 'villegas_enviar_correo_first_quiz_handler' );
 
 function villegas_enviar_correo_first_quiz_handler() {
     error_log( '--- [FirstQuizEmail] Handler triggered ---' );
