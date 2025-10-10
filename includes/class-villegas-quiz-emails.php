@@ -11,16 +11,17 @@ class Villegas_Quiz_Emails {
      * @param int $user_id
      * @param int $quiz_id
      * @return array {
-     *   @type string $percentage   e.g. "85%"
-     *   @type string $date         formatted date or '—'
-     *   @type int    $activity_id  ID of the attempt, or 0 if none
+     *   @type string   $percentage   e.g. "85%"
+     *   @type string   $date         formatted date or '—'
+     *   @type int      $activity_id  ID of the attempt, or 0 if none
+     *   @type int|null $timestamp    Unix timestamp of completion or null when unavailable
      * }
      */
     public static function get_last_attempt_data( $user_id, $quiz_id ) {
         global $wpdb;
 
         if ( empty( $quiz_id ) || empty( $user_id ) ) {
-            return [ 'percentage' => 'None', 'date' => '—', 'activity_id' => 0 ];
+            return [ 'percentage' => 'None', 'date' => '—', 'activity_id' => 0, 'timestamp' => null ];
         }
 
         $activity = $wpdb->get_row( $wpdb->prepare(
@@ -40,7 +41,7 @@ class Villegas_Quiz_Emails {
         ) );
 
         if ( ! $activity ) {
-            return [ 'percentage' => 'None', 'date' => '—', 'activity_id' => 0 ];
+            return [ 'percentage' => 'None', 'date' => '—', 'activity_id' => 0, 'timestamp' => null ];
         }
 
         $percentage = $wpdb->get_var( $wpdb->prepare(
@@ -56,6 +57,7 @@ class Villegas_Quiz_Emails {
             'percentage'  => $percentage !== null ? intval( $percentage ) . '%' : 'None',
             'date'        => date_i18n( get_option( 'date_format' ) . ' H:i', $activity->activity_completed ),
             'activity_id' => intval( $activity->activity_id ),
+            'timestamp'   => $activity->activity_completed ? (int) $activity->activity_completed : null,
         ];
     }
 
@@ -94,11 +96,11 @@ class Villegas_Quiz_Emails {
 
         $first_data = $first_quiz_id
             ? self::get_last_attempt_data( $user_id, $first_quiz_id )
-            : [ 'percentage' => 'None', 'date' => '—', 'activity_id' => 0 ];
+            : [ 'percentage' => 'None', 'date' => '—', 'activity_id' => 0, 'timestamp' => null ];
 
         $final_data = $final_quiz_id
             ? self::get_last_attempt_data( $user_id, $final_quiz_id )
-            : [ 'percentage' => 'None', 'date' => '—', 'activity_id' => 0 ];
+            : [ 'percentage' => 'None', 'date' => '—', 'activity_id' => 0, 'timestamp' => null ];
 
         $progress_data = $course_id
             ? learndash_course_progress([ 'user_id' => $user_id, 'course_id' => $course_id, 'array' => true ])
