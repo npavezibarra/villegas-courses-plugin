@@ -275,7 +275,7 @@ ul {
 
 /* Yellow circle for completed lessons */
 .lesson-item.completed .lesson-circle {
-    background-color: #ffd700; /* Yellow */
+    background: linear-gradient(314deg, rgb(236 196 146) 0%, rgb(198 176 100) 100%);
 }
 
 /* Base styles for the circle */
@@ -292,7 +292,7 @@ ul {
 
 /* Yellow circle for completed lessons */
 .lesson-item.completed .lesson-circle {
-    background-color: #ffd700; /* Yellow */
+    background: linear-gradient(314deg, rgb(236 196 146) 0%, rgb(198 176 100) 100%);
 }
 
 /* Add background for the current lesson */
