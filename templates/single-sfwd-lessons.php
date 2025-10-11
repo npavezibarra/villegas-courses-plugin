@@ -166,13 +166,13 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
                     if (!empty($current_section)) {
                         $current_section = reset($current_section);
+                        echo '<li class="course-section-header" style="margin-bottom: 10px; padding: 10px;">';
+                        echo '<h4>' . esc_html($current_section['post_title']) . '</h4>';
+                        echo '</li>';
                         if ( ! $first_quiz_inserted && ! empty( $first_quiz_nav_item ) ) {
                             echo $first_quiz_nav_item;
                             $first_quiz_inserted = true;
                         }
-                        echo '<li class="course-section-header" style="margin-bottom: 10px; padding: 10px;">';
-                        echo '<h4>' . esc_html($current_section['post_title']) . '</h4>';
-                        echo '</li>';
                         continue;
                     }
 
