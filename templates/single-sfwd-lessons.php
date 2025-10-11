@@ -119,6 +119,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
                 $lessons = $lessons_query->posts;
                 $lesson_index = 0;
+                $all_lessons_completed = true;
 
                 for ($step_index = 0; $step_index < count($lessons) + count($section_headers); $step_index++) {
                     $current_section = array_filter($section_headers, function ($header) use ($step_index) {
@@ -136,6 +137,9 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                     if ($lesson_index < count($lessons)) {
                         $lesson_post = $lessons[$lesson_index];
                         $is_completed = learndash_is_lesson_complete($user_id, $lesson_post->ID, $course_id);
+                        if ( ! $is_completed ) {
+                            $all_lessons_completed = false;
+                        }
                         $current_lesson_class = ($lesson_post->ID == $current_lesson_id) ? 'current-lesson' : '';
 
                         echo '<li class="lesson-item ' . ($is_completed ? 'completed' : 'not-completed') . ' ' . esc_attr($current_lesson_class) . '">';
@@ -149,6 +153,8 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 wp_reset_postdata();
 
                 // Quizzes
+                $final_quiz_id = absint(get_post_meta($course_id, '_final_quiz_id', true));
+
                 $quiz_query = new WP_Query(array(
                     'post_type' => 'sfwd-quiz',
                     'meta_key' => 'course_id',
@@ -161,13 +167,41 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 if ($quiz_query->have_posts()) {
                     while ($quiz_query->have_posts()) {
                         $quiz_query->the_post();
+                        $quiz_id = get_the_ID();
+
+                        if ($quiz_id === $final_quiz_id) {
+                            continue;
+                        }
+
                         echo '<li class="lesson-item" style="display: flex; align-items: center; margin-bottom: 5px;">';
                         echo '<img src="https://cdn-icons-png.flaticon.com/512/3965/3965068.png" alt="Icono Examen" style="width: 20px; height: 20px; margin-right: 10px;">';
-                        echo '<a href="' . esc_url(get_permalink(get_the_ID())) . '" style="text-decoration: none; color: #333;">' . esc_html(get_the_title()) . '</a>';
+                        echo '<a href="' . esc_url(get_permalink($quiz_id)) . '" style="text-decoration: none; color: #333;">' . esc_html(get_the_title()) . '</a>';
                         echo '</li>';
                     }
                 }
-                
+
+                if ( $final_quiz_id ) {
+                    $final_quiz_post = get_post($final_quiz_id);
+
+                    if ( $final_quiz_post && 'sfwd-quiz' === $final_quiz_post->post_type ) {
+                        $final_quiz_title = get_the_title($final_quiz_post);
+                        $final_quiz_permalink = get_permalink($final_quiz_post);
+                        $final_quiz_classes = 'lesson-item final-quiz-item';
+
+                        if ( $all_lessons_completed ) {
+                            echo '<li class="' . esc_attr($final_quiz_classes) . '" style="display: flex; align-items: center; margin-bottom: 5px;">';
+                            echo '<img src="https://cdn-icons-png.flaticon.com/512/3965/3965068.png" alt="Icono Examen" style="width: 20px; height: 20px; margin-right: 10px;">';
+                            echo '<a href="' . esc_url($final_quiz_permalink) . '" style="text-decoration: none; color: #333;">' . esc_html($final_quiz_title) . '</a>';
+                            echo '</li>';
+                        } else {
+                            echo '<li class="' . esc_attr($final_quiz_classes . ' final-quiz-locked') . '" style="display: flex; align-items: center; margin-bottom: 5px; opacity: 0.5; pointer-events: none;">';
+                            echo '<img src="https://cdn-icons-png.flaticon.com/512/3965/3965068.png" alt="Icono Examen" style="width: 20px; height: 20px; margin-right: 10px;">';
+                            echo '<span style="color: #333;">' . esc_html($final_quiz_title) . '</span>';
+                            echo '</li>';
+                        }
+                    }
+                }
+
 
                 echo '</ul>';
             }
