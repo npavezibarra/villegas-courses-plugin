@@ -100,6 +100,14 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             $current_lesson_id = get_the_ID();
             $user_id = get_current_user_id();
 
+            if ( ! class_exists( 'PoliteiaCourse' ) ) {
+                require_once plugin_dir_path( __FILE__ ) . '../classes/class-politeia-course.php';
+            }
+
+            if ( ! class_exists( 'Politeia_Quiz_Stats' ) ) {
+                require_once plugin_dir_path( __FILE__ ) . '../classes/class-politeia-quiz-stats.php';
+            }
+
             if ($course_id) {
                 // Get lessons
                 $lessons_query = new WP_Query(array(
@@ -120,6 +128,36 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 $lessons = $lessons_query->posts;
                 $lesson_index = 0;
                 $all_lessons_completed = true;
+                $first_quiz_inserted = false;
+                $first_quiz_nav_item = '';
+
+                $first_quiz_id = class_exists( 'PoliteiaCourse' ) ? intval( PoliteiaCourse::getFirstQuizId( $course_id ) ) : 0;
+
+                if ( $first_quiz_id ) {
+                    $first_quiz_post = get_post( $first_quiz_id );
+
+                    if ( $first_quiz_post instanceof WP_Post ) {
+                        $first_quiz_title = get_the_title( $first_quiz_post );
+                        $first_quiz_link  = get_permalink( $first_quiz_post );
+                        $first_quiz_score = '0%';
+
+                        if ( class_exists( 'Politeia_Quiz_Stats' ) ) {
+                            $first_quiz_stats   = new Politeia_Quiz_Stats( $first_quiz_id, $user_id );
+                            $first_quiz_summary = $first_quiz_stats->get_current_quiz_summary();
+                            $rounded_percentage = $first_quiz_summary['percentage_rounded'] ?? null;
+
+                            if ( ! is_null( $rounded_percentage ) ) {
+                                $first_quiz_score = intval( $rounded_percentage ) . '%';
+                            }
+                        }
+
+                        $first_quiz_nav_item = '<li class="lesson-item first-quiz-score" style="margin-bottom: 10px;">';
+                        $first_quiz_nav_item .= '<a href="' . esc_url( $first_quiz_link ) . '" style="text-decoration: none; color: #333;">';
+                        $first_quiz_nav_item .= esc_html( $first_quiz_title ) . ' - ' . esc_html( $first_quiz_score );
+                        $first_quiz_nav_item .= '</a>';
+                        $first_quiz_nav_item .= '</li>';
+                    }
+                }
 
                 for ($step_index = 0; $step_index < count($lessons) + count($section_headers); $step_index++) {
                     $current_section = array_filter($section_headers, function ($header) use ($step_index) {
@@ -128,6 +166,10 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
                     if (!empty($current_section)) {
                         $current_section = reset($current_section);
+                        if ( ! $first_quiz_inserted && ! empty( $first_quiz_nav_item ) ) {
+                            echo $first_quiz_nav_item;
+                            $first_quiz_inserted = true;
+                        }
                         echo '<li class="course-section-header" style="margin-bottom: 10px; padding: 10px;">';
                         echo '<h4>' . esc_html($current_section['post_title']) . '</h4>';
                         echo '</li>';
