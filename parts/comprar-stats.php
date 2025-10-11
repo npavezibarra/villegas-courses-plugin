@@ -114,7 +114,12 @@ function mostrar_comprar_stats() {
     <div class="progress-widget" style="<?php echo $widget_style; ?>">
         <div class="progress-bar-stats" style="<?php echo $progress_bar_style; ?>">
             <div style="<?php echo $bar_style; ?>">
-                <div style="width: <?php echo esc_attr($is_enrolled || !is_user_logged_in() ? $percentage_complete : 0); ?>%; background-color: <?php echo $is_enrolled ? '#ff9800' : (!is_user_logged_in() ? '#4c8bf5' : '#ccc'); ?>; height: 100%; border-radius: 5px;"></div>
+                <?php
+                $progress_fill_background = $is_enrolled
+                    ? 'linear-gradient(314deg, rgb(255, 241, 158) 0%, rgb(220, 194, 105) 100%)'
+                    : (!is_user_logged_in() ? '#4c8bf5' : '#ccc');
+                ?>
+                <div style="width: <?php echo esc_attr($is_enrolled || !is_user_logged_in() ? $percentage_complete : 0); ?>%; background: <?php echo esc_attr($progress_fill_background); ?>; height: 100%; border-radius: 5px;"></div>
             </div>
             <div style="<?php echo $labels_style; ?>">
                 <span><?php echo $is_enrolled ? esc_html(round($percentage_complete)) : '0'; ?>%</span>

@@ -47,7 +47,7 @@
         }
 
         .lesson-item.completed .lesson-circle {
-            background: #ff9800;
+            background: linear-gradient(314deg, rgb(255, 241, 158) 0%, rgb(220, 194, 105) 100%);
         }
 
         .lesson-item.completed {
