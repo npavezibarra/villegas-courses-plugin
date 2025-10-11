@@ -116,7 +116,7 @@ function mostrar_comprar_stats() {
             <div style="<?php echo $bar_style; ?>">
                 <?php
                 $progress_fill_background = $is_enrolled
-                    ? 'linear-gradient(314deg, rgb(255, 241, 158) 0%, rgb(220, 194, 105) 100%)'
+                    ? 'linear-gradient(314deg, rgb(236 196 146) 0%, rgb(198 176 100) 100%)'
                     : (!is_user_logged_in() ? '#4c8bf5' : '#ccc');
                 ?>
                 <div style="width: <?php echo esc_attr($is_enrolled || !is_user_logged_in() ? $percentage_complete : 0); ?>%; background: <?php echo esc_attr($progress_fill_background); ?>; height: 100%; border-radius: 5px;"></div>

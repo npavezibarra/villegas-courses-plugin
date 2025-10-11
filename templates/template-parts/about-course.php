@@ -43,7 +43,7 @@
 
                         echo '<li class="lesson-item ' . esc_attr($circle_color_class) . '" style="display: flex; align-items: center; margin-bottom: 10px;">';
                         $circle_background = $is_completed
-                            ? 'linear-gradient(314deg, rgb(255, 241, 158) 0%, rgb(220, 194, 105) 100%)'
+                            ? 'linear-gradient(314deg, rgb(236 196 146) 0%, rgb(198 176 100) 100%)'
                             : '#ccc';
                         echo '<span class="lesson-circle" style="width: 20px; height: 20px; border-radius: 50%; margin-right: 10px; background: ' . $circle_background . ';"></span>';
                         echo '<a href="' . esc_url(get_permalink($lesson_id)) . '">' . esc_html(get_the_title($lesson_id)) . '</a>';
