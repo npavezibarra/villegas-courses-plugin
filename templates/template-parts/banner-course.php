@@ -136,17 +136,20 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                         $greeting_name = $user_name ? $user_name : esc_html__( 'estudiante', 'villegas-courses' );
                         ?>
         <div id="payment-overlay" style="
-    position:fixed;inset:0;display:flex;justify-content:center;align-items:center;
-    background:rgba(0,0,0,0.9);z-index:999999;">
+    position:fixed; inset:0; display:flex; justify-content:center; align-items:center;
+    background: rgba(0, 0, 0, 0.3); z-index:999999;">
   <div style="
-      background:#fff;color:#222;border-radius:14px;padding:30px 26px;
-      width:min(500px,92vw);text-align:center;box-shadow:0 20px 40px rgba(0,0,0,.4);
-      position:relative;">
+      background:#fff; color:#222; border-radius:14px; padding:40px 36px;
+      width:min(500px,92vw); text-align:center; box-shadow:0 20px 40px rgba(0,0,0,.3);
+      line-height:1.6;">
 
-    <h2>Hola <?php echo esc_html( $greeting_name ); ?> 👋</h2>
-    <p style="font-size:16px;line-height:1.5;">
+    <h2 style="margin-bottom:12px;">Hola <?php echo esc_html( $greeting_name ); ?> 👋</h2>
+    <p style="font-size:16px;margin:0 auto 18px;max-width:420px;">
       Tu compra está en proceso y estamos esperando la confirmación de tu transferencia bancaria
-      para la orden <strong>#<?php echo esc_html( $order_id ); ?></strong>.<br><br>
+      para la orden <strong>#<?php echo esc_html( $order_id ); ?></strong>.
+    </p>
+
+    <p style="font-size:16px;margin:0 auto 22px;max-width:420px;">
       Por favor deposita <strong><?php echo wp_kses_post( $amount ); ?></strong> en la siguiente cuenta:
     </p>
 
@@ -186,13 +189,17 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
       </tbody>
     </table>
 
-    <!-- Textos inferiores con líneas balanceadas -->
-    <p style="font-size:15px; margin: 0 auto 12px; max-width:420px; text-align:justify;">
-      Envía tu comprobante de transferencia (indicando tu nombre y número de orden) a 
-      <strong>villeguistas@gmail.com</strong>.
+    <!-- Texto final centrado y estilizado -->
+    <p style="font-size:15px; margin: 0 auto 10px; max-width:420px; text-align:center;">
+      Envía tu <strong>comprobante de transferencia bancaria</strong><br>
+      (indicando tu nombre y número de orden) a:
     </p>
 
-    <p style="font-size:15px; margin: 0 auto; max-width:420px; text-align:justify;">
+    <p style="font-size:17px; font-weight:700; color:#000; margin: 0 auto 12px; max-width:420px; text-align:center;">
+      villeguistas@gmail.com
+    </p>
+
+    <p style="font-size:15px; margin: 0 auto; max-width:420px; text-align:center;">
       Una vez confirmado el pago, tendrás acceso completo al contenido del curso.
     </p>
   </div>
