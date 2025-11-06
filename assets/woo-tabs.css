@@ -1,0 +1,17 @@
+.payment-warning {
+    display: block;
+    width: 100%;
+    max-width: 960px;
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+    .payment-warning {
+        font-size: 14px;
+        padding: 12px 16px !important;
+    }
+}

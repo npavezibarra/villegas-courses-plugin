@@ -15,7 +15,8 @@ if ( ! $post ) {
     return; // Si no hay $post, no hacemos nada
 }
 
-$post_id = $post->ID;
+$post_id   = $post->ID;
+$course_id = absint( $post_id );
 
 // Obtener URL de imagen destacada o un placeholder
 $thumbnail_url = has_post_thumbnail( $post_id ) 
@@ -39,9 +40,104 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
 
     <div id="datos-generales-curso" style="position: relative; z-index: 1; color: white;">
         <h1><?php echo esc_html( $title ); ?></h1>
+        <?php
+        $should_show_payment_warning = false;
+
+        if ( function_exists( 'wc_get_orders' ) && is_user_logged_in() ) {
+            $current_user_id = get_current_user_id();
+
+            if ( $current_user_id ) {
+                $orders = wc_get_orders(
+                    array(
+                        'customer_id'    => $current_user_id,
+                        'status'         => array( 'wc-pending', 'wc-on-hold' ),
+                        'payment_method' => 'bacs',
+                        'limit'          => -1,
+                    )
+                );
+
+                if ( ! empty( $orders ) ) {
+                    $linked_product_id = absint( get_post_meta( $post_id, '_linked_woocommerce_product', true ) );
+
+                    foreach ( $orders as $order ) {
+                        foreach ( $order->get_items() as $item ) {
+                            $product = $item->get_product();
+
+                            if ( ! $product ) {
+                                continue;
+                            }
+
+                            $candidate_ids = array_filter(
+                                array_map(
+                                    'absint',
+                                    array( $product->get_id(), $product->get_parent_id() )
+                                )
+                            );
+
+                            if ( $linked_product_id && in_array( $linked_product_id, $candidate_ids, true ) ) {
+                                $should_show_payment_warning = true;
+                            }
+
+                            if ( ! $should_show_payment_warning ) {
+                                foreach ( $candidate_ids as $candidate_id ) {
+                                    $related_course_meta = get_post_meta( $candidate_id, '_related_course', true );
+
+                                    if ( empty( $related_course_meta ) ) {
+                                        continue;
+                                    }
+
+                                    if ( is_serialized( $related_course_meta ) ) {
+                                        $related_course_meta = maybe_unserialize( $related_course_meta );
+                                    }
+
+                                    foreach ( (array) $related_course_meta as $maybe_course_id ) {
+                                        if ( absint( $maybe_course_id ) === $course_id ) {
+                                            $should_show_payment_warning = true;
+                                            break 2;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if ( ! $should_show_payment_warning ) {
+                                foreach ( $candidate_ids as $candidate_id ) {
+                                    if ( $candidate_id && has_term( 'cursos', 'product_cat', $candidate_id ) ) {
+                                        $should_show_payment_warning = true;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if ( $should_show_payment_warning ) {
+                                break 2;
+                            }
+                        }
+
+                        if ( $should_show_payment_warning ) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if ( $should_show_payment_warning ) :
+            ?>
+            <div class="payment-warning" style="
+                background-color:#c00; color:white; font-weight:600;
+                padding:10px 20px; text-align:center; border-radius:4px;
+                margin-top:10px; letter-spacing:0.3px;">
+                Waiting for bank transfer confirmation —
+                please email your payment receipt including order number and name to
+                <strong>villeguistas@gmail.com</strong>.
+                Once we confirm your transfer, you’ll gain full access to the course.
+            </div>
+        <?php
+        endif;
+        ?>
         <?php if ( ! empty( $author_name ) ) : ?>
     <div style="display: flex; align-items: center; gap: 10px;">
-        <?php 
+        <?php
         $user_photo_url = get_user_meta($author_id, 'profile_picture', true);
 
         if ($user_photo_url) {
