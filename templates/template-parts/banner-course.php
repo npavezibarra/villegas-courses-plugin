@@ -6,7 +6,15 @@
 
 // Evitar acceso directo
 if ( ! defined( 'ABSPATH' ) ) {
-    exit; 
+    exit;
+}
+
+if ( ! defined( 'WP_DEBUG' ) ) {
+    define( 'WP_DEBUG', true );
+}
+
+if ( ! defined( 'WP_DEBUG_LOG' ) ) {
+    define( 'WP_DEBUG_LOG', true );
 }
 
 // Asegurarnos de tener un $post disponible (en el Loop o global)
@@ -41,7 +49,7 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
     <div id="datos-generales-curso" style="position: relative; z-index: 1; color: white;">
         <h1><?php echo esc_html( $title ); ?></h1>
         <?php
-        $should_show_payment_warning = false;
+        $matched_orders = array();
 
         if ( function_exists( 'wc_get_orders' ) && is_user_logged_in() ) {
             $current_user_id = get_current_user_id();
@@ -50,7 +58,7 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                 $orders = wc_get_orders(
                     array(
                         'customer_id' => $current_user_id,
-                        'status'      => array( 'on-hold' ),
+                        'status'      => array( 'on-hold', 'processing', 'completed' ),
                         'limit'       => -1,
                     )
                 );
@@ -59,6 +67,10 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                     $course_linked_product_id = absint( get_post_meta( $post_id, '_linked_woocommerce_product', true ) );
 
                     foreach ( $orders as $order ) {
+                        $order_id      = $order->get_id();
+                        $order_status  = $order->get_status();
+                        $order_matched = false;
+
                         foreach ( $order->get_items() as $item ) {
                             $product = $item->get_product();
 
@@ -78,8 +90,8 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                             );
 
                             if ( $course_linked_product_id && in_array( $course_linked_product_id, $candidate_ids, true ) ) {
-                                $should_show_payment_warning = true;
-                                break 2;
+                                $order_matched = true;
+                                break;
                             }
 
                             foreach ( $candidate_ids as $candidate_id ) {
@@ -100,34 +112,46 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                                 $matches_via_linked   = $linked_course_id === $course_id;
 
                                 if ( $is_course_product && $related_course_match ) {
-                                    $should_show_payment_warning = true;
-                                    break 3;
+                                    $order_matched = true;
+                                    break 2;
                                 }
 
                                 if ( $matches_via_linked || ( ! $is_course_product && $related_course_match ) ) {
-                                    $should_show_payment_warning = true;
-                                    break 3;
+                                    $order_matched = true;
+                                    break 2;
                                 }
                             }
+                        }
+
+                        if ( $order_matched ) {
+                            $matched_orders[] = array(
+                                'id'     => $order_id,
+                                'status' => $order_status,
+                            );
+
+                            error_log( "Course {$post_id} matched with Order #{$order_id} (status: {$order_status})" );
                         }
                     }
                 }
             }
         }
 
-        if ( $should_show_payment_warning ) :
-            ?>
-            <div class="payment-warning" style="
-                background-color:#c00; color:white; font-weight:600;
-                padding:10px 20px; text-align:center; border-radius:4px;
-                margin-top:10px; letter-spacing:0.3px;">
-                Waiting for bank transfer confirmation —
-                please email your payment receipt including order number and name to
-                <strong>villeguistas@gmail.com</strong>.
-                Once we confirm your transfer, you’ll gain full access to the course.
-            </div>
-        <?php
-        endif;
+        if ( ! empty( $matched_orders ) ) {
+            foreach ( $matched_orders as $order_data ) {
+                $order_id = esc_html( $order_data['id'] );
+                $status   = esc_html( $order_data['status'] );
+                echo '<div class="payment-warning" style="';
+                echo 'background-color:#c00; color:#fff; font-weight:600;';
+                echo 'padding:10px 20px; text-align:center; border-radius:4px;';
+                echo 'margin-top:10px; letter-spacing:0.3px;">';
+                echo "Order #{$order_id} — Status: {$status}<br>";
+                echo 'Please send your transfer receipt including order number and name to ';
+                echo '<strong>villeguistas@gmail.com</strong>.';
+                echo '</div>';
+            }
+        } else {
+            error_log( 'No matching orders found for Course ' . $post_id . ' and User ' . get_current_user_id() );
+        }
         ?>
         <?php if ( ! empty( $author_name ) ) : ?>
     <div style="display: flex; align-items: center; gap: 10px;">
