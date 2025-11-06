@@ -1,13 +1,13 @@
-#payment-overlay button.copy-btn {
+.vil-pay-overlay .vil-copy {
     background: none;
     border: none;
-    font-size: 14px;
     cursor: pointer;
+    font-size: 16px;
     margin-left: 6px;
     transition: opacity 0.2s ease;
 }
 
-#payment-overlay button.copy-btn:hover,
-#payment-overlay button.copy-btn:focus {
+.vil-pay-overlay .vil-copy:hover,
+.vil-pay-overlay .vil-copy:focus {
     opacity: 0.7;
 }

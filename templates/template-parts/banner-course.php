@@ -84,23 +84,27 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                             );
 
                             foreach ( $product_ids as $product_id_candidate ) {
-                                $related_course_meta = get_post_meta( $product_id_candidate, '_related_course', true );
+                                $candidate_course_ids = array();
 
-                                if ( empty( $related_course_meta ) ) {
-                                    continue;
+                                foreach ( array( '_related_course', '_linked_woocommerce_product' ) as $meta_key ) {
+                                    $meta_value = get_post_meta( $product_id_candidate, $meta_key, true );
+
+                                    if ( empty( $meta_value ) ) {
+                                        continue;
+                                    }
+
+                                    if ( is_serialized( $meta_value ) ) {
+                                        $meta_value = maybe_unserialize( $meta_value );
+                                    }
+
+                                    $meta_ids              = array_map( 'absint', (array) $meta_value );
+                                    $candidate_course_ids = array_merge( $candidate_course_ids, $meta_ids );
                                 }
 
-                                if ( is_serialized( $related_course_meta ) ) {
-                                    $related_course_meta = maybe_unserialize( $related_course_meta );
-                                }
+                                $candidate_course_ids = array_filter( $candidate_course_ids );
 
-                                $related_course_ids = array_map( 'absint', (array) $related_course_meta );
-
-                                if ( in_array( $course_id, $related_course_ids, true ) && 'on-hold' === $order->get_status() ) {
-                                    $matched_order = array(
-                                        'id'    => $order->get_id(),
-                                        'total' => $order->get_total(),
-                                    );
+                                if ( in_array( $course_id, $candidate_course_ids, true ) && 'on-hold' === $order->get_status() ) {
+                                    $matched_order = $order;
 
                                     error_log( 'DEBUG: Found on-hold order #' . $order->get_id() . ' for course ' . $post_id );
                                     break 2;
@@ -116,73 +120,157 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
             }
         }
 
-        if ( $matched_order ) {
-            $amount_value = isset( $matched_order['total'] ) ? $matched_order['total'] : 0;
+        if ( $matched_order && is_a( $matched_order, 'WC_Order' ) ) {
+            $amount_value = $matched_order->get_total();
             $amount       = function_exists( 'wc_price' ) ? wc_price( $amount_value ) : esc_html( number_format_i18n( (float) $amount_value, 2 ) );
-            $amount_plain = wp_strip_all_tags( $amount );
-            $order_id     = esc_html( $matched_order['id'] );
-            ?>
-            <div id="payment-overlay" style="
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-                background: rgba(0,0,0,0.7); display: flex; justify-content: center;
-                align-items: center; z-index: 9999;">
-              <div style="
-                  background: white; color: #222; border-radius: 12px;
-                  padding: 30px 25px; max-width: 500px; width: 90%;
-                  text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.2); position: relative;">
+            $order_id     = (int) $matched_order->get_id();
+            $cookie_name  = 'vil_pay_dismiss_' . $order_id;
 
-                  <button id="close-overlay" style="
-                      position: absolute; top: 10px; right: 10px;
-                      background: transparent; border: none; font-size: 22px;
-                      cursor: pointer;">×</button>
+            if ( empty( $_COOKIE[ $cookie_name ] ) ) {
+                if ( ! function_exists( 'did_action' ) || ! did_action( 'villegas_rendered_payment_modal' ) ) {
+                    if ( function_exists( 'do_action' ) ) {
+                        do_action( 'villegas_rendered_payment_modal' );
+                    }
 
-                  <h2 style="margin-bottom:10px;">Hi <?php echo $user_name ? $user_name : esc_html__( 'there', 'villegas-courses' ); ?> 👋</h2>
-                  <p style="margin-bottom:15px;">
-                    We’re still waiting for your bank transfer for order <strong>#<?php echo $order_id; ?></strong>.<br>
-                    Please deposit <strong><?php echo wp_kses_post( $amount ); ?></strong> using the following details:
-                  </p>
+                    add_action(
+                        'wp_footer',
+                        function () use ( $user_name, $order_id, $amount, $cookie_name ) {
+                            $greeting_name = $user_name ? $user_name : esc_html__( 'there', 'villegas-courses' );
+                            ?>
+        <div id="vil-pay-overlay" class="vil-pay-overlay" aria-hidden="false" role="dialog" aria-modal="true">
+          <div class="vil-pay-modal" role="document">
+            <button type="button" class="vil-pay-close" aria-label="<?php esc_attr_e( 'Close', 'villegas-courses' ); ?>">×</button>
 
-                  <div style="text-align:left; line-height:1.8; margin-top:10px;">
-                    <div>🏦 Villegas y Compañía SpA <button class="copy-btn" data-copy="<?php echo esc_attr( 'Villegas y Compañía SpA' ); ?>">📋</button></div>
-                    <div>RUT: 77593240-6 <button class="copy-btn" data-copy="77593240-6">📋</button></div>
-                    <div>Banco Itaú <button class="copy-btn" data-copy="<?php echo esc_attr( 'Banco Itaú' ); ?>">📋</button></div>
-                    <div>Cuenta Corriente: 0224532529 <button class="copy-btn" data-copy="0224532529">📋</button></div>
-                    <div>Amount: <?php echo wp_kses_post( $amount ); ?> <button class="copy-btn" data-copy="<?php echo esc_attr( $amount_plain ); ?>">📋</button></div>
-                  </div>
+            <h2 class="vil-pay-title">Hi <?php echo esc_html( $greeting_name ); ?> 👋</h2>
+            <p class="vil-pay-intro">
+              We’re still waiting for your bank transfer for order <strong>#<?php echo esc_html( $order_id ); ?></strong>.<br>
+              Please deposit <strong><?php echo wp_kses_post( $amount ); ?></strong> using the following details:
+            </p>
 
-                  <p style="margin-top:15px;">
-                    Please send your payment receipt including your name and order number to<br>
-                    <strong>villeguistas@gmail.com</strong>
-                  </p>
-                  <button id="understood-btn" style="
-                      background:#c00; color:#fff; border:none; border-radius:6px;
-                      padding:10px 20px; margin-top:10px; cursor:pointer;">
-                      <?php esc_html_e( 'Got it', 'villegas-courses' ); ?>
-                  </button>
-              </div>
-            </div>
+            <ul class="vil-pay-list">
+              <li>
+                <span>Villegas y Compañía SpA</span>
+                <button type="button" class="vil-copy" data-copy="Villegas y Compañía SpA" aria-label="<?php esc_attr_e( 'Copy account name', 'villegas-courses' ); ?>">📋</button>
+              </li>
+              <li>
+                <span>RUT: 77593240-6</span>
+                <button type="button" class="vil-copy" data-copy="77593240-6" aria-label="<?php esc_attr_e( 'Copy RUT', 'villegas-courses' ); ?>">📋</button>
+              </li>
+              <li>
+                <span>Banco Itaú</span>
+                <button type="button" class="vil-copy" data-copy="Banco Itaú" aria-label="<?php esc_attr_e( 'Copy bank', 'villegas-courses' ); ?>">📋</button>
+              </li>
+              <li>
+                <span>Cuenta Corriente: 0224532529</span>
+                <button type="button" class="vil-copy" data-copy="0224532529" aria-label="<?php esc_attr_e( 'Copy account number', 'villegas-courses' ); ?>">📋</button>
+              </li>
+              <li>
+                <span>Amount: <?php echo wp_kses_post( $amount ); ?></span>
+                <button type="button" class="vil-copy" data-copy="<?php echo esc_attr( wp_strip_all_tags( $amount ) ); ?>" aria-label="<?php esc_attr_e( 'Copy amount', 'villegas-courses' ); ?>">📋</button>
+              </li>
+            </ul>
 
-            <script>
-            document.querySelectorAll('#payment-overlay .copy-btn').forEach(btn => {
-              btn.addEventListener('click', () => {
-                if (navigator?.clipboard?.writeText) {
-                  navigator.clipboard.writeText(btn.dataset.copy).then(() => {
-                    btn.textContent = '✅';
-                    setTimeout(() => {
-                      btn.textContent = '📋';
-                    }, 1200);
-                  });
+            <p class="vil-pay-note">
+              Send your receipt (with name &amp; order number) to <strong>villeguistas@gmail.com</strong>.
+            </p>
+
+            <button type="button" class="vil-pay-okay"><?php esc_html_e( 'Got it', 'villegas-courses' ); ?></button>
+          </div>
+        </div>
+
+        <style>
+          .vil-pay-overlay{
+            position:fixed; inset:0; background:rgba(0,0,0,.6);
+            display:flex; align-items:center; justify-content:center;
+            z-index:100000;
+          }
+          .vil-pay-modal{
+            width:min(500px, 92vw); background:#fff; color:#222;
+            border-radius:14px; padding:26px 22px;
+            box-shadow:0 18px 40px rgba(0,0,0,.25);
+            position:relative;
+          }
+          .vil-pay-close{
+            position:absolute; top:10px; right:12px;
+            background:none; border:none; font-size:22px; line-height:1;
+            cursor:pointer;
+          }
+          .vil-pay-title{ margin:0 0 10px; font-size:22px; text-align:center; }
+          .vil-pay-intro{ margin:0 0 14px; text-align:center; }
+          .vil-pay-list{ list-style:none; padding:0; margin:10px 0 14px; }
+          .vil-pay-list li{
+            display:flex; align-items:center; justify-content:space-between;
+            gap:10px; padding:10px 12px; border:1px solid #eee; border-radius:8px; margin-bottom:8px;
+          }
+          .vil-copy{
+            background:none; border:none; cursor:pointer; font-size:16px;
+          }
+          .vil-copy:focus{ outline:2px solid #c00; outline-offset:2px; }
+          .vil-pay-note{ margin:10px 0 0; text-align:center; }
+          .vil-pay-okay{
+            margin:14px auto 0; display:block;
+            background:#c00; color:#fff; border:none; border-radius:8px;
+            padding:10px 16px; cursor:pointer; font-weight:600;
+          }
+        </style>
+
+        <script>
+          (function(){
+            var overlay = document.getElementById('vil-pay-overlay');
+            if(!overlay){return;}
+
+            var body = document.body;
+            var prevOverflow = body ? body.style.overflow : '';
+            var onEsc;
+            if(body){ body.style.overflow = 'hidden'; }
+
+            overlay.querySelectorAll('.vil-copy').forEach(function(btn){
+              btn.addEventListener('click', function(){
+                if (!navigator.clipboard || !navigator.clipboard.writeText) {
+                  return;
                 }
+
+                navigator.clipboard.writeText(btn.dataset.copy || '').then(function(){
+                  var old = btn.textContent;
+                  btn.textContent = '✅';
+                  setTimeout(function(){ btn.textContent = old; }, 1200);
+                });
               });
             });
-            document.getElementById('close-overlay')?.addEventListener('click', () => {
-              document.getElementById('payment-overlay')?.remove();
+
+            function closeModal(){
+              if(overlay){ overlay.remove(); }
+              if(body){ body.style.overflow = prevOverflow || ''; }
+              document.cookie = '<?php echo esc_js( $cookie_name ); ?>=1;path=/;max-age=7200';
+              if(onEsc){ document.removeEventListener('keydown', onEsc); }
+            }
+
+            overlay.addEventListener('click', function(e){
+              if(e.target === overlay){ closeModal(); }
             });
-            document.getElementById('understood-btn')?.addEventListener('click', () => {
-              document.getElementById('payment-overlay')?.remove();
-            });
-            </script>
-            <?php
+
+            var closeBtn = overlay.querySelector('.vil-pay-close');
+            if(closeBtn){ closeBtn.addEventListener('click', closeModal); }
+
+            var okBtn = overlay.querySelector('.vil-pay-okay');
+            if(okBtn){ okBtn.addEventListener('click', closeModal); }
+
+            onEsc = function(e){
+              if(e.key === 'Escape'){
+                closeModal();
+              }
+            };
+            document.addEventListener('keydown', onEsc);
+
+            var focusables = overlay.querySelectorAll('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+            if(focusables.length){ focusables[0].focus(); }
+          })();
+        </script>
+        <?php
+                        }
+                    );
+                }
+            }
         } else {
             error_log( 'DEBUG: No on-hold orders found for course ' . $post_id );
         }
