@@ -150,17 +150,49 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
       Por favor deposita <strong><?php echo wp_kses_post( $amount ); ?></strong> en la siguiente cuenta:
     </p>
 
-    <ul style="list-style:none;padding:0;margin:20px 0;text-align:left;line-height:1.8;">
-      <li>🏦 Villegas y Compañía SpA <button class="copy-btn" data-copy="Villegas y Compañía SpA">📋</button></li>
-      <li>RUT: 77.593.240-6 <button class="copy-btn" data-copy="77593240-6">📋</button></li>
-      <li>Banco Itaú <button class="copy-btn" data-copy="Banco Itaú">📋</button></li>
-      <li>Cuenta Corriente: 0224532529 <button class="copy-btn" data-copy="0224532529">📋</button></li>
-      <li>Monto: <?php echo wp_kses_post( $amount ); ?> <button class="copy-btn" data-copy="<?php echo esc_attr( wp_strip_all_tags( $amount ) ); ?>">📋</button></li>
-    </ul>
+    <!-- Datos bancarios en tabla (sin bordes) -->
+    <table style="width:100%; border-collapse:collapse; margin: 20px auto 25px; max-width:380px;">
+      <tbody style="text-align:left;">
+        <tr>
+          <td style="padding:6px 4px;">🏦 <strong>Villegas y Compañía SpA</strong></td>
+          <td style="text-align:right;">
+            <button class="copy-btn" data-copy="Villegas y Compañía SpA" style="border:none;background:none;cursor:pointer;">📋</button>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 4px;">RUT: 77.593.240-6</td>
+          <td style="text-align:right;">
+            <button class="copy-btn" data-copy="77593240-6" style="border:none;background:none;cursor:pointer;">📋</button>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 4px;">Banco Itaú</td>
+          <td style="text-align:right;">
+            <button class="copy-btn" data-copy="Banco Itaú" style="border:none;background:none;cursor:pointer;">📋</button>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 4px;">Cuenta Corriente: 0224532529</td>
+          <td style="text-align:right;">
+            <button class="copy-btn" data-copy="0224532529" style="border:none;background:none;cursor:pointer;">📋</button>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:6px 4px;">Monto: <?php echo wp_kses_post( $amount ); ?></td>
+          <td style="text-align:right;">
+            <button class="copy-btn" data-copy="<?php echo esc_attr( wp_strip_all_tags( $amount ) ); ?>" style="border:none;background:none;cursor:pointer;">📋</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
 
-    <p style="font-size:15px;margin-top:10px;">
-      Envía tu comprobante de transferencia (indicando tu nombre y número de orden) a<br>
-      <strong>villeguistas@gmail.com</strong>.<br><br>
+    <!-- Textos inferiores con líneas balanceadas -->
+    <p style="font-size:15px; margin: 0 auto 12px; max-width:420px; text-align:justify;">
+      Envía tu comprobante de transferencia (indicando tu nombre y número de orden) a 
+      <strong>villeguistas@gmail.com</strong>.
+    </p>
+
+    <p style="font-size:15px; margin: 0 auto; max-width:420px; text-align:justify;">
       Una vez confirmado el pago, tendrás acceso completo al contenido del curso.
     </p>
   </div>
