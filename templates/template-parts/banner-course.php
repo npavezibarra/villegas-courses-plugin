@@ -49,15 +49,14 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
             if ( $current_user_id ) {
                 $orders = wc_get_orders(
                     array(
-                        'customer_id'    => $current_user_id,
-                        'status'         => array( 'wc-pending', 'wc-on-hold' ),
-                        'payment_method' => 'bacs',
-                        'limit'          => -1,
+                        'customer_id' => $current_user_id,
+                        'status'      => array( 'on-hold' ),
+                        'limit'       => -1,
                     )
                 );
 
                 if ( ! empty( $orders ) ) {
-                    $linked_product_id = absint( get_post_meta( $post_id, '_linked_woocommerce_product', true ) );
+                    $course_linked_product_id = absint( get_post_meta( $post_id, '_linked_woocommerce_product', true ) );
 
                     foreach ( $orders as $order ) {
                         foreach ( $order->get_items() as $item ) {
@@ -67,54 +66,49 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                                 continue;
                             }
 
-                            $candidate_ids = array_filter(
-                                array_map(
-                                    'absint',
-                                    array( $product->get_id(), $product->get_parent_id() )
+                            $candidate_ids = array_values(
+                                array_unique(
+                                    array_filter(
+                                        array_map(
+                                            'absint',
+                                            array( $product->get_id(), $product->get_parent_id() )
+                                        )
+                                    )
                                 )
                             );
 
-                            if ( $linked_product_id && in_array( $linked_product_id, $candidate_ids, true ) ) {
+                            if ( $course_linked_product_id && in_array( $course_linked_product_id, $candidate_ids, true ) ) {
                                 $should_show_payment_warning = true;
-                            }
-
-                            if ( ! $should_show_payment_warning ) {
-                                foreach ( $candidate_ids as $candidate_id ) {
-                                    $related_course_meta = get_post_meta( $candidate_id, '_related_course', true );
-
-                                    if ( empty( $related_course_meta ) ) {
-                                        continue;
-                                    }
-
-                                    if ( is_serialized( $related_course_meta ) ) {
-                                        $related_course_meta = maybe_unserialize( $related_course_meta );
-                                    }
-
-                                    foreach ( (array) $related_course_meta as $maybe_course_id ) {
-                                        if ( absint( $maybe_course_id ) === $course_id ) {
-                                            $should_show_payment_warning = true;
-                                            break 2;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if ( ! $should_show_payment_warning ) {
-                                foreach ( $candidate_ids as $candidate_id ) {
-                                    if ( $candidate_id && has_term( 'cursos', 'product_cat', $candidate_id ) ) {
-                                        $should_show_payment_warning = true;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if ( $should_show_payment_warning ) {
                                 break 2;
                             }
-                        }
 
-                        if ( $should_show_payment_warning ) {
-                            break;
+                            foreach ( $candidate_ids as $candidate_id ) {
+                                if ( ! $candidate_id ) {
+                                    continue;
+                                }
+
+                                $is_course_product = has_term( 'cursos', 'product_cat', $candidate_id );
+
+                                $related_course_meta = get_post_meta( $candidate_id, '_related_course', true );
+                                if ( ! empty( $related_course_meta ) && is_serialized( $related_course_meta ) ) {
+                                    $related_course_meta = maybe_unserialize( $related_course_meta );
+                                }
+
+                                $related_course_ids   = array_map( 'absint', (array) $related_course_meta );
+                                $related_course_match = in_array( $course_id, $related_course_ids, true );
+                                $linked_course_id     = absint( get_post_meta( $candidate_id, '_linked_woocommerce_product', true ) );
+                                $matches_via_linked   = $linked_course_id === $course_id;
+
+                                if ( $is_course_product && $related_course_match ) {
+                                    $should_show_payment_warning = true;
+                                    break 3;
+                                }
+
+                                if ( $matches_via_linked || ( ! $is_course_product && $related_course_match ) ) {
+                                    $should_show_payment_warning = true;
+                                    break 3;
+                                }
+                            }
                         }
                     }
                 }
