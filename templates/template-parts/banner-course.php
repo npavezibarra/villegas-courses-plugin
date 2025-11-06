@@ -49,7 +49,7 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
     <div id="datos-generales-curso" style="position: relative; z-index: 1; color: white;">
         <h1><?php echo esc_html( $title ); ?></h1>
         <?php
-        $matched_orders = array();
+        $matched_order = null;
 
         if ( function_exists( 'wc_get_orders' ) && is_user_logged_in() ) {
             $current_user_id = get_current_user_id();
@@ -58,18 +58,17 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                 $orders = wc_get_orders(
                     array(
                         'customer_id' => $current_user_id,
-                        'status'      => array( 'on-hold', 'processing', 'completed' ),
+                        'status'      => array( 'on-hold' ),
                         'limit'       => -1,
                     )
                 );
 
-                if ( ! empty( $orders ) ) {
-                    $course_linked_product_id = absint( get_post_meta( $post_id, '_linked_woocommerce_product', true ) );
+                error_log( 'DEBUG: Checking on-hold orders for user ' . $current_user_id . ' and course ' . $post_id );
 
+                if ( ! empty( $orders ) ) {
                     foreach ( $orders as $order ) {
-                        $order_id      = $order->get_id();
-                        $order_status  = $order->get_status();
-                        $order_matched = false;
+                        $order_id     = $order->get_id();
+                        $order_status = $order->get_status();
 
                         foreach ( $order->get_items() as $item ) {
                             $product = $item->get_product();
@@ -78,79 +77,60 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
                                 continue;
                             }
 
-                            $candidate_ids = array_values(
-                                array_unique(
-                                    array_filter(
-                                        array_map(
-                                            'absint',
-                                            array( $product->get_id(), $product->get_parent_id() )
-                                        )
-                                    )
+                            $product_ids = array_filter(
+                                array_map(
+                                    'absint',
+                                    array( $product->get_id(), $product->get_parent_id() )
                                 )
                             );
 
-                            if ( $course_linked_product_id && in_array( $course_linked_product_id, $candidate_ids, true ) ) {
-                                $order_matched = true;
-                                break;
-                            }
-
-                            foreach ( $candidate_ids as $candidate_id ) {
-                                if ( ! $candidate_id ) {
-                                    continue;
-                                }
-
-                                $is_course_product = has_term( 'cursos', 'product_cat', $candidate_id );
-
-                                $related_course_meta = get_post_meta( $candidate_id, '_related_course', true );
+                            foreach ( $product_ids as $product_id_candidate ) {
+                                $related_course_meta = get_post_meta( $product_id_candidate, '_related_course', true );
                                 if ( ! empty( $related_course_meta ) && is_serialized( $related_course_meta ) ) {
                                     $related_course_meta = maybe_unserialize( $related_course_meta );
                                 }
 
-                                $related_course_ids   = array_map( 'absint', (array) $related_course_meta );
-                                $related_course_match = in_array( $course_id, $related_course_ids, true );
-                                $linked_course_id     = absint( get_post_meta( $candidate_id, '_linked_woocommerce_product', true ) );
-                                $matches_via_linked   = $linked_course_id === $course_id;
+                                $related_course_ids = array_map( 'absint', (array) $related_course_meta );
+                                $linked_course_meta = get_post_meta( $product_id_candidate, '_linked_woocommerce_product', true );
+                                $linked_course_id   = absint( $linked_course_meta );
 
-                                if ( $is_course_product && $related_course_match ) {
-                                    $order_matched = true;
-                                    break 2;
-                                }
+                                $matches_related = in_array( $course_id, $related_course_ids, true );
+                                $matches_linked  = ( $linked_course_id === $course_id );
 
-                                if ( $matches_via_linked || ( ! $is_course_product && $related_course_match ) ) {
-                                    $order_matched = true;
+                                if ( $matches_related || $matches_linked ) {
+                                    $matched_order = array(
+                                        'id'     => $order_id,
+                                        'status' => $order_status,
+                                    );
+
+                                    error_log( 'DEBUG: Found on-hold order #' . $order_id . ' for course ' . $post_id );
                                     break 2;
                                 }
                             }
                         }
 
-                        if ( $order_matched ) {
-                            $matched_orders[] = array(
-                                'id'     => $order_id,
-                                'status' => $order_status,
-                            );
-
-                            error_log( "Course {$post_id} matched with Order #{$order_id} (status: {$order_status})" );
+                        if ( $matched_order ) {
+                            break;
                         }
                     }
                 }
             }
         }
 
-        if ( ! empty( $matched_orders ) ) {
-            foreach ( $matched_orders as $order_data ) {
-                $order_id = esc_html( $order_data['id'] );
-                $status   = esc_html( $order_data['status'] );
-                echo '<div class="payment-warning" style="';
-                echo 'background-color:#c00; color:#fff; font-weight:600;';
-                echo 'padding:10px 20px; text-align:center; border-radius:4px;';
-                echo 'margin-top:10px; letter-spacing:0.3px;">';
-                echo "Order #{$order_id} — Status: {$status}<br>";
-                echo 'Please send your transfer receipt including order number and name to ';
-                echo '<strong>villeguistas@gmail.com</strong>.';
-                echo '</div>';
-            }
+        if ( $matched_order ) {
+            $order_id = esc_html( $matched_order['id'] );
+            $status   = esc_html( $matched_order['status'] );
+            echo '<div class="payment-warning" style="';
+            echo 'background-color:#c00; color:#fff; font-weight:600;';
+            echo 'padding:10px 20px; text-align:center; border-radius:4px;';
+            echo 'margin-top:10px; letter-spacing:0.3px;">';
+            echo "Order #{$order_id} — Status: {$status}<br>";
+            echo 'We are still waiting for your bank transfer confirmation. ';
+            echo 'Please email your payment receipt including the order number and your name to ';
+            echo '<strong>villeguistas@gmail.com</strong>. Once confirmed, you’ll gain full access to the course.';
+            echo '</div>';
         } else {
-            error_log( 'No matching orders found for Course ' . $post_id . ' and User ' . get_current_user_id() );
+            error_log( 'DEBUG: No on-hold orders found for course ' . $post_id );
         }
         ?>
         <?php if ( ! empty( $author_name ) ) : ?>
