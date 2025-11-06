@@ -277,6 +277,7 @@ require_once plugin_dir_path(__FILE__) . 'opciones-usuario.php';
 require_once plugin_dir_path(__FILE__) . 'profile/profile-picture.php';
 /* SHORTCODES */
 require_once plugin_dir_path(__FILE__) . 'shortcodes/shortcode-cursos-finalizados.php';
+require_once plugin_dir_path(__FILE__) . 'includes/shortcodes/shortcode-academia-villegas.php';
 /* ADMIN PAGES */
 require_once plugin_dir_path(__FILE__) . 'admin/pages/course-checklist.php';
 require_once plugin_dir_path(__FILE__) . 'admin/admin-page.php';
