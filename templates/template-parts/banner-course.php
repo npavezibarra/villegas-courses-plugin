@@ -50,6 +50,8 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
         <h1><?php echo esc_html( $title ); ?></h1>
         <?php
         $matched_order = null;
+        $user          = wp_get_current_user();
+        $user_name     = esc_html( $user->display_name );
 
         if ( function_exists( 'wc_get_orders' ) && is_user_logged_in() ) {
             $current_user_id = get_current_user_id();
@@ -67,9 +69,6 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
 
                 if ( ! empty( $orders ) ) {
                     foreach ( $orders as $order ) {
-                        $order_id     = $order->get_id();
-                        $order_status = $order->get_status();
-
                         foreach ( $order->get_items() as $item ) {
                             $product = $item->get_product();
 
@@ -86,24 +85,24 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
 
                             foreach ( $product_ids as $product_id_candidate ) {
                                 $related_course_meta = get_post_meta( $product_id_candidate, '_related_course', true );
-                                if ( ! empty( $related_course_meta ) && is_serialized( $related_course_meta ) ) {
+
+                                if ( empty( $related_course_meta ) ) {
+                                    continue;
+                                }
+
+                                if ( is_serialized( $related_course_meta ) ) {
                                     $related_course_meta = maybe_unserialize( $related_course_meta );
                                 }
 
                                 $related_course_ids = array_map( 'absint', (array) $related_course_meta );
-                                $linked_course_meta = get_post_meta( $product_id_candidate, '_linked_woocommerce_product', true );
-                                $linked_course_id   = absint( $linked_course_meta );
 
-                                $matches_related = in_array( $course_id, $related_course_ids, true );
-                                $matches_linked  = ( $linked_course_id === $course_id );
-
-                                if ( $matches_related || $matches_linked ) {
+                                if ( in_array( $course_id, $related_course_ids, true ) && 'on-hold' === $order->get_status() ) {
                                     $matched_order = array(
-                                        'id'     => $order_id,
-                                        'status' => $order_status,
+                                        'id'    => $order->get_id(),
+                                        'total' => $order->get_total(),
                                     );
 
-                                    error_log( 'DEBUG: Found on-hold order #' . $order_id . ' for course ' . $post_id );
+                                    error_log( 'DEBUG: Found on-hold order #' . $order->get_id() . ' for course ' . $post_id );
                                     break 2;
                                 }
                             }
@@ -118,17 +117,72 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
         }
 
         if ( $matched_order ) {
-            $order_id = esc_html( $matched_order['id'] );
-            $status   = esc_html( $matched_order['status'] );
-            echo '<div class="payment-warning" style="';
-            echo 'background-color:#c00; color:#fff; font-weight:600;';
-            echo 'padding:10px 20px; text-align:center; border-radius:4px;';
-            echo 'margin-top:10px; letter-spacing:0.3px;">';
-            echo "Order #{$order_id} — Status: {$status}<br>";
-            echo 'We are still waiting for your bank transfer confirmation. ';
-            echo 'Please email your payment receipt including the order number and your name to ';
-            echo '<strong>villeguistas@gmail.com</strong>. Once confirmed, you’ll gain full access to the course.';
-            echo '</div>';
+            $amount_value = isset( $matched_order['total'] ) ? $matched_order['total'] : 0;
+            $amount       = function_exists( 'wc_price' ) ? wc_price( $amount_value ) : esc_html( number_format_i18n( (float) $amount_value, 2 ) );
+            $amount_plain = wp_strip_all_tags( $amount );
+            $order_id     = esc_html( $matched_order['id'] );
+            ?>
+            <div id="payment-overlay" style="
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                background: rgba(0,0,0,0.7); display: flex; justify-content: center;
+                align-items: center; z-index: 9999;">
+              <div style="
+                  background: white; color: #222; border-radius: 12px;
+                  padding: 30px 25px; max-width: 500px; width: 90%;
+                  text-align: center; box-shadow: 0 8px 20px rgba(0,0,0,0.2); position: relative;">
+
+                  <button id="close-overlay" style="
+                      position: absolute; top: 10px; right: 10px;
+                      background: transparent; border: none; font-size: 22px;
+                      cursor: pointer;">×</button>
+
+                  <h2 style="margin-bottom:10px;">Hi <?php echo $user_name ? $user_name : esc_html__( 'there', 'villegas-courses' ); ?> 👋</h2>
+                  <p style="margin-bottom:15px;">
+                    We’re still waiting for your bank transfer for order <strong>#<?php echo $order_id; ?></strong>.<br>
+                    Please deposit <strong><?php echo wp_kses_post( $amount ); ?></strong> using the following details:
+                  </p>
+
+                  <div style="text-align:left; line-height:1.8; margin-top:10px;">
+                    <div>🏦 Villegas y Compañía SpA <button class="copy-btn" data-copy="<?php echo esc_attr( 'Villegas y Compañía SpA' ); ?>">📋</button></div>
+                    <div>RUT: 77593240-6 <button class="copy-btn" data-copy="77593240-6">📋</button></div>
+                    <div>Banco Itaú <button class="copy-btn" data-copy="<?php echo esc_attr( 'Banco Itaú' ); ?>">📋</button></div>
+                    <div>Cuenta Corriente: 0224532529 <button class="copy-btn" data-copy="0224532529">📋</button></div>
+                    <div>Amount: <?php echo wp_kses_post( $amount ); ?> <button class="copy-btn" data-copy="<?php echo esc_attr( $amount_plain ); ?>">📋</button></div>
+                  </div>
+
+                  <p style="margin-top:15px;">
+                    Please send your payment receipt including your name and order number to<br>
+                    <strong>villeguistas@gmail.com</strong>
+                  </p>
+                  <button id="understood-btn" style="
+                      background:#c00; color:#fff; border:none; border-radius:6px;
+                      padding:10px 20px; margin-top:10px; cursor:pointer;">
+                      <?php esc_html_e( 'Got it', 'villegas-courses' ); ?>
+                  </button>
+              </div>
+            </div>
+
+            <script>
+            document.querySelectorAll('#payment-overlay .copy-btn').forEach(btn => {
+              btn.addEventListener('click', () => {
+                if (navigator?.clipboard?.writeText) {
+                  navigator.clipboard.writeText(btn.dataset.copy).then(() => {
+                    btn.textContent = '✅';
+                    setTimeout(() => {
+                      btn.textContent = '📋';
+                    }, 1200);
+                  });
+                }
+              });
+            });
+            document.getElementById('close-overlay')?.addEventListener('click', () => {
+              document.getElementById('payment-overlay')?.remove();
+            });
+            document.getElementById('understood-btn')?.addEventListener('click', () => {
+              document.getElementById('payment-overlay')?.remove();
+            });
+            </script>
+            <?php
         } else {
             error_log( 'DEBUG: No on-hold orders found for course ' . $post_id );
         }
