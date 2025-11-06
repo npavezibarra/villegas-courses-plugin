@@ -205,15 +205,6 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
   </div>
 </div>
 
-<style>
-#payment-overlay::before {
-  content:'';
-  position:fixed;
-  inset:0;
-  backdrop-filter:blur(6px);
-}
-</style>
-
 <script>
 // Copy buttons only — overlay cannot be closed.
 (function(){
