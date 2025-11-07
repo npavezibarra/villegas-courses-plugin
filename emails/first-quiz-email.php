@@ -27,7 +27,8 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     }
     $course_id    = $debug['course_id'];
 
-    $background_image_url = '';
+    $default_background_image_url = 'https://elvillegas.cl/wp-content/uploads/2025/04/default-bg.jpg';
+    $background_image_url        = '';
 
     if ( $quiz_post_id ) {
         $background_image_id = get_post_meta( $quiz_post_id, '_quiz_style_image', true );
@@ -43,6 +44,10 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         if ( $background_image_id ) {
             $background_image_url = wp_get_attachment_url( (int) $background_image_id );
         }
+    }
+
+    if ( ! $background_image_url ) {
+        $background_image_url = $default_background_image_url;
     }
 
     if ( $background_image_url ) {
