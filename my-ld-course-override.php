@@ -68,13 +68,19 @@ function my_custom_ld_course_styles() {
     wp_enqueue_style('quiz-styles', plugin_dir_url(__FILE__) . 'assets/quiz-styles.css', [], '1.0', 'all');
     wp_enqueue_style('cursos-finalizados', plugin_dir_url(__FILE__) . 'assets/cursos-finalizados.css', [], '1.0', 'all');
 
-    // Encolar estilo solo en la página de cursos
-    if (is_post_type_archive('sfwd-courses')) {
+    // Encolar estilo en la página de cursos o cuando el shortcode del grid esté presente
+    $enqueue_archive_style = is_post_type_archive('sfwd-courses');
+
+    global $post;
+    if ( ! $enqueue_archive_style && isset( $post->post_content ) && has_shortcode( $post->post_content, 'villegas_courses_archive' ) ) {
+        $enqueue_archive_style = true;
+    }
+
+    if ( $enqueue_archive_style ) {
         wp_enqueue_style('archive-courses-style', plugin_dir_url(__FILE__) . 'assets/archive-courses.css', [], '1.0', 'all');
     }
 
     // Verificar si el shortcode [login_register_form] está presente en la página
-    global $post;
     if (isset($post->post_content) && has_shortcode($post->post_content, 'login_register_form')) {
         // Encolar estilos específicos para el formulario de login/registro
         wp_enqueue_style('login-register-style', plugin_dir_url(__FILE__) . 'assets/login-register.css', [], '1.0', 'all');
@@ -277,6 +283,7 @@ require_once plugin_dir_path(__FILE__) . 'opciones-usuario.php';
 require_once plugin_dir_path(__FILE__) . 'profile/profile-picture.php';
 /* SHORTCODES */
 require_once plugin_dir_path(__FILE__) . 'shortcodes/shortcode-cursos-finalizados.php';
+require_once plugin_dir_path(__FILE__) . 'shortcodes/shortcode-courses-archive.php';
 /* ADMIN PAGES */
 require_once plugin_dir_path(__FILE__) . 'admin/pages/course-checklist.php';
 require_once plugin_dir_path(__FILE__) . 'admin/admin-page.php';
