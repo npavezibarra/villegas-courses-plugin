@@ -7,6 +7,7 @@ header.wp-block-template-part {
 header > div > div {
     display: flex;
     justify-content: space-between;
+    max-width: 1200px;
 }
 
 #lesson-content .ld-tabs.ld-tab-count-1 {
