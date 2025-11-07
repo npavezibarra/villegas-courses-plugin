@@ -28,7 +28,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $course_id    = $debug['course_id'];
 
     $default_background_image_url = 'https://elvillegas.cl/wp-content/uploads/2025/04/default-bg.jpg';
-    $background_image_url        = '';
+    $background_image_url         = '';
 
     if ( $quiz_post_id ) {
         $background_image_id = get_post_meta( $quiz_post_id, '_quiz_style_image', true );
@@ -46,13 +46,9 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         }
     }
 
-    if ( ! $background_image_url ) {
-        $background_image_url = $default_background_image_url;
-    }
-
-    if ( $background_image_url ) {
-        $background_image_url = set_url_scheme( $background_image_url, 'https' );
-    }
+    $background_image_url = function_exists( 'villegas_normalize_email_asset_url' )
+        ? villegas_normalize_email_asset_url( $background_image_url ?: '', $default_background_image_url )
+        : ( $background_image_url ?: $default_background_image_url );
 
     $current_percentage = villegas_normalize_percentage_value( $quiz_data['percentage'] ?? null );
     error_log( '[FirstQuizEmail] Normalized percentage=' . var_export( $current_percentage, true ) );
