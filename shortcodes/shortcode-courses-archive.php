@@ -39,7 +39,7 @@ if ( ! function_exists( 'villegas_courses_archive_shortcode' ) ) {
         ob_start();
 
         if ( $query->have_posts() ) {
-            echo '<div class="courses-container">';
+            echo '<div class="courses-container courses-container--shortcode">';
 
             while ( $query->have_posts() ) {
                 $query->the_post();

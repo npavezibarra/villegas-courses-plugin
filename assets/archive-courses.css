@@ -128,3 +128,7 @@ footer.entry-footer {
 h2.entry-title>a {
     font-family: 'Cardo', serif !important;
 }
+
+.courses-container--shortcode h2.entry-title {
+    font-size: 38px;
+}
