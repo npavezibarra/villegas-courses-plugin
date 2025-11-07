@@ -104,8 +104,8 @@ function villegas_render_faq_accordion_shortcode() {
         </style>
     <?php endif; ?>
 
-    <div class="bg-background min-h-screen p-4 sm:p-8 font-sans">
-        <div class="max-w-4xl mx-auto bg-white p-6 sm:p-10 border border-black">
+    <div class="min-h-screen p-4 sm:p-8 font-sans">
+        <div class="max-w-4xl mx-auto p-6 sm:p-10">
             <div id="<?php echo esc_attr( $accordion_id ); ?>" class="space-y-4">
                 <details class="group border border-black overflow-hidden transition duration-300">
                     <summary class="flex justify-between items-center w-full py-4 px-6 cursor-pointer select-none bg-white transition duration-300 group-hover:bg-gray-50">
