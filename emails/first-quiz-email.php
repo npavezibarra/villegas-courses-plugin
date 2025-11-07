@@ -189,14 +189,34 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $background_color          = '#f6f6f6';
     $background_image_attr_url = $background_image_url ? esc_url( $background_image_url ) : '';
     $wrapper_background_attr   = $background_image_attr_url ? ' background="' . $background_image_attr_url . '"' : '';
-    $wrapper_background_style  = $background_image_attr_url
-        ? "background:url('{$background_image_attr_url}') no-repeat center center / cover;background-color:{$background_color};"
-        : 'background-color:' . $background_color . ';';
+    $wrapper_bgcolor_attr      = ' bgcolor="' . esc_attr( $background_color ) . '"';
+
+    $background_style_rules = [ 'background-color:' . $background_color . ';' ];
+
+    if ( $background_image_attr_url ) {
+        $background_style_rules[] = "background-image:url('{$background_image_attr_url}');";
+        $background_style_rules[] = 'background-repeat:no-repeat;';
+        $background_style_rules[] = 'background-position:center center;';
+        $background_style_rules[] = 'background-size:cover;';
+    }
+
+    $wrapper_background_style = implode( '', $background_style_rules );
+    $wrapper_div_style        = $wrapper_background_style . 'padding:32px 0;';
 
     $body  = $inline_styles;
-    $body .= '<table id="villegas-email-wrapper" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"' . $wrapper_background_attr . ' style="' . $wrapper_background_style . '">';
+    $body .= '<table id="villegas-email-wrapper" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"' . $wrapper_background_attr . $wrapper_bgcolor_attr . ' style="' . $wrapper_background_style . '">';
     $body .= '<tr>';
-    $body .= '<td align="center" valign="top"' . $wrapper_background_attr . ' style="' . $wrapper_background_style . 'padding:32px 0;">';
+    $body .= '<td align="center" valign="top"' . $wrapper_background_attr . $wrapper_bgcolor_attr . ' style="' . $wrapper_background_style . '">';
+
+    if ( $background_image_attr_url ) {
+        $body .= '<!--[if gte mso 9]>';
+        $body .= '<v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">';
+        $body .= '<v:fill type="frame" src="' . $background_image_attr_url . '" color="' . esc_attr( $background_color ) . '" />';
+        $body .= '</v:background>';
+        $body .= '<![endif]-->';
+    }
+
+    $body .= '<div style="' . $wrapper_div_style . '">';
     $body .= '<table id="villegas-email-card" role="presentation" width="720" border="0" cellspacing="0" cellpadding="0" style="width:100%;max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
 
     $body .= '<tr>';
@@ -247,6 +267,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '</tr>';
 
     $body .= '</table>';
+    $body .= '</div><!-- /villegas-background -->';
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '</table>';
