@@ -11,6 +11,30 @@ function villegas_get_final_quiz_email_content( array $quiz_data, WP_User $user 
     }
 
     $course_title = $debug['course_title'];
+    $quiz_post_id = ! empty( $debug['quiz_post_id'] ) ? (int) $debug['quiz_post_id'] : 0;
+    $quiz_id      = ! empty( $debug['quiz_id'] ) ? (int) $debug['quiz_id'] : 0;
+
+    if ( ! $quiz_post_id && $quiz_id && 'sfwd-quiz' === get_post_type( $quiz_id ) ) {
+        $quiz_post_id = $quiz_id;
+    }
+
+    $background_image_url = '';
+
+    if ( $quiz_post_id ) {
+        $background_image_id = get_post_meta( $quiz_post_id, '_quiz_style_image', true );
+
+        if ( $background_image_id ) {
+            $background_image_url = wp_get_attachment_url( (int) $background_image_id );
+        }
+    }
+
+    if ( ! $background_image_url && $quiz_id && $quiz_id !== $quiz_post_id ) {
+        $background_image_id = get_post_meta( $quiz_id, '_quiz_style_image', true );
+
+        if ( $background_image_id ) {
+            $background_image_url = wp_get_attachment_url( (int) $background_image_id );
+        }
+    }
 
     $first_score = villegas_normalize_percentage_value( $debug['first_attempt']['percentage'] ?? null );
     $final_score = villegas_normalize_percentage_value( $debug['final_attempt']['percentage'] ?? null );
@@ -72,7 +96,16 @@ function villegas_get_final_quiz_email_content( array $quiz_data, WP_User $user 
     $inline_styles  = '<style type="text/css">@media only screen and (max-width:480px){#villegas-final-graficas td{display:block !important;width:100% !important;}}</style>';
 
     $body  = $inline_styles;
-    $body .= '<div id="villegas-final-wrapper" style="background-color:#f6f6f6;padding:32px 0;">';
+    if ( $background_image_url ) {
+        $wrapper_background_style = sprintf(
+            "background:url('%s') no-repeat center center;background-size:cover;",
+            esc_url( $background_image_url )
+        );
+    } else {
+        $wrapper_background_style = 'background-color:#f6f6f6;';
+    }
+
+    $body .= '<div id="villegas-final-wrapper" style="' . $wrapper_background_style . 'padding:32px 0;">';
     $body .= '<div id="villegas-final-card" style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
 
     $body .= '<div id="villegas-final-encabezado" style="text-align:center;padding:28px 24px 0;">';

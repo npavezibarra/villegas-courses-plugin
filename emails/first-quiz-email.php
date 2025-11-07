@@ -27,6 +27,24 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     }
     $course_id    = $debug['course_id'];
 
+    $background_image_url = '';
+
+    if ( $quiz_post_id ) {
+        $background_image_id = get_post_meta( $quiz_post_id, '_quiz_style_image', true );
+
+        if ( $background_image_id ) {
+            $background_image_url = wp_get_attachment_url( (int) $background_image_id );
+        }
+    }
+
+    if ( ! $background_image_url && $quiz_id && (int) $quiz_id !== $quiz_post_id ) {
+        $background_image_id = get_post_meta( (int) $quiz_id, '_quiz_style_image', true );
+
+        if ( $background_image_id ) {
+            $background_image_url = wp_get_attachment_url( (int) $background_image_id );
+        }
+    }
+
     $current_percentage = villegas_normalize_percentage_value( $quiz_data['percentage'] ?? null );
     error_log( '[FirstQuizEmail] Normalized percentage=' . var_export( $current_percentage, true ) );
 
@@ -164,7 +182,16 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 </style>';
 
     $body  = $inline_styles;
-    $body .= '<div id="villegas-email-wrapper" style="background-color:#f6f6f6;padding:32px 0;">';
+    if ( $background_image_url ) {
+        $wrapper_background_style = sprintf(
+            "background:url('%s') no-repeat center center;background-size:cover;",
+            esc_url( $background_image_url )
+        );
+    } else {
+        $wrapper_background_style = 'background-color:#f6f6f6;';
+    }
+
+    $body .= '<div id="villegas-email-wrapper" style="' . $wrapper_background_style . 'padding:32px 0;">';
     $body .= '<div id="villegas-email-card" style="max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;overflow:hidden;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
 
     $body .= '<div id="villegas-email-encabezado" style="text-align:center;padding:0;">';
