@@ -12,12 +12,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
     <main id="main-course-grid" class="site-main">
 
         <header class="page-header">
-            <h1 class="entry-title"><?php post_type_archive_title(); ?></h1>
-
-            <!-- Div rojo agregado -->
-            <div style="background-color: red; height: 50px; width: 100%; text-align: center; color: white; font-weight: bold;">
-                <p>Nuevo contenido aquí</p>
-            </div>
+            <h1 class="entry-title" style="text-align: center;"><?php post_type_archive_title(); ?></h1>
         </header><!-- .page-header -->
 
         <?php if ( have_posts() ) : ?>
