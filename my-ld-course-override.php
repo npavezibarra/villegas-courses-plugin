@@ -282,6 +282,7 @@ require_once plugin_dir_path(__FILE__) . 'opciones-usuario.php';
 /* PROFILE PHOTO */
 require_once plugin_dir_path(__FILE__) . 'profile/profile-picture.php';
 /* SHORTCODES */
+require_once plugin_dir_path(__FILE__) . 'shortcodes/villegas-circle-progress.php';
 require_once plugin_dir_path(__FILE__) . 'shortcodes/shortcode-cursos-finalizados.php';
 require_once plugin_dir_path(__FILE__) . 'shortcodes/shortcode-courses-archive.php';
 /* ADMIN PAGES */
