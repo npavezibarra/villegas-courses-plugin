@@ -1,5 +1,15 @@
 /* General Styles */
 
+header.wp-block-template-part {
+    border-bottom: 1px solid black;
+}
+
+header > div > div {
+    display: flex;
+    justify-content: space-between;
+    max-width: 1200px;
+}
+
 #lesson-content .ld-tabs.ld-tab-count-1 {
     margin: 10px 0px !important;
 }
