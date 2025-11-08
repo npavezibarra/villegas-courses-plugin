@@ -102,6 +102,71 @@ if ( ! function_exists( 'villegas_generate_quickchart_url' ) ) {
     }
 }
 
+if ( ! function_exists( 'villegas_normalize_email_asset_url' ) ) {
+    function villegas_normalize_email_asset_url( string $url, ?string $fallback = null ): string {
+        $url       = trim( $url );
+        $fallback  = null !== $fallback ? trim( $fallback ) : '';
+
+        if ( '' === $url ) {
+            return $fallback;
+        }
+
+        $normalized_url = set_url_scheme( $url, 'https' );
+
+        $parts = wp_parse_url( $normalized_url );
+
+        if ( ! $parts || empty( $parts['host'] ) ) {
+            return '' !== $fallback ? $fallback : $normalized_url;
+        }
+
+        $host = strtolower( $parts['host'] );
+
+        $local_suffixes = [ '.local', '.test', '.invalid' ];
+        $is_local_host  = 'localhost' === $host;
+
+        if ( ! $is_local_host ) {
+            foreach ( $local_suffixes as $suffix ) {
+                $suffix_length = strlen( $suffix );
+
+                if ( $suffix_length && strlen( $host ) >= $suffix_length && $suffix === substr( $host, - $suffix_length ) ) {
+                    $is_local_host = true;
+                    break;
+                }
+            }
+        }
+
+        if ( $is_local_host ) {
+            $path = $parts['path'] ?? '';
+
+            if ( $path ) {
+                $public_host = apply_filters( 'villegas_email_public_asset_host', 'elvillegas.cl', $url );
+
+                $normalized_url = 'https://' . $public_host . $path;
+
+                if ( ! empty( $parts['query'] ) ) {
+                    $normalized_url .= '?' . $parts['query'];
+                }
+            }
+        }
+
+        if ( function_exists( 'wp_remote_head' ) ) {
+            $response = wp_remote_head( $normalized_url, [ 'timeout' => 5 ] );
+
+            if ( is_wp_error( $response ) ) {
+                return $fallback;
+            }
+
+            $status_code = (int) wp_remote_retrieve_response_code( $response );
+
+            if ( $status_code < 200 || $status_code >= 400 ) {
+                return $fallback;
+            }
+        }
+
+        return $normalized_url;
+    }
+}
+
 if ( ! function_exists( 'villegas_resolve_quiz_pro_id' ) ) {
     function villegas_resolve_quiz_pro_id( int $quiz_post_id ): int {
         $quiz_post_id = absint( $quiz_post_id );
