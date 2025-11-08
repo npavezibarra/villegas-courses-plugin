@@ -91,6 +91,10 @@ main#main-course-grid {
     padding: 20px 20px 0px 20px;
 }
 
+#bottom-course-card header.entry-header {
+    margin-bottom: 20px;
+}
+
 .course-post-evaluations {
     border-top: 1px solid #cccccc;
     border-radius: 0px;
