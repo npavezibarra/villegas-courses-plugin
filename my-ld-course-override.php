@@ -120,6 +120,18 @@ function villegas_enqueue_profile_picture_script() {
     }
 }
 
+add_action('wp_enqueue_scripts', function() {
+    if (is_singular('sfwd-quiz')) {
+        wp_enqueue_script(
+            'quiz-title-toggle',
+            plugin_dir_url(__FILE__) . 'assets/js/quiz-title-toggle.js',
+            [],
+            '1.0',
+            true
+        );
+    }
+});
+
 /* AJAX PARA RESULTADOS QUIZ */
 add_action( 'wp_ajax_mostrar_resultados_curso', 'villegas_ajax_resultados_curso' );
 function villegas_ajax_resultados_curso() {
