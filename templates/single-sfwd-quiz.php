@@ -56,54 +56,52 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
 
   <div class="custom-quiz-layout">
     <div id="quiz-card">
-<?php
-/**
- * Dynamic Quiz Header
- * Prints:
- *   <h3>Evaluación Inicial|Final</h3>
- *   <h2>{Course Name}</h2>
- * …only if both type & course exist. Otherwise prints <h2>{Quiz Title}</h2>.
- */
+      <?php
+      /**
+       * Dynamic Quiz Header: <h3> tipo, <h2> curso/título, <p> fecha
+       */
 
-// 1) Get associated Course ID (use LD helper, then fallbacks)
-$course_id = 0;
-if ( function_exists( 'learndash_get_course_id' ) ) {
-    $course_id = (int) learndash_get_course_id( $quiz_id );
-}
-if ( ! $course_id ) {
-    // Common fallbacks some setups use:
-    $course_id = (int) get_post_meta( $quiz_id, '_quiz_course', true );
-    if ( ! $course_id ) {
-        $course_id = (int) get_post_meta( $quiz_id, 'course_id', true );
-    }
-}
-$course_name = $course_id ? get_the_title( $course_id ) : '';
+      // 1) Buscar curso asociado
+      $course_id = 0;
+      if ( function_exists( 'learndash_get_course_id' ) ) {
+          $course_id = (int) learndash_get_course_id( $quiz_id );
+      }
+      if ( ! $course_id ) {
+          $course_id = (int) get_post_meta( $quiz_id, '_quiz_course', true );
+          if ( ! $course_id ) {
+              $course_id = (int) get_post_meta( $quiz_id, 'course_id', true );
+          }
+      }
+      $course_name = $course_id ? get_the_title( $course_id ) : '';
 
-// 2) Detect quiz "type" (search across likely meta keys)
-$type_meta_keys = array(
-    '_quiz_type',
-    'quiz_type',
-    '_ld_quiz_type',
-    'ld_quiz_type',
-    '_politeia_quiz_type',   // <- keep this if you use your own metabox
-);
-$quiz_type_raw = '';
-foreach ( $type_meta_keys as $key ) {
-    $val = get_post_meta( $quiz_id, $key, true );
-    if ( ! empty( $val ) ) {
-        $quiz_type_raw = strtolower( trim( $val ) );
-        break;
-    }
-}
+      // 2) Detectar tipo de evaluación
+      $type_meta_keys = array(
+          '_quiz_type',
+          'quiz_type',
+          '_ld_quiz_type',
+          'ld_quiz_type',
+          '_politeia_quiz_type', // cambia este si usas un metabox propio
+      );
+      $quiz_type_raw = '';
+      foreach ( $type_meta_keys as $key ) {
+          $val = get_post_meta( $quiz_id, $key, true );
+          if ( ! empty( $val ) ) {
+              $quiz_type_raw = strtolower( trim( $val ) );
+              break;
+          }
+      }
 
-// Normalize accepted values to our two labels
-$label = '';
-if ( in_array( $quiz_type_raw, array( 'first', 'initial', 'inicial' ), true ) ) {
-    $label = 'Evaluación Inicial';
-} elseif ( in_array( $quiz_type_raw, array( 'final', 'finale' ), true ) ) {
-    $label = 'Evaluación Final';
-}
-?>
+      // 3) Determinar etiqueta de tipo
+      $label = '';
+      if ( in_array( $quiz_type_raw, array( 'first', 'initial', 'inicial' ), true ) ) {
+          $label = 'Evaluación Inicial';
+      } elseif ( in_array( $quiz_type_raw, array( 'final', 'finale' ), true ) ) {
+          $label = 'Evaluación Final';
+      }
+
+      // 4) Fecha del quiz (usa la fecha de publicación)
+      $quiz_date = get_the_date( 'j \d\e F \d\e Y', $quiz_id );
+      ?>
       <div class="quiz-page-header" style="display:none;">
         <?php if ( $label && $course_name ) : ?>
           <h3><?php echo esc_html( $label ); ?></h3>
@@ -111,19 +109,8 @@ if ( in_array( $quiz_type_raw, array( 'first', 'initial', 'inicial' ), true ) ) 
         <?php else : ?>
           <h2><?php echo esc_html( get_the_title( $quiz_id ) ); ?></h2>
         <?php endif; ?>
+        <p class="quiz-date"><?php echo esc_html( $quiz_date ); ?></p>
       </div>
-
-      <?php
-      // (Opcional) detectar si es Prueba Inicial o Final
-      $quiz_type = 'final';
-      $terms     = wp_get_post_terms( $quiz_id, 'ld_quiz_category' );
-      foreach ( $terms as $term ) {
-          if ( strtolower( $term->name ) === 'primera' ) {
-              $quiz_type = 'first';
-              break;
-          }
-      }
-      ?>
 
       <!-- ─────────────────────────────────────────────────────────────────── -->
       <!-- Aquí LearnDash inyecta TODO el contenido del quiz dentro de <div class="ld-tabs">: -->
