@@ -31,8 +31,6 @@ $image_id  = get_post_meta( $quiz_id, '_quiz_style_image', true );
 $image_url = $image_id ? wp_get_attachment_url( $image_id ) : '';
 $body_class = 'quiz-style-' . $quiz_id;
 
-$quiz_title = get_the_title( $quiz_id );
-$quiz_date  = get_the_date( '', $quiz_id );
 ?>
 
 <?php if ( $image_url ): ?>
@@ -58,17 +56,62 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
 
   <div class="custom-quiz-layout">
     <div id="quiz-card">
+<?php
+/**
+ * Dynamic Quiz Header
+ * Prints:
+ *   <h3>Evaluación Inicial|Final</h3>
+ *   <h2>{Course Name}</h2>
+ * …only if both type & course exist. Otherwise prints <h2>{Quiz Title}</h2>.
+ */
 
-      <?php if ( $quiz_title || $quiz_date ) : ?>
-      <div class="quiz-page-header">
-        <?php if ( $quiz_title ) : ?>
-        <h1 class="quiz-title"><?php echo esc_html( $quiz_title ); ?></h1>
-        <?php endif; ?>
-        <?php if ( $quiz_date ) : ?>
-        <p class="quiz-date"><?php echo esc_html( $quiz_date ); ?></p>
+// 1) Get associated Course ID (use LD helper, then fallbacks)
+$course_id = 0;
+if ( function_exists( 'learndash_get_course_id' ) ) {
+    $course_id = (int) learndash_get_course_id( $quiz_id );
+}
+if ( ! $course_id ) {
+    // Common fallbacks some setups use:
+    $course_id = (int) get_post_meta( $quiz_id, '_quiz_course', true );
+    if ( ! $course_id ) {
+        $course_id = (int) get_post_meta( $quiz_id, 'course_id', true );
+    }
+}
+$course_name = $course_id ? get_the_title( $course_id ) : '';
+
+// 2) Detect quiz "type" (search across likely meta keys)
+$type_meta_keys = array(
+    '_quiz_type',
+    'quiz_type',
+    '_ld_quiz_type',
+    'ld_quiz_type',
+    '_politeia_quiz_type',   // <- keep this if you use your own metabox
+);
+$quiz_type_raw = '';
+foreach ( $type_meta_keys as $key ) {
+    $val = get_post_meta( $quiz_id, $key, true );
+    if ( ! empty( $val ) ) {
+        $quiz_type_raw = strtolower( trim( $val ) );
+        break;
+    }
+}
+
+// Normalize accepted values to our two labels
+$label = '';
+if ( in_array( $quiz_type_raw, array( 'first', 'initial', 'inicial' ), true ) ) {
+    $label = 'Evaluación Inicial';
+} elseif ( in_array( $quiz_type_raw, array( 'final', 'finale' ), true ) ) {
+    $label = 'Evaluación Final';
+}
+?>
+      <div class="quiz-page-header" style="display:none;">
+        <?php if ( $label && $course_name ) : ?>
+          <h3><?php echo esc_html( $label ); ?></h3>
+          <h2><?php echo esc_html( $course_name ); ?></h2>
+        <?php else : ?>
+          <h2><?php echo esc_html( get_the_title( $quiz_id ) ); ?></h2>
         <?php endif; ?>
       </div>
-      <?php endif; ?>
 
       <?php
       // (Opcional) detectar si es Prueba Inicial o Final
