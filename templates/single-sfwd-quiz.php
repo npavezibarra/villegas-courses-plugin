@@ -62,16 +62,51 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
        */
 
       $quiz_id = (int) $quiz_id;
+      $log_enabled = defined( 'WP_DEBUG' ) && WP_DEBUG;
+
+      if ( $log_enabled ) {
+          error_log( "CODEX QUIZ HEADER: Rendering quiz_id={$quiz_id}" );
+      }
+
       $course_id = 0;
 
       if ( function_exists( 'learndash_get_course_id' ) ) {
           $course_id = (int) learndash_get_course_id( $quiz_id );
+          if ( $log_enabled ) {
+              error_log( "CODEX QUIZ HEADER: learndash_get_course_id returned {$course_id}" );
+          }
+      }
+
+      if ( ! $course_id ) {
+          global $wpdb;
+          $fallback_course_id = $wpdb->get_var(
+              $wpdb->prepare(
+                  "
+                  SELECT post_id
+                  FROM {$wpdb->postmeta}
+                  WHERE meta_key IN ('_first_quiz_id', '_final_quiz_id')
+                    AND meta_value = %d
+                  LIMIT 1
+                  ",
+                  $quiz_id
+              )
+          );
+
+          if ( $fallback_course_id ) {
+              $course_id = (int) $fallback_course_id;
+              if ( $log_enabled ) {
+                  error_log( "CODEX QUIZ HEADER: fallback query found course_id={$course_id}" );
+              }
+          }
       }
 
       if ( ! $course_id && function_exists( 'learndash_get_courses_for_step' ) ) {
           $courses = learndash_get_courses_for_step( $quiz_id, true );
           if ( is_array( $courses ) && ! empty( $courses ) ) {
               $course_id = (int) array_key_first( $courses );
+              if ( $log_enabled ) {
+                  error_log( "CODEX QUIZ HEADER: learndash_get_courses_for_step fallback returned {$course_id}" );
+              }
           }
       }
 
@@ -81,11 +116,25 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
           $first_quiz_id = (int) get_post_meta( $course_id, '_first_quiz_id', true );
           $final_quiz_id = (int) get_post_meta( $course_id, '_final_quiz_id', true );
 
+          if ( $log_enabled ) {
+              error_log( "CODEX QUIZ HEADER: course {$course_id} meta -> first={$first_quiz_id}, final={$final_quiz_id}" );
+          }
+
           if ( $quiz_id === $first_quiz_id ) {
               $label = 'Evaluación Inicial';
+              if ( $log_enabled ) {
+                  error_log( 'CODEX QUIZ HEADER: matched as FIRST quiz' );
+              }
           } elseif ( $quiz_id === $final_quiz_id ) {
               $label = 'Evaluación Final';
+              if ( $log_enabled ) {
+                  error_log( 'CODEX QUIZ HEADER: matched as FINAL quiz' );
+              }
+          } elseif ( $log_enabled ) {
+              error_log( 'CODEX QUIZ HEADER: no match found for this quiz_id' );
           }
+      } elseif ( $log_enabled ) {
+          error_log( 'CODEX QUIZ HEADER: course_id not found; cannot compare IDs' );
       }
 
       $course_name = $course_id ? get_the_title( $course_id ) : '';
