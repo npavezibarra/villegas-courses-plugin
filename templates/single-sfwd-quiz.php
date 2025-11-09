@@ -58,36 +58,57 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
     <div id="quiz-card">
       <?php
       /**
-       * Dynamic Quiz Header: <h3> tipo, <h2> curso/título, <p> fecha
-       * Usa la meta de curso de Codex para clasificar el quiz como inicial o final.
+       * Codex Debug Header: registra cada paso de la detección de tipo de quiz
+       * y muestra el encabezado dinámico (tipo/curso + fecha).
        */
 
-      $quiz_id   = (int) $quiz_id;
-      $course_id = 0;
-      $label     = '';
+      $quiz_id = (int) $quiz_id;
+      error_log( 'CODEX QUIZ HEADER: Rendering quiz_id=' . $quiz_id );
 
+      $course_id = 0;
       if ( function_exists( 'learndash_get_course_id' ) ) {
           $course_id = (int) learndash_get_course_id( $quiz_id );
+          error_log( 'CODEX QUIZ HEADER: learndash_get_course_id returned ' . $course_id );
       }
 
-      $course_name = $course_id ? get_the_title( $course_id ) : '';
+      if ( ! $course_id && function_exists( 'learndash_get_courses_for_step' ) ) {
+          $courses = learndash_get_courses_for_step( $quiz_id, true );
+          if ( is_array( $courses ) && ! empty( $courses ) ) {
+              $course_id = (int) array_key_first( $courses );
+              error_log( 'CODEX QUIZ HEADER: fallback learndash_get_courses_for_step returned ' . $course_id );
+          }
+      }
+
+      $course_name = $course_id ? get_the_title( $course_id ) : '(none)';
+      error_log( 'CODEX QUIZ HEADER: course_name=' . $course_name );
+
+      $label         = '';
+      $first_quiz_id = 0;
+      $final_quiz_id = 0;
 
       if ( $course_id ) {
           $first_quiz_id = (int) get_post_meta( $course_id, '_first_quiz_id', true );
           $final_quiz_id = (int) get_post_meta( $course_id, '_final_quiz_id', true );
 
+          error_log( sprintf( 'CODEX QUIZ HEADER: course %d meta -> first=%d, final=%d', $course_id, $first_quiz_id, $final_quiz_id ) );
+
           if ( $quiz_id === $first_quiz_id ) {
               $label = 'Evaluación Inicial';
+              error_log( 'CODEX QUIZ HEADER: matched as FIRST quiz' );
           } elseif ( $quiz_id === $final_quiz_id ) {
               $label = 'Evaluación Final';
+              error_log( 'CODEX QUIZ HEADER: matched as FINAL quiz' );
+          } else {
+              error_log( 'CODEX QUIZ HEADER: no match found for this quiz_id' );
           }
+      } else {
+          error_log( 'CODEX QUIZ HEADER: course_id not found; cannot compare IDs' );
       }
 
-      // Fecha del quiz (usa la fecha de publicación)
       $quiz_date = get_the_date( 'j \d\e F \d\e Y', $quiz_id );
       ?>
       <div class="quiz-page-header" style="display:none;">
-        <?php if ( $label && $course_name ) : ?>
+        <?php if ( $label && $course_name && '(none)' !== $course_name ) : ?>
           <h3><?php echo esc_html( $label ); ?></h3>
           <h2><?php echo esc_html( $course_name ); ?></h2>
         <?php else : ?>
