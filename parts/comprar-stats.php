@@ -141,13 +141,13 @@ function mostrar_comprar_stats() {
                 if ($has_completed_quiz): ?>
                     <div class="examen-inicial">
                         <strong><?php echo $percentage_correct; ?>%</strong>
-                        <p id="primer-test-legend">Prueba Inicial</p>
+                        <p id="primer-test-legend">Evaluación Inicial</p>
                     </div>
                 <?php else: ?>
                     <button onclick="window.location.href='<?php echo esc_url($first_quiz_url); ?>'"
                             class="button exam-inicial-btn"
                             style="<?php echo sprintf($button_style, '#2196f3'); ?> flex: 1; text-align: center;">
-                        Prueba Inicial
+                        Evaluación Inicial
                     </button>
                 <?php endif; ?>
                 <button onclick="window.location.href='<?php echo esc_url(get_permalink($product_id)); ?>'"
@@ -164,12 +164,12 @@ function mostrar_comprar_stats() {
                     if ($has_completed_quiz): ?>
                         <div class="quiz-result" style="background-color: white; border: 1px solid #e2e2e2; text-align: center;">
                             <strong><?php echo $percentage_correct; ?>%</strong>
-                            <p id="primer-test-legend">Prueba Inicial</p>
+                            <p id="primer-test-legend">Evaluación Inicial</p>
                         </div>
                     <?php else: ?>
                         <button onclick="window.location.href='<?php echo esc_url($first_quiz_url); ?>'"
                                 style="<?php echo sprintf($button_style, '#2196f3'); ?> width: 100%; padding: 10px 0;">
-                            Prueba Inicial
+                            Evaluación Inicial
                         </button>
                     <?php endif; ?>
                 </div>
