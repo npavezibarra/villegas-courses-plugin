@@ -59,47 +59,31 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
       <?php
       /**
        * Dynamic Quiz Header: <h3> tipo, <h2> curso/título, <p> fecha
+       * Usa la meta de curso de Codex para clasificar el quiz como inicial o final.
        */
 
-      // 1) Buscar curso asociado
+      $quiz_id   = (int) $quiz_id;
       $course_id = 0;
+      $label     = '';
+
       if ( function_exists( 'learndash_get_course_id' ) ) {
           $course_id = (int) learndash_get_course_id( $quiz_id );
       }
-      if ( ! $course_id ) {
-          $course_id = (int) get_post_meta( $quiz_id, '_quiz_course', true );
-          if ( ! $course_id ) {
-              $course_id = (int) get_post_meta( $quiz_id, 'course_id', true );
-          }
-      }
+
       $course_name = $course_id ? get_the_title( $course_id ) : '';
 
-      // 2) Detectar tipo de evaluación
-      $type_meta_keys = array(
-          '_quiz_type',
-          'quiz_type',
-          '_ld_quiz_type',
-          'ld_quiz_type',
-          '_politeia_quiz_type', // cambia este si usas un metabox propio
-      );
-      $quiz_type_raw = '';
-      foreach ( $type_meta_keys as $key ) {
-          $val = get_post_meta( $quiz_id, $key, true );
-          if ( ! empty( $val ) ) {
-              $quiz_type_raw = strtolower( trim( $val ) );
-              break;
+      if ( $course_id ) {
+          $first_quiz_id = (int) get_post_meta( $course_id, '_first_quiz_id', true );
+          $final_quiz_id = (int) get_post_meta( $course_id, '_final_quiz_id', true );
+
+          if ( $quiz_id === $first_quiz_id ) {
+              $label = 'Evaluación Inicial';
+          } elseif ( $quiz_id === $final_quiz_id ) {
+              $label = 'Evaluación Final';
           }
       }
 
-      // 3) Determinar etiqueta de tipo
-      $label = '';
-      if ( in_array( $quiz_type_raw, array( 'first', 'initial', 'inicial' ), true ) ) {
-          $label = 'Evaluación Inicial';
-      } elseif ( in_array( $quiz_type_raw, array( 'final', 'finale' ), true ) ) {
-          $label = 'Evaluación Final';
-      }
-
-      // 4) Fecha del quiz (usa la fecha de publicación)
+      // Fecha del quiz (usa la fecha de publicación)
       $quiz_date = get_the_date( 'j \d\e F \d\e Y', $quiz_id );
       ?>
       <div class="quiz-page-header" style="display:none;">
