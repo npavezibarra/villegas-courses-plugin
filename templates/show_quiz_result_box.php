@@ -15,8 +15,10 @@
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
-exit;
+    exit;
 }
+
+$quiz_post_id = function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ? intval( learndash_get_quiz_id_by_pro_quiz_id( $quiz->getID() ) ) : 0;
 ?>
 <div style="display: none;" class="wpProQuiz_sending">
 <h4 class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
@@ -46,8 +48,8 @@ array(
 </div>
 
 <div style="display: none;" class="wpProQuiz_results">
-<hr>
-<h4 style="font-family: sans-serif; font-size: 34px;" class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
+    <hr>
+    <h4 style="font-family: sans-serif; font-size: 34px;" class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
 <?php
 if ( ! $quiz->isHideResultCorrectQuestion() ) {
 echo wp_kses_post(
@@ -105,7 +107,6 @@ if ( ! $quiz->isHideResultPoints() ) {
         require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
     }
 
-    $quiz_post_id = function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ? intval( learndash_get_quiz_id_by_pro_quiz_id( $quiz->getID() ) ) : 0;
     $quiz_id      = $quiz_post_id ? $quiz_post_id : intval( $quiz->getID() );
 
     $average_chart_markup = '';

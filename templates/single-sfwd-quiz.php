@@ -30,6 +30,9 @@ $quiz_id = $post->ID;
 $image_id  = get_post_meta( $quiz_id, '_quiz_style_image', true );
 $image_url = $image_id ? wp_get_attachment_url( $image_id ) : '';
 $body_class = 'quiz-style-' . $quiz_id;
+
+$quiz_title = get_the_title( $quiz_id );
+$quiz_date  = get_the_date( '', $quiz_id );
 ?>
 
 <?php if ( $image_url ): ?>
@@ -56,14 +59,16 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
   <div class="custom-quiz-layout">
     <div id="quiz-card">
 
-      <?php
-      // Título del quiz
-      the_title('<h1>', '</h1>');
-
-      // Fecha actual en español
-      setlocale(LC_TIME, 'es_ES.UTF-8');
-      echo strftime('%e de %B de %Y');
-      ?>
+      <?php if ( $quiz_title || $quiz_date ) : ?>
+      <div class="quiz-page-header">
+        <?php if ( $quiz_title ) : ?>
+        <h1 class="quiz-title"><?php echo esc_html( $quiz_title ); ?></h1>
+        <?php endif; ?>
+        <?php if ( $quiz_date ) : ?>
+        <p class="quiz-date"><?php echo esc_html( $quiz_date ); ?></p>
+        <?php endif; ?>
+      </div>
+      <?php endif; ?>
 
       <?php
       // (Opcional) detectar si es Prueba Inicial o Final
