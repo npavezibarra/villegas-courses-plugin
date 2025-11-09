@@ -105,13 +105,13 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
                             <!-- Evaluaciones -->
                             <div class="course-post-evaluations">
-                                <!-- Prueba Inicial -->
+                                <!-- Evaluación inicial -->
                                 <?php $first_completed = $first_quiz_id ? villegas_is_quiz_completed( $first_quiz_id, $user_id ) : false; ?>
                                 <div class="evaluation-row">
                                     <?php if (!is_user_logged_in()) : ?>
-                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode($first_quiz_id ? get_permalink($first_quiz_id) : get_permalink($course_id)); ?>">Prueba Inicial</a>
+                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode($first_quiz_id ? get_permalink($first_quiz_id) : get_permalink($course_id)); ?>">Evaluación inicial</a>
                                     <?php else : ?>
-                                        <a class="evaluation-title" href="<?php echo $first_quiz_id ? get_permalink($first_quiz_id) : get_permalink($course_id); ?>">Prueba Inicial</a>
+                                        <a class="evaluation-title" href="<?php echo $first_quiz_id ? get_permalink($first_quiz_id) : get_permalink($course_id); ?>">Evaluación inicial</a>
                                     <?php endif; ?>
                                     <div class="progress-bar" id="progress-first">
                                         <div class="progress" style="width: <?php echo $first_completed ? $first_quiz_score : 0; ?>%;"></div>
@@ -119,12 +119,12 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                                     <span class="evaluation-percentage"><?php echo $first_completed ? $first_quiz_score : 0; ?>%</span>
                                 </div>
 
-                                <!-- Prueba Final -->
+                                <!-- Evaluación Final -->
                                 <div class="evaluation-row">
                                     <?php if (!is_user_logged_in()) : ?>
-                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode($final_quiz_id ? get_permalink($final_quiz_id) : get_permalink($course_id)); ?>">Prueba Final</a>
+                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode($final_quiz_id ? get_permalink($final_quiz_id) : get_permalink($course_id)); ?>">Evaluación Final</a>
                                     <?php elseif ($first_quiz_score === 0) : ?>
-                                        <span class="evaluation-title" style="opacity: 0.5; cursor: not-allowed;">Prueba Final</span>
+                                        <span class="evaluation-title" style="opacity: 0.5; cursor: not-allowed;">Evaluación Final</span>
                                     <?php else : ?>
                                         <?php
                                             // Verificar si el usuario completó el curso
@@ -133,7 +133,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                                                 : false;
                                             $final_link = ($completed && $final_quiz_id) ? get_permalink($final_quiz_id) : get_permalink($course_id);
                                         ?>
-                                        <a class="evaluation-title" href="<?php echo esc_url($final_link); ?>">Prueba Final</a>
+                                        <a class="evaluation-title" href="<?php echo esc_url($final_link); ?>">Evaluación Final</a>
                                     <?php endif; ?>
                                     <div class="progress-bar" id="progress-final">
                                         <div class="progress" style="width: <?php echo $final_quiz_score; ?>%;"></div>

@@ -94,10 +94,10 @@ if ( ! function_exists( 'villegas_courses_archive_shortcode' ) ) {
                 if ( ! is_user_logged_in() ) {
                     $first_redirect = $first_quiz_id ? get_permalink( $first_quiz_id ) : $course_permalink;
                     $first_login    = add_query_arg( 'redirect_to', rawurlencode( $first_redirect ), home_url( '/mi-cuenta/' ) );
-                    echo '<a class="evaluation-title" href="' . esc_url( $first_login ) . '">' . esc_html__( 'Prueba Inicial', 'villegas-courses' ) . '</a>';
+                    echo '<a class="evaluation-title" href="' . esc_url( $first_login ) . '">' . esc_html__( 'Evaluación inicial', 'villegas-courses' ) . '</a>';
                 } else {
                     $first_link = $first_quiz_id ? get_permalink( $first_quiz_id ) : $course_permalink;
-                    echo '<a class="evaluation-title" href="' . esc_url( $first_link ) . '">' . esc_html__( 'Prueba Inicial', 'villegas-courses' ) . '</a>';
+                    echo '<a class="evaluation-title" href="' . esc_url( $first_link ) . '">' . esc_html__( 'Evaluación inicial', 'villegas-courses' ) . '</a>';
                 }
                 echo '<div class="progress-bar" id="progress-first">';
                 echo '<div class="progress" style="width: ' . esc_attr( $first_progress ) . '%;"></div>';
@@ -109,13 +109,13 @@ if ( ! function_exists( 'villegas_courses_archive_shortcode' ) ) {
                 if ( ! is_user_logged_in() ) {
                     $final_redirect = $final_quiz_id ? get_permalink( $final_quiz_id ) : $course_permalink;
                     $final_login    = add_query_arg( 'redirect_to', rawurlencode( $final_redirect ), home_url( '/mi-cuenta/' ) );
-                    echo '<a class="evaluation-title" href="' . esc_url( $final_login ) . '">' . esc_html__( 'Prueba Final', 'villegas-courses' ) . '</a>';
+                    echo '<a class="evaluation-title" href="' . esc_url( $final_login ) . '">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</a>';
                 } elseif ( 0 === intval( $first_progress ) ) {
-                    echo '<span class="evaluation-title" style="opacity: 0.5; cursor: not-allowed;">' . esc_html__( 'Prueba Final', 'villegas-courses' ) . '</span>';
+                    echo '<span class="evaluation-title" style="opacity: 0.5; cursor: not-allowed;">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</span>';
                 } else {
                     $completed = function_exists( 'learndash_is_user_complete' ) ? learndash_is_user_complete( $user_id, $course_id ) : false;
                     $final_link = ( $completed && $final_quiz_id ) ? get_permalink( $final_quiz_id ) : $course_permalink;
-                    echo '<a class="evaluation-title" href="' . esc_url( $final_link ) . '">' . esc_html__( 'Prueba Final', 'villegas-courses' ) . '</a>';
+                    echo '<a class="evaluation-title" href="' . esc_url( $final_link ) . '">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</a>';
                 }
                 echo '<div class="progress-bar" id="progress-final">';
                 echo '<div class="progress" style="width: ' . esc_attr( $final_progress ) . '%;"></div>';
