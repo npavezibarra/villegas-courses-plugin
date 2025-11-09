@@ -5,7 +5,6 @@ document.addEventListener("DOMContentLoaded", function () {
         messageDiv.className = 'custom-quiz-message';
         messageDiv.id = 'quiz-start-message';
         const messageContent = `
-            <a id="back-to-course-link" href="${document.referrer}" class="back-to-course-link">Volver al curso</a>
             <div id="quiz-start-paragraph">
                 ${quizData.description || '<p style="color:red;">(Falta la descripción del quiz)</p>'}
             </div>
