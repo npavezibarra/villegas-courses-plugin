@@ -17,16 +17,6 @@
     padding: 40px 20px; /* opcional, para que no quede pegado en pantallas pequeñas */
 }
 
-a.back-to-course-link {
-    color: #2890e8;
-    font-size: 12px;
-    margin: auto;
-    border: 1px solid #2890e8;
-    max-width: 134px;
-    margin-top: 20px;
-    border-radius: 3px;
-}
-
 #quiz-card > h1 {
     font-size:28px;
     font-weight: 800;
@@ -50,7 +40,7 @@ p.wpProQuiz_points {
     width: 200px !important;
 }
 
-input.wpProQuiz_button {
+#quiz-card input.wpProQuiz_button {
     border-radius: 4px !important;
 }
 

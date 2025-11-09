@@ -129,6 +129,14 @@ add_action('wp_enqueue_scripts', function() {
             '1.0',
             true
         );
+
+        wp_enqueue_script(
+            'quiz-card-styles',
+            plugin_dir_url(__FILE__) . 'assets/js/quiz-card-styles.js',
+            [],
+            '1.0',
+            true
+        );
     }
 });
 
