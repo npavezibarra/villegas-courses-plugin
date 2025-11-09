@@ -140,6 +140,59 @@ add_action('wp_enqueue_scripts', function() {
     }
 });
 
+add_filter( 'learndash_quiz_before', 'villegas_show_attempt_bar', 10, 2 );
+
+function villegas_show_attempt_bar( $quiz_content, $quiz ) {
+    $quiz_id = 0;
+
+    if ( is_object( $quiz ) ) {
+        if ( method_exists( $quiz, 'getID' ) ) {
+            $quiz_id = absint( $quiz->getID() );
+        } elseif ( isset( $quiz->ID ) ) {
+            $quiz_id = absint( $quiz->ID );
+        }
+    } elseif ( is_numeric( $quiz ) ) {
+        $quiz_id = absint( $quiz );
+    }
+
+    if ( ! $quiz_id ) {
+        return $quiz_content;
+    }
+
+    ob_start();
+    villegas_render_attempt_bar( $quiz_id, get_current_user_id() );
+    echo $quiz_content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Content provided by LearnDash.
+
+    return ob_get_clean();
+}
+
+function villegas_render_attempt_bar( $quiz_id, $user_id ) {
+    if ( ! $quiz_id ) {
+        return;
+    }
+
+    $attempts = 0;
+
+    if ( $user_id ) {
+        global $wpdb;
+
+        $attempts = (int) $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$wpdb->prefix}learndash_user_activity WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'",
+                $user_id,
+                $quiz_id
+            )
+        );
+    }
+
+    $label = ! $attempts ? 'Tu primer intento' : sprintf( 'Intento %d', $attempts + 1 );
+
+    printf(
+        '<div class="quiz-attempt-bar">%s</div>',
+        esc_html( $label )
+    );
+}
+
 /* AJAX PARA RESULTADOS QUIZ */
 add_action( 'wp_ajax_mostrar_resultados_curso', 'villegas_ajax_resultados_curso' );
 function villegas_ajax_resultados_curso() {
