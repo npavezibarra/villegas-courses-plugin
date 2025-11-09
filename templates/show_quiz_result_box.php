@@ -19,8 +19,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 $quiz_post_id = function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ? intval( learndash_get_quiz_id_by_pro_quiz_id( $quiz->getID() ) ) : 0;
-$quiz_title   = $quiz_post_id ? get_the_title( $quiz_post_id ) : $quiz->getName();
-$quiz_date    = $quiz_post_id ? get_the_date( '', $quiz_post_id ) : '';
 ?>
 <div style="display: none;" class="wpProQuiz_sending">
 <h4 class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
@@ -51,12 +49,6 @@ array(
 
 <div style="display: none;" class="wpProQuiz_results">
     <hr>
-    <?php if ( $quiz_title || $quiz_date ) : ?>
-    <div class="quiz-result-header" style="display:none;">
-        <h1 class="quiz-title"><?php echo esc_html( $quiz_title ); ?></h1>
-        <p class="quiz-date"><?php echo esc_html( $quiz_date ); ?></p>
-    </div>
-    <?php endif; ?>
     <h4 style="font-family: sans-serif; font-size: 34px;" class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
 <?php
 if ( ! $quiz->isHideResultCorrectQuestion() ) {
