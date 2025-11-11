@@ -55,24 +55,16 @@
     }
 
     const applyState = (loggedIn) => {
-      if (authButton.disabled) {
-        authButton.disabled = false;
-      }
+      authButton.disabled = false;
 
       if (config) {
         config.isLoggedIn = loggedIn;
         config.isUser = loggedIn;
       }
 
-      if (loggedIn) {
-        authButton.textContent = 'Salir';
-        authButton.classList.remove('ingresar');
-        authButton.classList.add('salir');
-      } else {
-        authButton.textContent = 'Ingresar';
-        authButton.classList.remove('salir');
-        authButton.classList.add('ingresar');
-      }
+      authButton.textContent = loggedIn ? 'Logout' : 'Login';
+      authButton.classList.toggle('is-logged-in', loggedIn);
+      authButton.classList.toggle('is-logged-out', !loggedIn);
     };
 
     applyState(Boolean(config && (config.isLoggedIn || config.isUser)));
@@ -82,7 +74,7 @@
 
       if (config && (config.isLoggedIn || config.isUser)) {
         authButton.disabled = true;
-        authButton.textContent = 'Saliendo...';
+        authButton.textContent = 'Logging out...';
 
         try {
           const resp = await fetch(config.ajax, {
@@ -91,7 +83,7 @@
             body: new URLSearchParams({
               action: 'vcp_auth_logout',
               nonce: config.nonce,
-            }).toString(),
+            }),
           });
 
           const json = await resp.json();
@@ -101,13 +93,14 @@
             return;
           }
 
-          window.alert('Error al cerrar sesión.');
+          window.alert('Error logging out.');
           applyState(true);
         } catch (err) {
           console.error(err);
           applyState(true);
         } finally {
           authButton.disabled = false;
+          authButton.textContent = 'Logout';
         }
 
         return;
@@ -125,7 +118,7 @@
           modalEl.classList.add('is-visible');
           overlayEl.classList.add('is-visible');
         } else {
-          console.warn('Modal de autenticación no encontrado en el DOM.');
+          console.warn('Auth modal not found in DOM.');
         }
       }
     });
