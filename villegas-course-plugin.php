@@ -186,7 +186,7 @@ add_action('wp_enqueue_scripts', function () {
         'vcp-auth-js',
         plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js',
         ['jquery'],
-        '1.3',
+        '1.4',
         true
     );
 
@@ -213,7 +213,7 @@ add_action('wp_enqueue_scripts', function () {
         'isLoggedIn'     => is_user_logged_in(),
         'logoutRedirect' => home_url(),
     ]);
-});
+}, 99);
 
 add_action('init', function () {
     if (isset($_GET['vcp_auth']) && $_GET['vcp_auth'] === 'google') {
