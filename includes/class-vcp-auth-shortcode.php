@@ -28,6 +28,12 @@ final class VCP_Auth_Shortcode {
                 <button class="vcp-auth-tab" data-target="#vcp-register">Register</button>
             </div>
 
+            <div class="vcp-social-login">
+                <button class="vcp-google-login" data-provider="google">
+                    Continue with Google
+                </button>
+            </div>
+
             <div class="vcp-auth-panels">
                 <form id="vcp-login" class="vcp-auth-panel is-active" method="post">
                     <h3 id="vcp-auth-title">Login</h3>
@@ -35,6 +41,7 @@ final class VCP_Auth_Shortcode {
                     <input type="hidden" name="action" value="">
                     <div class="vcp-field"><label>Username</label><input type="text" name="log"></div>
                     <div class="vcp-field"><label>Password</label><input type="password" name="pwd"></div>
+                    <div class="vcp-captcha" data-type="login"></div>
                     <button type="submit">Login</button>
                 </form>
 
@@ -45,6 +52,7 @@ final class VCP_Auth_Shortcode {
                     <div class="vcp-field"><label>Email</label><input type="email" name="user_email"></div>
                     <div class="vcp-field"><label>Username</label><input type="text" name="user_login"></div>
                     <div class="vcp-field"><label>Password</label><input type="password" name="user_pass"></div>
+                    <div class="vcp-captcha" data-type="register"></div>
                     <button type="submit">Create account</button>
                 </form>
             </div>

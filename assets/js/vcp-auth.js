@@ -12,6 +12,12 @@
   }
 
   document.addEventListener('click', e => {
+    if (e.target.closest('.vcp-google-login')) {
+      e.preventDefault();
+      window.location.href = '/?vcp_auth=google';
+      return;
+    }
+
     if (e.target.closest('.vcp-auth-open')) toggleModal(true);
     if (e.target.closest('.vcp-auth-close') || e.target.classList.contains('vcp-auth-overlay')) toggleModal(false);
   });
@@ -26,7 +32,7 @@
     });
   });
 
-  document.addEventListener('submit', e => {
+  document.addEventListener('submit', async e => {
     const form = e.target.closest('#vcp-login, #vcp-register');
     if (!form) return;
     e.preventDefault();
@@ -35,10 +41,24 @@
       return;
     }
 
+    let token = '';
+    if (window.grecaptcha && VCP_AUTH.captcha_key !== 'YOUR_SITE_KEY') {
+      try {
+        token = await grecaptcha.execute(VCP_AUTH.captcha_key, { action: 'submit' });
+      } catch (err) {
+        console.error('Captcha failed', err);
+      }
+    }
+
     const data = new URLSearchParams(new FormData(form));
     const isLogin = form.id === 'vcp-login';
-    data.set('action', isLogin ? 'vcp_auth_login' : 'vcp_auth_register');
-    data.set('nonce', VCP_AUTH.nonce);
+    data.delete('action');
+    data.delete('nonce');
+    data.append('action', isLogin ? 'vcp_auth_login' : 'vcp_auth_register');
+    data.append('nonce', VCP_AUTH.nonce);
+    if (token) {
+      data.append('captcha_token', token);
+    }
 
     fetch(VCP_AUTH.ajax, {
       method: 'POST',
@@ -51,7 +71,7 @@
         if (json.success) {
           window.location.reload();
         } else {
-          const msg = json.data || 'Login failed.';
+          const msg = json.data || 'Authentication failed.';
           form.querySelector('.vcp-auth-error')?.remove();
           const err = document.createElement('div');
           err.className = 'vcp-auth-error';
