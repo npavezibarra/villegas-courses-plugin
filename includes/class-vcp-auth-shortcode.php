@@ -93,4 +93,85 @@ final class VCP_Auth_Shortcode {
     }
 }
 
+/**
+ * Variante minimalista del shortcode [vcp_auth].
+ * Muestra solo el botón "Ingresa" y no muestra nada si el usuario está logueado.
+ */
+final class VCP_Auth_Button_Shortcode {
+    public static function init() {
+        add_shortcode('vcp_auth_button', [__CLASS__, 'render']);
+    }
+
+    public static function render($atts = []) {
+        // Si el usuario está logueado, no mostrar nada
+        if (is_user_logged_in()) {
+            return '';
+        }
+
+        // Atributos por defecto
+        $atts = shortcode_atts([
+            'label' => 'Ingresa'
+        ], $atts, 'vcp_auth_button');
+
+        ob_start(); ?>
+        <button class="vcp-auth-open"><?php echo esc_html($atts['label']); ?></button>
+
+        <!-- Reutilizamos el mismo modal y overlay del shortcode principal -->
+        <div class="vcp-auth-overlay" hidden></div>
+        <div class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
+          <button class="vcp-auth-close" aria-label="Cerrar">×</button>
+
+          <div class="vcp-auth-tabs">
+            <button class="vcp-auth-tab is-active" data-target="#vcp-login">Login</button>
+            <button class="vcp-auth-tab" data-target="#vcp-register">Register</button>
+          </div>
+
+          <div class="vcp-auth-panels">
+            <form id="vcp-login" class="vcp-auth-panel is-active" novalidate>
+              <h3 id="vcp-auth-title">Login</h3>
+              <div class="vcp-field">
+                <label>Username or Email</label>
+                <input type="text" name="log" required>
+              </div>
+              <div class="vcp-field">
+                <label>Password</label>
+                <input type="password" name="pwd" required>
+              </div>
+              <div class="vcp-actions">
+                <button type="submit">Login</button>
+              </div>
+              <input type="hidden" name="action" value="vcp_auth_login">
+              <input type="hidden" name="nonce" value="<?php echo esc_attr(wp_create_nonce('vcp_auth_nonce')); ?>">
+              <div class="vcp-auth-error" aria-live="polite"></div>
+            </form>
+
+            <form id="vcp-register" class="vcp-auth-panel" novalidate>
+              <h3>Register</h3>
+              <div class="vcp-field">
+                <label>Email</label>
+                <input type="email" name="user_email" required>
+              </div>
+              <div class="vcp-field">
+                <label>Username</label>
+                <input type="text" name="user_login" required>
+              </div>
+              <div class="vcp-field">
+                <label>Password</label>
+                <input type="password" name="user_pass" minlength="6" required>
+              </div>
+              <div class="vcp-actions">
+                <button type="submit">Create Account</button>
+              </div>
+              <input type="hidden" name="action" value="vcp_auth_register">
+              <input type="hidden" name="nonce" value="<?php echo esc_attr(wp_create_nonce('vcp_auth_nonce')); ?>">
+              <div class="vcp-auth-error" aria-live="polite"></div>
+            </form>
+          </div>
+        </div>
+        <?php
+        return ob_get_clean();
+    }
+}
+VCP_Auth_Button_Shortcode::init();
+
 VCP_Auth_Shortcode::init();
