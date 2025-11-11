@@ -157,3 +157,64 @@ add_action('wp_ajax_vcp_auth_logout', function () {
 add_action('wp_ajax_nopriv_vcp_auth_logout', function () {
     wp_send_json_error(['message' => 'Not logged in']);
 });
+
+/**
+ * Validate if a username or email exists.
+ */
+$vcp_check_user_exists = function () {
+    $input = isset($_POST['user_check']) ? sanitize_text_field(wp_unslash($_POST['user_check'])) : '';
+
+    if ($input === '') {
+        wp_send_json_error(['message' => 'Campo vacío']);
+    }
+
+    if (is_email($input)) {
+        $user = get_user_by('email', $input);
+    } else {
+        $user = get_user_by('login', $input);
+    }
+
+    if ($user) {
+        wp_send_json_success(['exists' => true]);
+    }
+
+    wp_send_json_error([
+        'exists'  => false,
+        'message' => 'Este correo no está registrado',
+    ]);
+};
+
+add_action('wp_ajax_nopriv_vcp_check_user_exists', $vcp_check_user_exists);
+add_action('wp_ajax_vcp_check_user_exists', $vcp_check_user_exists);
+
+/**
+ * Handle password reset request.
+ */
+$vcp_reset_password = function () {
+    $email = isset($_POST['user_email']) ? sanitize_email(wp_unslash($_POST['user_email'])) : '';
+
+    if (empty($email) || !is_email($email)) {
+        wp_send_json_error(['message' => 'Correo no válido.']);
+    }
+
+    $user = get_user_by('email', $email);
+    if (!$user) {
+        wp_send_json_error(['message' => 'Este correo no está registrado.']);
+    }
+
+    $reset = retrieve_password($user->user_login);
+
+    if ($reset instanceof WP_Error) {
+        $message = $reset->get_error_message();
+        wp_send_json_error(['message' => $message ? $message : 'No se pudo enviar el correo. Intenta más tarde.']);
+    }
+
+    if (!$reset) {
+        wp_send_json_error(['message' => 'No se pudo enviar el correo. Intenta más tarde.']);
+    }
+
+    wp_send_json_success(['message' => 'Hemos enviado un enlace de restablecimiento de contraseña a tu correo.']);
+};
+
+add_action('wp_ajax_nopriv_vcp_reset_password', $vcp_reset_password);
+add_action('wp_ajax_vcp_reset_password', $vcp_reset_password);

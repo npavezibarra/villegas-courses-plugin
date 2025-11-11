@@ -6,6 +6,7 @@
   const config = typeof VCP_AUTH !== 'undefined' ? VCP_AUTH : null;
   const redirectConfig = typeof VCP_AUTH_REDIRECT !== 'undefined' ? VCP_AUTH_REDIRECT : null;
   let lastFocus = null;
+  const loginValidationTimers = new WeakMap();
 
   function showModal() {
     if (!overlay || !modal) {
@@ -62,7 +63,7 @@
         config.isUser = loggedIn;
       }
 
-      authButton.textContent = loggedIn ? 'Logout' : 'Login';
+      authButton.textContent = loggedIn ? 'Salir' : 'Ingresar';
       authButton.classList.toggle('is-logged-in', loggedIn);
       authButton.classList.toggle('is-logged-out', !loggedIn);
     };
@@ -74,7 +75,7 @@
 
       if (config && (config.isLoggedIn || config.isUser)) {
         authButton.disabled = true;
-        authButton.textContent = 'Logging out...';
+        authButton.textContent = 'Saliendo...';
 
         try {
           const resp = await fetch(config.ajax, {
@@ -93,14 +94,14 @@
             return;
           }
 
-          window.alert('Error logging out.');
+          window.alert('Error al cerrar sesión.');
           applyState(true);
         } catch (err) {
           console.error(err);
           applyState(true);
         } finally {
           authButton.disabled = false;
-          authButton.textContent = 'Logout';
+          authButton.textContent = 'Salir';
         }
 
         return;
@@ -118,7 +119,7 @@
           modalEl.classList.add('is-visible');
           overlayEl.classList.add('is-visible');
         } else {
-          console.warn('Auth modal not found in DOM.');
+          console.warn('Modal de autenticación no encontrado en el DOM.');
         }
       }
     });
@@ -159,7 +160,7 @@
             window.location.reload();
           }
         })
-        .catch(() => window.alert('Logout failed.'));
+        .catch(() => window.alert('No se pudo cerrar sesión.'));
 
       return;
     }
@@ -177,6 +178,52 @@
 
     if (e.target.closest('.vcp-auth-open')) {
       showModal();
+      return;
+    }
+
+    const forgotLink = e.target.closest('#vcp-forgot-toggle');
+    if (forgotLink) {
+      e.preventDefault();
+      const modalRoot = forgotLink.closest('.vcp-auth-modal');
+      if (modalRoot) {
+        const loginPanel = modalRoot.querySelector('#vcp-login');
+        const resetPanel = modalRoot.querySelector('#vcp-reset');
+        if (loginPanel && resetPanel) {
+          loginPanel.classList.remove('is-active');
+          resetPanel.classList.add('is-active');
+        }
+        const tabs = modalRoot.querySelectorAll('.vcp-auth-tab');
+        tabs.forEach((tab, index) => {
+          if (index === 0) {
+            tab.classList.add('is-active');
+          } else {
+            tab.classList.remove('is-active');
+          }
+        });
+      }
+      return;
+    }
+
+    const backToLogin = e.target.closest('#vcp-back-to-login');
+    if (backToLogin) {
+      e.preventDefault();
+      const modalRoot = backToLogin.closest('.vcp-auth-modal');
+      if (modalRoot) {
+        const loginPanel = modalRoot.querySelector('#vcp-login');
+        const resetPanel = modalRoot.querySelector('#vcp-reset');
+        if (loginPanel && resetPanel) {
+          resetPanel.classList.remove('is-active');
+          loginPanel.classList.add('is-active');
+        }
+        const tabs = modalRoot.querySelectorAll('.vcp-auth-tab');
+        tabs.forEach((tab, index) => {
+          if (index === 0) {
+            tab.classList.add('is-active');
+          } else {
+            tab.classList.remove('is-active');
+          }
+        });
+      }
       return;
     }
 
@@ -248,7 +295,7 @@
       try {
         token = await grecaptcha.execute(config.recaptcha_key, { action: 'submit' });
       } catch (err) {
-        console.error('Captcha failed', err);
+        console.error('Error al verificar el captcha', err);
       }
     }
 
@@ -261,38 +308,183 @@
     if (token) {
       data.append('captcha_token', token);
     }
+    const messageBox = form.querySelector('.vcp-auth-error');
+    if (messageBox) {
+      messageBox.style.display = 'none';
+      messageBox.textContent = '';
+      messageBox.style.color = '#c62828';
+    }
 
-    fetch(config.ajax, {
-      method: 'POST',
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: data.toString(),
-    })
-      .then(r => r.json())
-      .then(json => {
-        if (json.success) {
-          document.dispatchEvent(new CustomEvent('vcp-login-success', { detail: json }));
+    const loginFieldMessage = form.querySelector('.vcp-login-error');
+    if (loginFieldMessage) {
+      loginFieldMessage.style.display = 'none';
+    }
 
-          hideModal();
+    try {
+      const response = await fetch(config.ajax, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: data.toString(),
+      });
+      const json = await response.json();
 
-          const target = redirectConfig && redirectConfig.redirect
-            ? redirectConfig.redirect
-            : '';
-
-          if (target) {
-            window.location.href = target;
-          }
-
-          return;
-        } else {
-          const msg = json.data || 'Authentication failed.';
-          form.querySelector('.vcp-auth-error')?.remove();
-          const err = document.createElement('div');
-          err.className = 'vcp-auth-error';
-          err.textContent = msg;
-          form.appendChild(err);
+      if (json.success) {
+        if (messageBox) {
+          messageBox.style.display = 'none';
+          messageBox.textContent = '';
         }
-      })
-      .catch(() => window.alert('Network error.'));
+
+        document.dispatchEvent(new CustomEvent('vcp-login-success', { detail: json }));
+
+        hideModal();
+
+        const target = redirectConfig && redirectConfig.redirect
+          ? redirectConfig.redirect
+          : '';
+
+        if (target) {
+          window.location.href = target;
+        }
+
+        return;
+      }
+
+      const message = typeof json.data === 'string'
+        ? json.data
+        : (json.data && json.data.message) ? json.data.message : 'Autenticación fallida.';
+
+      if (messageBox) {
+        messageBox.textContent = message;
+        messageBox.style.display = 'block';
+        messageBox.style.color = '#c62828';
+      } else {
+        window.alert(message);
+      }
+    } catch (error) {
+      console.error('Error en la autenticación', error);
+      window.alert('Error de red.');
+    }
+  });
+
+  document.addEventListener('input', e => {
+    if (!e.target.matches('#vcp-login-user')) {
+      return;
+    }
+
+    if (!config) {
+      return;
+    }
+
+    const input = e.target;
+    const field = input.closest('.vcp-field');
+    const errorMsg = field ? field.querySelector('.vcp-login-error') : null;
+    if (!errorMsg) {
+      return;
+    }
+
+    const existing = loginValidationTimers.get(input);
+    if (existing) {
+      clearTimeout(existing);
+    }
+
+    errorMsg.style.display = 'none';
+
+    const value = input.value.trim();
+    if (!value) {
+      return;
+    }
+
+    const timer = window.setTimeout(async () => {
+      try {
+        const resp = await fetch(config.ajax, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            action: 'vcp_check_user_exists',
+            user_check: value,
+          }),
+        });
+        const json = await resp.json();
+        if (!json.success && json.data && json.data.message) {
+          errorMsg.textContent = json.data.message;
+          errorMsg.style.display = 'block';
+        } else {
+          errorMsg.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Error al validar el usuario', err);
+      }
+    }, 500);
+
+    loginValidationTimers.set(input, timer);
+  });
+
+  document.addEventListener('submit', async e => {
+    const form = e.target;
+    if (!form || !form.matches('#vcp-reset')) {
+      return;
+    }
+
+    e.preventDefault();
+
+    if (!config) {
+      return;
+    }
+
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton ? submitButton.textContent : '';
+    if (submitButton) {
+      submitButton.disabled = true;
+      submitButton.textContent = 'Enviando...';
+    }
+
+    const messageBox = form.querySelector('.vcp-auth-error');
+    if (messageBox) {
+      messageBox.style.display = 'none';
+      messageBox.textContent = '';
+    }
+
+    const data = new URLSearchParams(new FormData(form));
+    data.set('action', 'vcp_reset_password');
+    if (config.nonce) {
+      data.set('nonce', config.nonce);
+    }
+
+    try {
+      const resp = await fetch(config.ajax, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: data.toString(),
+      });
+      const json = await resp.json();
+
+      if (messageBox) {
+        messageBox.style.display = 'block';
+        messageBox.style.color = json.success ? '#0a8f08' : '#c62828';
+        const text = json.data && json.data.message
+          ? json.data.message
+          : (json.success ? '' : 'No se pudo enviar el correo. Intenta más tarde.');
+        messageBox.textContent = text;
+      }
+
+      if (json.success) {
+        form.reset();
+      }
+    } catch (err) {
+      console.error('Error al solicitar el restablecimiento', err);
+      if (messageBox) {
+        messageBox.style.display = 'block';
+        messageBox.style.color = '#c62828';
+        messageBox.textContent = 'No se pudo enviar el correo. Intenta más tarde.';
+      } else {
+        window.alert('No se pudo enviar el correo. Intenta más tarde.');
+      }
+    } finally {
+      if (submitButton) {
+        submitButton.disabled = false;
+        submitButton.textContent = originalText || 'Enviar enlace';
+      }
+    }
   });
 })(jQuery);
