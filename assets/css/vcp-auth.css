@@ -253,56 +253,67 @@
   outline-offset: 2px;
 }
 
-/* === Fix for Gutenberg/Block Theme Layout Conflicts === */
+/* === SAFE RESET FOR BLOCK THEME CONFLICTS === */
 
-/* Reset inherited flex/grid from theme containers */
 .vcp-auth-modal,
-.vcp-auth-modal * {
-  all: unset;
+.vcp-auth-overlay {
+  all: initial;
+  font-family: system-ui, sans-serif;
   box-sizing: border-box;
-  font-family: inherit;
-  color: inherit;
-  flex: none !important;
-  align-self: auto !important;
 }
 
-/* Reapply modal-specific styles */
+.vcp-auth-modal * {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+/* === Modal container === */
 .vcp-auth-modal {
-  all: initial;
   position: fixed !important;
   top: 50% !important;
   left: 50% !important;
   transform: translate(-50%, -50%) !important;
   z-index: 9999 !important;
-  display: block !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
   width: 90%;
   max-width: 420px;
   background: #fff;
   border-radius: 10px;
   padding: 2rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  font-family: system-ui, sans-serif;
+  overflow-y: auto;
+  max-height: 90vh;
 }
 
-/* Tabs inside modal */
+/* === Overlay === */
+.vcp-auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9998;
+}
+
+/* === Tabs === */
 .vcp-auth-tabs {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  gap: 1rem !important;
-  margin-bottom: 1.5rem !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
 }
 
-/* Buttons reset */
 .vcp-auth-tab {
-  all: unset;
   background: #eee;
   color: #000;
+  border: none;
   padding: 8px 14px;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
+  transition: all 0.2s ease-in-out;
   font-size: 0.95rem;
-  text-align: center;
 }
 
 .vcp-auth-tab.is-active {
@@ -310,9 +321,61 @@
   color: #fff;
 }
 
-.vcp-auth-overlay {
-  position: fixed !important;
-  inset: 0 !important;
-  background: rgba(0,0,0,0.6);
-  z-index: 9998;
+/* === Panels === */
+.vcp-auth-panel {
+  display: none;
+}
+
+.vcp-auth-panel.is-active {
+  display: block;
+}
+
+.vcp-field {
+  margin-bottom: 1rem;
+}
+
+.vcp-field label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.vcp-field input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+/* === Buttons === */
+.vcp-actions button {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.vcp-actions button:hover {
+  background: #333;
+}
+
+/* === Footer links === */
+.vcp-forgot {
+  text-align: right;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.vcp-forgot a {
+  color: #333;
+  text-decoration: none;
+}
+
+.vcp-forgot a:hover {
+  text-decoration: underline;
 }
