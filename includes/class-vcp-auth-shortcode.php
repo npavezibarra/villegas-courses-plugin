@@ -13,6 +13,19 @@ final class VCP_Auth_Shortcode {
             'label' => 'Register / Login',
         ], $atts, 'vcp_auth');
 
+        if (is_user_logged_in()) {
+            $user = wp_get_current_user();
+
+            ob_start();
+            ?>
+            <div class="vcp-auth-logged">
+                <span class="vcp-auth-greet">Hello, <?php echo esc_html($user->display_name ?: $user->user_login); ?></span>
+                <button type="button" class="vcp-auth-logout">Logout</button>
+            </div>
+            <?php
+            return ob_get_clean();
+        }
+
         $nonce = wp_create_nonce('vcp_auth_nonce');
 
         ob_start();

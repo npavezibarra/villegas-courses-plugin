@@ -12,6 +12,35 @@
   }
 
   document.addEventListener('click', e => {
+    const logoutBtn = e.target.closest('.vcp-auth-logout');
+    if (logoutBtn) {
+      e.preventDefault();
+
+      if (typeof VCP_AUTH === 'undefined') {
+        window.location.reload();
+        return;
+      }
+
+      fetch(VCP_AUTH.ajax, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          action: 'vcp_auth_logout',
+          nonce: VCP_AUTH.nonce
+        }).toString()
+      })
+        .then(r => r.json())
+        .then(json => {
+          if (json.success) {
+            window.location.reload();
+          }
+        })
+        .catch(() => window.alert('Logout failed.'));
+
+      return;
+    }
+
     const googleBtn = e.target.closest('.vcp-google-login');
     if (googleBtn) {
       e.preventDefault();

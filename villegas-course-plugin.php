@@ -30,6 +30,7 @@ add_action('wp_enqueue_scripts', function () {
             'nonce'       => wp_create_nonce('vcp_auth_nonce'),
             'captcha_key' => 'YOUR_SITE_KEY',
             'google_url'  => home_url('/?vcp_auth=google'),
+            'isUser'      => is_user_logged_in(),
         ]);
     }
 });
