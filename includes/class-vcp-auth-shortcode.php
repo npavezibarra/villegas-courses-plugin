@@ -34,7 +34,7 @@ final class VCP_Auth_Shortcode {
 
         <div class="vcp-auth-overlay" hidden></div>
         <div class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
-            <button class="vcp-auth-close" aria-label="Close">×</button>
+            <button class="vcp-auth-close" aria-label="Close dialog">×</button>
 
             <div class="vcp-auth-tabs">
                 <button class="vcp-auth-tab is-active" data-target="#vcp-login">Login</button>

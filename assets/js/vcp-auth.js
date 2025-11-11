@@ -1,14 +1,50 @@
 (function($){
-  const qs = s => document.querySelector(s);
-  const qsa = s => Array.from(document.querySelectorAll(s));
+  const qs = (selector, ctx = document) => ctx.querySelector(selector);
+  const qsa = (selector, ctx = document) => Array.from(ctx.querySelectorAll(selector));
+  const overlay = qs('.vcp-auth-overlay');
+  const modal = qs('.vcp-auth-modal');
+  const config = typeof VCP_AUTH !== 'undefined' ? VCP_AUTH : null;
+  let lastFocus = null;
 
-  function toggleModal(show) {
-    const overlay = qs('.vcp-auth-overlay');
-    const modal = qs('.vcp-auth-modal');
-    if (!overlay || !modal) return;
-    overlay.hidden = !show;
-    modal.hidden = !show;
-    document.body.style.overflow = show ? 'hidden' : '';
+  function showModal() {
+    if (!overlay || !modal) {
+      return;
+    }
+
+    lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    overlay.hidden = false;
+    modal.hidden = false;
+
+    window.setTimeout(() => {
+      overlay.classList.add('is-visible');
+      modal.classList.add('is-visible');
+
+      const firstInput = modal.querySelector('input, button, select, textarea, [tabindex]:not([tabindex="-1"])');
+      if (firstInput && typeof firstInput.focus === 'function') {
+        firstInput.focus();
+      }
+    }, 10);
+
+    document.body.style.overflow = 'hidden';
+  }
+
+  function hideModal() {
+    if (!overlay || !modal) {
+      return;
+    }
+
+    overlay.classList.remove('is-visible');
+    modal.classList.remove('is-visible');
+
+    window.setTimeout(() => {
+      overlay.hidden = true;
+      modal.hidden = true;
+      document.body.style.overflow = '';
+
+      if (lastFocus && typeof lastFocus.focus === 'function' && document.contains(lastFocus)) {
+        lastFocus.focus();
+      }
+    }, 250);
   }
 
   document.addEventListener('click', e => {
@@ -16,19 +52,19 @@
     if (logoutBtn) {
       e.preventDefault();
 
-      if (typeof VCP_AUTH === 'undefined') {
+      if (!config) {
         window.location.reload();
         return;
       }
 
-      fetch(VCP_AUTH.ajax, {
+      fetch(config.ajax, {
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           action: 'vcp_auth_logout',
-          nonce: VCP_AUTH.nonce
-        }).toString()
+          nonce: config.nonce,
+        }).toString(),
       })
         .then(r => r.json())
         .then(json => {
@@ -44,14 +80,61 @@
     const googleBtn = e.target.closest('.vcp-google-login');
     if (googleBtn) {
       e.preventDefault();
-      if (typeof VCP_AUTH !== 'undefined' && VCP_AUTH.google_url) {
-        window.location.href = VCP_AUTH.google_url;
+
+      if (config && config.google_url) {
+        window.location.href = config.google_url;
       }
+
       return;
     }
 
-    if (e.target.closest('.vcp-auth-open')) toggleModal(true);
-    if (e.target.closest('.vcp-auth-close') || e.target.classList.contains('vcp-auth-overlay')) toggleModal(false);
+    if (e.target.closest('.vcp-auth-open')) {
+      showModal();
+      return;
+    }
+
+    if (!overlay || !modal) {
+      return;
+    }
+
+    if (e.target.closest('.vcp-auth-close') || e.target === overlay) {
+      hideModal();
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!modal) {
+      return;
+    }
+
+    if (e.key === 'Escape' && !modal.hidden) {
+      e.preventDefault();
+      hideModal();
+    }
+  });
+
+  document.addEventListener('keydown', e => {
+    if (!modal || !modal.classList.contains('is-visible') || e.key !== 'Tab') {
+      return;
+    }
+
+    const focusable = qsa('a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])', modal)
+      .filter(el => !el.disabled && el.tabIndex !== -1 && (el.offsetWidth > 0 || el.offsetHeight > 0 || el.getClientRects().length));
+
+    if (focusable.length === 0) {
+      return;
+    }
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey && document.activeElement === first) {
+      last.focus();
+      e.preventDefault();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      first.focus();
+      e.preventDefault();
+    }
   });
 
   qsa('.vcp-auth-tab').forEach(tab => {
@@ -69,14 +152,14 @@
     if (!form) return;
     e.preventDefault();
 
-    if (typeof VCP_AUTH === 'undefined') {
+    if (!config) {
       return;
     }
 
     let token = '';
-    if (window.grecaptcha && VCP_AUTH.captcha_key !== 'YOUR_SITE_KEY') {
+    if (window.grecaptcha && config.captcha_key !== 'YOUR_SITE_KEY') {
       try {
-        token = await grecaptcha.execute(VCP_AUTH.captcha_key, { action: 'submit' });
+        token = await grecaptcha.execute(config.captcha_key, { action: 'submit' });
       } catch (err) {
         console.error('Captcha failed', err);
       }
@@ -87,12 +170,12 @@
     data.delete('action');
     data.delete('nonce');
     data.append('action', isLogin ? 'vcp_auth_login' : 'vcp_auth_register');
-    data.append('nonce', VCP_AUTH.nonce);
+    data.append('nonce', config.nonce);
     if (token) {
       data.append('captcha_token', token);
     }
 
-    fetch(VCP_AUTH.ajax, {
+    fetch(config.ajax, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

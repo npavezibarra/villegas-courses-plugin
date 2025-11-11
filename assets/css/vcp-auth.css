@@ -1,14 +1,42 @@
 .vcp-auth-open { padding: 10px 14px; background: #111; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
 
 .vcp-auth-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 0.25s ease;
   z-index: 9998;
 }
 
 .vcp-auth-modal {
-  position: fixed; inset: 0; display: grid; place-items: center;
-  z-index: 9999; background: #fff; border-radius: 10px; padding: 20px;
-  max-width: 400px; margin: auto;
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  opacity: 0;
+  transform: scale(0.97);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  z-index: 9999;
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  max-width: 400px;
+  margin: auto;
+}
+
+.vcp-auth-overlay.is-visible {
+  opacity: 1;
+}
+
+.vcp-auth-modal.is-visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.vcp-auth-modal :focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
 }
 
 [hidden] { display: none !important; }
