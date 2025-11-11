@@ -13,6 +13,115 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/includes/class-vcp-auth-shortcode.php';
 require_once __DIR__ . '/includes/vcp-auth-ajax.php';
 
+add_action('admin_menu', function () {
+    add_submenu_page(
+        'villegaslms',
+        __('New Users', 'villegas-course-plugin'),
+        __('New Users', 'villegas-course-plugin'),
+        'manage_options',
+        'villegaslms-new-users',
+        'vcp_render_new_users_page'
+    );
+});
+
+function vcp_render_new_users_page() {
+    $since = strtotime('-7 days');
+    $args  = [
+        'orderby'    => 'registered',
+        'order'      => 'DESC',
+        'meta_query' => [],
+        'date_query' => [
+            [
+                'after' => date('Y-m-d H:i:s', $since),
+            ],
+        ],
+        'fields' => ['ID', 'user_login', 'user_email', 'user_registered'],
+    ];
+
+    $users = get_users($args);
+    ?>
+    <div class="wrap">
+        <h1><?php esc_html_e('New Users (Last 7 Days)', 'villegas-course-plugin'); ?></h1>
+        <?php if (empty($users)) : ?>
+            <p><?php esc_html_e('No new users found in the last week.', 'villegas-course-plugin'); ?></p>
+        <?php else : ?>
+            <table class="widefat striped">
+                <thead>
+                    <tr>
+                        <th><?php esc_html_e('Username', 'villegas-course-plugin'); ?></th>
+                        <th><?php esc_html_e('Email', 'villegas-course-plugin'); ?></th>
+                        <th><?php esc_html_e('Registered', 'villegas-course-plugin'); ?></th>
+                        <th><?php esc_html_e('Actions', 'villegas-course-plugin'); ?></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($users as $user) : ?>
+                        <tr id="user-<?php echo esc_attr($user->ID); ?>">
+                            <td><?php echo esc_html($user->user_login); ?></td>
+                            <td><?php echo esc_html($user->user_email); ?></td>
+                            <td><?php echo esc_html($user->user_registered); ?></td>
+                            <td>
+                                <button
+                                    class="button delete-user-btn"
+                                    data-user="<?php echo esc_attr($user->ID); ?>"
+                                    data-nonce="<?php echo esc_attr(wp_create_nonce('vcp_delete_user_' . $user->ID)); ?>"
+                                >
+                                    <?php esc_html_e('Delete', 'villegas-course-plugin'); ?>
+                                </button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        <?php endif; ?>
+    </div>
+    <?php
+}
+
+add_action('wp_ajax_vcp_delete_user', function () {
+    if (!current_user_can('delete_users')) {
+        wp_send_json_error(['message' => __('No permission', 'villegas-course-plugin')]);
+    }
+
+    $user_id = isset($_POST['user_id']) ? (int) wp_unslash($_POST['user_id']) : 0;
+    $nonce   = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+
+    if (!$user_id || !wp_verify_nonce($nonce, 'vcp_delete_user_' . $user_id)) {
+        wp_send_json_error(['message' => __('Invalid request', 'villegas-course-plugin')]);
+    }
+
+    if (get_current_user_id() === $user_id) {
+        wp_send_json_error(['message' => __('You cannot delete yourself', 'villegas-course-plugin')]);
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/user.php';
+    wp_delete_user($user_id);
+
+    wp_send_json_success(['message' => __('User deleted', 'villegas-course-plugin')]);
+});
+
+add_action('admin_enqueue_scripts', function ($hook) {
+    if ($hook !== 'villegaslms_page_villegaslms-new-users') {
+        return;
+    }
+
+    wp_enqueue_script(
+        'vcp-new-users',
+        plugin_dir_url(__FILE__) . 'assets/js/vcp-new-users.js',
+        ['jquery'],
+        '1.0',
+        true
+    );
+
+    wp_localize_script('vcp-new-users', 'VCP_USERS', [
+        'ajax' => admin_url('admin-ajax.php'),
+    ]);
+
+    wp_register_style('vcp-new-users-admin', false);
+    wp_enqueue_style('vcp-new-users-admin');
+    wp_add_inline_style('vcp-new-users-admin', '.delete-user-btn{background:#cc0000!important;color:#fff!important;}.delete-user-btn:hover{background:#a30000!important;}');
+});
+
 add_action('plugins_loaded', function () {
     if (!defined('VCP_RECAPTCHA_SITE_KEY')) {
         define('VCP_RECAPTCHA_SITE_KEY', (string) get_option('vcp_recaptcha_site_key', ''));
