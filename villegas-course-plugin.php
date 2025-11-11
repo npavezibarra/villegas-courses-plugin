@@ -13,16 +13,17 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/includes/class-vcp-auth-shortcode.php';
 require_once __DIR__ . '/includes/vcp-auth-ajax.php';
 
-add_action('admin_menu', function () {
+function vcp_register_new_users_submenu() {
     add_submenu_page(
-        'villegaslms',
+        'villegas-lms',
         __('New Users', 'villegas-course-plugin'),
         __('New Users', 'villegas-course-plugin'),
         'manage_options',
         'villegaslms-new-users',
         'vcp_render_new_users_page'
     );
-});
+}
+add_action('admin_menu', 'vcp_register_new_users_submenu', 20);
 
 function vcp_render_new_users_page() {
     $since = strtotime('-7 days');
@@ -101,7 +102,7 @@ add_action('wp_ajax_vcp_delete_user', function () {
 });
 
 add_action('admin_enqueue_scripts', function ($hook) {
-    if ($hook !== 'villegaslms_page_villegaslms-new-users') {
+    if ($hook !== 'villegas-lms_page_villegaslms-new-users') {
         return;
     }
 
