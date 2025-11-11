@@ -4,6 +4,7 @@
   const overlay = qs('.vcp-auth-overlay');
   const modal = qs('.vcp-auth-modal');
   const config = typeof VCP_AUTH !== 'undefined' ? VCP_AUTH : null;
+  const redirectConfig = typeof VCP_AUTH_REDIRECT !== 'undefined' ? VCP_AUTH_REDIRECT : null;
   let lastFocus = null;
 
   function showModal() {
@@ -184,7 +185,11 @@
       .then(r => r.json())
       .then(json => {
         if (json.success) {
-          window.location.reload();
+          const target = redirectConfig && redirectConfig.redirect
+            ? redirectConfig.redirect
+            : window.location.href;
+          window.location.href = target;
+          return;
         } else {
           const msg = json.data || 'Authentication failed.';
           form.querySelector('.vcp-auth-error')?.remove();

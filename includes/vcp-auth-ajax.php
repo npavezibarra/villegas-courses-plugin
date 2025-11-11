@@ -47,6 +47,13 @@ function vcp_auth_login() {
         wp_send_json_error($user->get_error_message());
     }
 
+    /**
+     * Fires when a user logs in through the VCP auth modal.
+     *
+     * @param \WP_User $user Authenticated user object.
+     */
+    do_action('vcp_user_logged_in', $user);
+
     wp_send_json_success(true);
 }
 
@@ -103,7 +110,20 @@ function vcp_auth_register() {
 
     wp_set_current_user($user_id);
     wp_set_auth_cookie($user_id, true);
-    do_action('wp_login', $login, get_userdata($user_id));
+
+    $user = get_userdata($user_id);
+    do_action('wp_login', $login, $user);
+
+    /**
+     * Fires after a new user registers through the VCP auth modal.
+     *
+     * @param int $user_id Newly created user ID.
+     */
+    do_action('vcp_user_registered', $user_id);
+
+    if ($user instanceof WP_User) {
+        do_action('vcp_user_logged_in', $user);
+    }
 
     wp_send_json_success(true);
 }

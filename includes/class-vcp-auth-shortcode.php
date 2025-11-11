@@ -9,9 +9,23 @@ final class VCP_Auth_Shortcode {
     }
 
     public static function render($atts = []) {
+        $has_redirect = array_key_exists('redirect', $atts);
+
         $atts = shortcode_atts([
-            'label' => 'Register / Login',
+            'label'    => 'Register / Login',
+            'redirect' => home_url(),
         ], $atts, 'vcp_auth');
+
+        $atts['redirect'] = $has_redirect ? $atts['redirect'] : '';
+
+        $redirect = apply_filters('vcp_auth_redirect_url', $atts['redirect'], $atts);
+        $redirect = is_string($redirect) ? esc_url_raw($redirect) : '';
+
+        if (wp_script_is('vcp-auth-js', 'enqueued') || wp_script_is('vcp-auth-js', 'registered')) {
+            wp_localize_script('vcp-auth-js', 'VCP_AUTH_REDIRECT', [
+                'redirect' => esc_url($redirect),
+            ]);
+        }
 
         if (is_user_logged_in()) {
             $user = wp_get_current_user();
