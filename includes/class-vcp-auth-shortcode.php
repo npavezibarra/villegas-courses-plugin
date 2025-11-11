@@ -48,20 +48,20 @@ final class VCP_Auth_Shortcode {
 
         <div class="vcp-auth-overlay" hidden></div>
         <div class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
-            <button class="vcp-auth-close" aria-label="Close dialog">×</button>
-
-            <div class="vcp-auth-tabs">
-                <button class="vcp-auth-tab is-active" data-target="#vcp-login">Login</button>
-                <button class="vcp-auth-tab" data-target="#vcp-register">Register</button>
-            </div>
-
-            <div class="vcp-social-login">
-                <button type="button" class="vcp-google-login">
-                    Continue with Google
-                </button>
-            </div>
-
             <div class="vcp-auth-panels">
+                <button class="vcp-auth-close" aria-label="Close dialog">×</button>
+
+                <div class="vcp-auth-tabs">
+                    <button class="vcp-auth-tab is-active" data-target="#vcp-login">Login</button>
+                    <button class="vcp-auth-tab" data-target="#vcp-register">Register</button>
+                </div>
+
+                <div class="vcp-social-login">
+                    <button type="button" class="vcp-google-login">
+                        Continue with Google
+                    </button>
+                </div>
+
                 <form id="vcp-login" class="vcp-auth-panel is-active" method="post">
                     <h3 id="vcp-auth-title">Login</h3>
                     <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
@@ -69,7 +69,9 @@ final class VCP_Auth_Shortcode {
                     <div class="vcp-field"><label>Username</label><input type="text" name="log"></div>
                     <div class="vcp-field"><label>Password</label><input type="password" name="pwd"></div>
                     <div class="vcp-captcha" data-type="login"></div>
-                    <button type="submit">Login</button>
+                    <div class="vcp-actions">
+                        <button type="submit">Login</button>
+                    </div>
                 </form>
 
                 <form id="vcp-register" class="vcp-auth-panel" method="post">
@@ -80,7 +82,9 @@ final class VCP_Auth_Shortcode {
                     <div class="vcp-field"><label>Username</label><input type="text" name="user_login"></div>
                     <div class="vcp-field"><label>Password</label><input type="password" name="user_pass"></div>
                     <div class="vcp-captcha" data-type="register"></div>
-                    <button type="submit">Create account</button>
+                    <div class="vcp-actions">
+                        <button type="submit">Create account</button>
+                    </div>
                 </form>
             </div>
         </div>

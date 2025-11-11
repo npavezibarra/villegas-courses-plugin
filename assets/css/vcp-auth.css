@@ -1,83 +1,202 @@
-.vcp-auth-open { padding: 10px 14px; background: #111; color: #fff; border: 0; border-radius: 6px; cursor: pointer; }
+/* === VCP Auth Modal — Modern Redesign === */
 
+.vcp-auth-open {
+  padding: 10px 16px;
+  background: #111;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .2s;
+}
+.vcp-auth-open:hover {
+  background: #333;
+}
+
+/* Overlay */
 .vcp-auth-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0,0,0,0.7);
   opacity: 0;
-  transition: opacity 0.25s ease;
+  visibility: hidden;
+  transition: opacity .25s ease;
   z-index: 9998;
 }
+.vcp-auth-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
 
+/* Modal Container */
 .vcp-auth-modal {
   position: fixed;
   inset: 0;
-  display: grid;
-  place-items: center;
-  opacity: 0;
-  transform: scale(0.97);
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   z-index: 9999;
-  background: #fff;
-  border-radius: 10px;
-  padding: 20px;
-  max-width: 400px;
-  margin: auto;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(.98);
+  transition: all .25s ease;
 }
-
-.vcp-auth-overlay.is-visible {
-  opacity: 1;
-}
-
 .vcp-auth-modal.is-visible {
   opacity: 1;
+  visibility: visible;
   transform: scale(1);
 }
 
-.vcp-auth-modal :focus-visible {
-  outline: 2px solid #111;
-  outline-offset: 2px;
+/* Modal Panel */
+.vcp-auth-panels {
+  background: #fff;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 400px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0,0,0,.15);
+  font-family: "Inter", "Helvetica Neue", sans-serif;
+  color: #222;
+  position: relative;
 }
 
-[hidden] { display: none !important; }
+/* Close Button */
+.vcp-auth-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background .2s;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+.vcp-auth-close:hover {
+  background: #333;
+}
 
-.vcp-auth-tabs { display: flex; gap: 8px; margin-bottom: 15px; }
-.vcp-auth-tab { border: 0; padding: 8px 12px; cursor: pointer; background: #eee; border-radius: 6px; }
-.vcp-auth-tab.is-active { background: #111; color: #fff; }
+/* Tabs */
+.vcp-auth-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.vcp-auth-tab {
+  border: none;
+  background: #eee;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background .2s;
+}
+.vcp-auth-tab.is-active {
+  background: #111;
+  color: #fff;
+}
 
-.vcp-social-login { margin-bottom: 15px; }
-.vcp-google-login {
+/* Forms */
+.vcp-auth-panel {
+  display: none;
+}
+.vcp-auth-panel.is-active {
+  display: block;
+}
+.vcp-auth-panel h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.35rem;
+}
+.vcp-field {
+  margin-bottom: 1rem;
+}
+.vcp-field label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 0.25rem;
+}
+.vcp-field input {
   width: 100%;
-  border: 0;
-  padding: 10px;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.vcp-field input:focus {
+  border-color: #111;
+  outline: none;
+}
+
+/* Actions */
+.vcp-actions {
+  margin-top: 1.25rem;
+}
+.vcp-actions button {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  background: #111;
+  color: #fff;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .2s;
+}
+.vcp-actions button:hover {
+  background: #333;
+}
+
+/* Google Login */
+.vcp-social-login {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.vcp-google-login {
+  border: 1px solid #ccc;
+  padding: 0.6rem 1rem;
   border-radius: 6px;
   background: #fff;
-  box-shadow: 0 0 0 1px rgba(0,0,0,.1);
   cursor: pointer;
+  font-weight: 500;
+  transition: background .2s;
 }
-.vcp-google-login:hover { box-shadow: 0 0 0 1px rgba(0,0,0,.2); }
+.vcp-google-login:hover {
+  background: #f2f2f2;
+}
 
-.vcp-auth-panel { display: none; }
-.vcp-auth-panel.is-active { display: block; }
-
+/* Captcha placeholder */
 .vcp-captcha {
-  margin: 12px 0;
-  min-height: 50px;
+  margin: 1.25rem 0;
+  min-height: 56px;
+  border-radius: 6px;
+  background: #f5f5f5;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f6f6f6;
-  border-radius: 6px;
   color: #777;
   font-size: 0.85rem;
 }
 
+/* Errors */
 .vcp-auth-error {
-  margin-top: 10px;
-  color: #c00;
+  margin-top: 1rem;
+  color: #c62828;
   font-size: 0.9rem;
 }
 
+/* Logged-in greeting */
 .vcp-auth-logged {
   display: inline-flex;
   align-items: center;
@@ -85,12 +204,11 @@
   background: #f8f8f8;
   padding: 8px 12px;
   border-radius: 6px;
+  font-family: "Inter", sans-serif;
 }
-
 .vcp-auth-greet {
   font-weight: 500;
 }
-
 .vcp-auth-logout {
   border: 0;
   background: #111;
@@ -98,4 +216,13 @@
   padding: 6px 10px;
   border-radius: 4px;
   cursor: pointer;
+  transition: background .2s;
+}
+.vcp-auth-logout:hover {
+  background: #333;
+}
+
+.vcp-auth-modal :focus-visible {
+  outline: 2px solid #111;
+  outline-offset: 2px;
 }

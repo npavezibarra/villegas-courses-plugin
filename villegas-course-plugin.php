@@ -37,6 +37,7 @@ add_action('wp_enqueue_scripts', function () {
     }
 
     if (has_shortcode($GLOBALS['post']->post_content, 'vcp_auth')) {
+        wp_enqueue_style('vcp-auth-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap', [], null);
         wp_enqueue_style('vcp-auth-css', plugin_dir_url(__FILE__) . 'assets/css/vcp-auth.css', [], '1.1');
         wp_enqueue_script('vcp-auth-js', plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js', ['jquery'], '1.1', true);
 
