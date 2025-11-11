@@ -139,6 +139,31 @@
   outline: none;
 }
 
+.vcp-forgot,
+.vcp-back {
+  margin-top: 0.75rem;
+  text-align: right;
+  font-size: 0.9rem;
+}
+
+.vcp-forgot a,
+.vcp-back a {
+  color: #111;
+  text-decoration: none;
+}
+
+.vcp-forgot a:hover,
+.vcp-back a:hover {
+  text-decoration: underline;
+}
+
+.vcp-login-error {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: #c62828;
+  display: none;
+}
+
 /* Actions */
 .vcp-actions {
   margin-top: 1.25rem;
@@ -194,6 +219,7 @@
   margin-top: 1rem;
   color: #c62828;
   font-size: 0.9rem;
+  display: none;
 }
 
 /* Logged-in greeting */

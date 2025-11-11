@@ -54,31 +54,55 @@ add_action(
 );
 
 add_action('wp_enqueue_scripts', function () {
-    if (!is_singular() || !isset($GLOBALS['post'])) {
+    if (is_admin()) {
         return;
     }
 
-    if (has_shortcode($GLOBALS['post']->post_content, 'vcp_auth')) {
-        wp_enqueue_style('vcp-auth-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap', [], null);
-        wp_enqueue_style('vcp-auth-css', plugin_dir_url(__FILE__) . 'assets/css/vcp-auth.css', [], '1.1');
-        wp_enqueue_script('vcp-auth-js', plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js', ['jquery'], '1.1', true);
+    wp_enqueue_style(
+        'vcp-auth-fonts',
+        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+        [],
+        null
+    );
 
-        $recaptcha_site_key = (string) get_option('vcp_recaptcha_site_key', '');
-        $google_client_id   = (string) get_option('vcp_google_client_id', '');
+    wp_enqueue_style(
+        'vcp-auth-css',
+        plugin_dir_url(__FILE__) . 'assets/css/vcp-auth.css',
+        [],
+        '1.3'
+    );
 
-        if ($recaptcha_site_key) {
-            wp_enqueue_script('google-recaptcha', 'https://www.google.com/recaptcha/api.js?render=' . rawurlencode($recaptcha_site_key), [], null, true);
-        }
+    wp_enqueue_script(
+        'vcp-auth-js',
+        plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js',
+        ['jquery'],
+        '1.3',
+        true
+    );
 
-        wp_localize_script('vcp-auth-js', 'VCP_AUTH', [
-            'ajax'        => admin_url('admin-ajax.php'),
-            'nonce'       => wp_create_nonce('vcp_auth_nonce'),
-            'recaptcha_key' => $recaptcha_site_key,
-            'google_id'  => $google_client_id,
-            'google_url' => VCP_GOOGLE_REDIRECT_URI,
-            'isUser'      => is_user_logged_in(),
-        ]);
+    $recaptcha_site_key = (string) get_option('vcp_recaptcha_site_key', '');
+    $google_client_id   = (string) get_option('vcp_google_client_id', '');
+
+    if ($recaptcha_site_key) {
+        wp_enqueue_script(
+            'google-recaptcha',
+            'https://www.google.com/recaptcha/api.js?render=' . rawurlencode($recaptcha_site_key),
+            [],
+            null,
+            true
+        );
     }
+
+    wp_localize_script('vcp-auth-js', 'VCP_AUTH', [
+        'ajax'           => admin_url('admin-ajax.php'),
+        'nonce'          => wp_create_nonce('vcp_auth_nonce'),
+        'recaptcha_key'  => $recaptcha_site_key,
+        'google_id'      => $google_client_id,
+        'google_url'     => VCP_GOOGLE_REDIRECT_URI,
+        'isUser'         => is_user_logged_in(),
+        'isLoggedIn'     => is_user_logged_in(),
+        'logoutRedirect' => home_url(),
+    ]);
 });
 
 add_action('init', function () {
@@ -204,6 +228,95 @@ if (!function_exists('vcp_auth_handle_google')) {
         exit;
     }
 }
+
+add_action('wp_footer', function () {
+    if (is_user_logged_in()) {
+        return;
+    }
+
+    static $printed = false;
+    if ($printed) {
+        return;
+    }
+    $printed = true;
+
+    $nonce = wp_create_nonce('vcp_auth_nonce');
+    ?>
+    <div class="vcp-auth-overlay" hidden></div>
+    <div class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
+        <button class="vcp-auth-close" aria-label="<?php echo esc_attr__('Cerrar', 'villegas-course-plugin'); ?>">×</button>
+
+        <div class="vcp-auth-panels">
+            <div class="vcp-auth-tabs">
+                <button class="vcp-auth-tab is-active" data-target="#vcp-login">Iniciar sesión</button>
+                <button class="vcp-auth-tab" data-target="#vcp-register">Crear cuenta</button>
+            </div>
+
+            <form id="vcp-login" class="vcp-auth-panel is-active" novalidate>
+                <h3 id="vcp-auth-title">Iniciar sesión</h3>
+                <div class="vcp-field">
+                    <label>Correo electrónico o nombre de usuario</label>
+                    <input type="text" name="log" id="vcp-login-user" required>
+                    <small class="vcp-login-error">Este correo no está registrado</small>
+                </div>
+                <div class="vcp-field">
+                    <label>Contraseña</label>
+                    <input type="password" name="pwd" required>
+                </div>
+                <div class="vcp-actions">
+                    <button type="submit">Entrar</button>
+                </div>
+                <p class="vcp-forgot">
+                    <a href="#" id="vcp-forgot-toggle">¿Olvidaste tu contraseña?</a>
+                </p>
+                <input type="hidden" name="action" value="vcp_auth_login">
+                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
+                <div class="vcp-auth-error" aria-live="polite"></div>
+            </form>
+
+            <form id="vcp-register" class="vcp-auth-panel" novalidate>
+                <h3>Crear cuenta</h3>
+                <div class="vcp-field">
+                    <label>Correo electrónico</label>
+                    <input type="email" name="user_email" required>
+                </div>
+                <div class="vcp-field">
+                    <label>Nombre de usuario</label>
+                    <input type="text" name="user_login" required>
+                </div>
+                <div class="vcp-field">
+                    <label>Contraseña</label>
+                    <input type="password" name="user_pass" minlength="6" required>
+                </div>
+                <div class="vcp-actions">
+                    <button type="submit">Crear cuenta</button>
+                </div>
+                <input type="hidden" name="action" value="vcp_auth_register">
+                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
+                <div class="vcp-auth-error" aria-live="polite"></div>
+            </form>
+
+            <form id="vcp-reset" class="vcp-auth-panel" novalidate>
+                <h3>Recuperar contraseña</h3>
+                <p>Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
+                <div class="vcp-field">
+                    <label>Correo electrónico</label>
+                    <input type="email" name="user_email" required>
+                </div>
+                <div class="vcp-actions">
+                    <button type="submit">Enviar enlace</button>
+                </div>
+                <p class="vcp-back">
+                    <a href="#" id="vcp-back-to-login">← Volver al inicio de sesión</a>
+                </p>
+                <input type="hidden" name="action" value="vcp_reset_password">
+                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
+                <div class="vcp-auth-error" aria-live="polite"></div>
+            </form>
+        </div>
+    </div>
+    <?php
+});
 
 if (!function_exists('vcp_add_google_login_submenu')) {
     function vcp_add_google_login_submenu() {
