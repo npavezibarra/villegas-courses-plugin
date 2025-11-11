@@ -205,16 +205,20 @@ if (!function_exists('vcp_auth_handle_google')) {
     }
 }
 
-add_action('admin_menu', function () {
-    add_submenu_page(
-        'villegaslms',
-        __('Google Login Settings', 'villegas-course-plugin'),
-        __('Google Login', 'villegas-course-plugin'),
-        'manage_options',
-        'villegaslms-google-login',
-        'vcp_google_login_settings_page'
-    );
-});
+if (!function_exists('vcp_add_google_login_submenu')) {
+    function vcp_add_google_login_submenu() {
+        add_submenu_page(
+            'villegas-lms',
+            __('Google Login Settings', 'villegas-course-plugin'),
+            __('Google Login', 'villegas-course-plugin'),
+            'manage_options',
+            'villegaslms-google-login',
+            'vcp_google_login_settings_page'
+        );
+    }
+}
+
+add_action('admin_menu', 'vcp_add_google_login_submenu', 20);
 
 if (!function_exists('vcp_google_login_settings_page')) {
     function vcp_google_login_settings_page() {
