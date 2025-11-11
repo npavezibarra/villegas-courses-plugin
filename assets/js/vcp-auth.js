@@ -25,4 +25,40 @@
       if (panel) panel.classList.add('is-active');
     });
   });
+
+  document.addEventListener('submit', e => {
+    const form = e.target.closest('#vcp-login, #vcp-register');
+    if (!form) return;
+    e.preventDefault();
+
+    if (typeof VCP_AUTH === 'undefined') {
+      return;
+    }
+
+    const data = new URLSearchParams(new FormData(form));
+    const isLogin = form.id === 'vcp-login';
+    data.set('action', isLogin ? 'vcp_auth_login' : 'vcp_auth_register');
+    data.set('nonce', VCP_AUTH.nonce);
+
+    fetch(VCP_AUTH.ajax, {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: data.toString(),
+    })
+      .then(r => r.json())
+      .then(json => {
+        if (json.success) {
+          window.location.reload();
+        } else {
+          const msg = json.data || 'Login failed.';
+          form.querySelector('.vcp-auth-error')?.remove();
+          const err = document.createElement('div');
+          err.className = 'vcp-auth-error';
+          err.textContent = msg;
+          form.appendChild(err);
+        }
+      })
+      .catch(() => window.alert('Network error.'));
+  });
 })(jQuery);

@@ -19,3 +19,9 @@
 
 .vcp-auth-panel { display: none; }
 .vcp-auth-panel.is-active { display: block; }
+
+.vcp-auth-error {
+  margin-top: 10px;
+  color: #c00;
+  font-size: 0.9rem;
+}

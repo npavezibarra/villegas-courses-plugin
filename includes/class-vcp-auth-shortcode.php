@@ -13,6 +13,8 @@ final class VCP_Auth_Shortcode {
             'label' => 'Register / Login',
         ], $atts, 'vcp_auth');
 
+        $nonce = wp_create_nonce('vcp_auth_nonce');
+
         ob_start();
         ?>
         <button class="vcp-auth-open"><?php echo esc_html($atts['label']); ?></button>
@@ -27,18 +29,22 @@ final class VCP_Auth_Shortcode {
             </div>
 
             <div class="vcp-auth-panels">
-                <form id="vcp-login" class="vcp-auth-panel is-active">
+                <form id="vcp-login" class="vcp-auth-panel is-active" method="post">
                     <h3 id="vcp-auth-title">Login</h3>
-                    <div class="vcp-field"><label>Username</label><input type="text"></div>
-                    <div class="vcp-field"><label>Password</label><input type="password"></div>
+                    <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
+                    <input type="hidden" name="action" value="">
+                    <div class="vcp-field"><label>Username</label><input type="text" name="log"></div>
+                    <div class="vcp-field"><label>Password</label><input type="password" name="pwd"></div>
                     <button type="submit">Login</button>
                 </form>
 
-                <form id="vcp-register" class="vcp-auth-panel">
+                <form id="vcp-register" class="vcp-auth-panel" method="post">
                     <h3>Register</h3>
-                    <div class="vcp-field"><label>Email</label><input type="email"></div>
-                    <div class="vcp-field"><label>Username</label><input type="text"></div>
-                    <div class="vcp-field"><label>Password</label><input type="password"></div>
+                    <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
+                    <input type="hidden" name="action" value="">
+                    <div class="vcp-field"><label>Email</label><input type="email" name="user_email"></div>
+                    <div class="vcp-field"><label>Username</label><input type="text" name="user_login"></div>
+                    <div class="vcp-field"><label>Password</label><input type="password" name="user_pass"></div>
                     <button type="submit">Create account</button>
                 </form>
             </div>
