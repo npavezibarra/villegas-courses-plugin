@@ -141,7 +141,13 @@ function vcp_auth_register() {
 }
 
 add_action('wp_ajax_vcp_auth_logout', function () {
-    check_ajax_referer('vcp_auth_nonce', 'nonce');
+    $nonce = isset($_POST['nonce']) ? wp_unslash($_POST['nonce']) : '';
+
+    if (!wp_verify_nonce($nonce, 'vcp_auth_nonce')) {
+        wp_logout();
+
+        wp_send_json_success(['message' => 'Logged out (no nonce check)']);
+    }
 
     wp_logout();
 
@@ -149,5 +155,5 @@ add_action('wp_ajax_vcp_auth_logout', function () {
 });
 
 add_action('wp_ajax_nopriv_vcp_auth_logout', function () {
-    wp_send_json_error('Not logged in');
+    wp_send_json_error(['message' => 'Not logged in']);
 });
