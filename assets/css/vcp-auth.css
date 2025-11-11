@@ -22,7 +22,7 @@
   opacity: 0;
   visibility: hidden;
   transition: opacity .25s ease;
-  z-index: 9998;
+  z-index: 99998;
 }
 .vcp-auth-overlay.is-visible {
   opacity: 1;
@@ -32,35 +32,36 @@
 /* Modal Container */
 .vcp-auth-modal {
   position: fixed;
-  inset: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(.98);
+  z-index: 99999;
   opacity: 0;
   visibility: hidden;
-  transform: scale(.98);
-  transition: all .25s ease;
+  transition: opacity .25s ease, transform .25s ease;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 90%;
+  max-width: 420px;
+  padding: 2rem;
+  font-family: "Inter", "Helvetica Neue", sans-serif;
 }
 .vcp-auth-modal.is-visible {
   opacity: 1;
   visibility: visible;
-  transform: scale(1);
+  transform: translate(-50%, -50%) scale(1);
 }
 
 /* Modal Panel */
 .vcp-auth-panels {
-  background: #fff;
-  border-radius: 12px;
-  padding: 2rem;
   width: 100%;
-  max-width: 400px;
-  max-height: 90vh;
+  max-height: 70vh;
   overflow-y: auto;
-  box-shadow: 0 10px 30px rgba(0,0,0,.15);
-  font-family: "Inter", "Helvetica Neue", sans-serif;
   color: #222;
-  position: relative;
 }
 
 /* Close Button */
@@ -251,4 +252,62 @@
 .vcp-auth-modal :focus-visible {
   outline: 2px solid #111;
   outline-offset: 2px;
+}
+
+/* === Scoped Reset: Prevent Flex/Grid Inheritance === */
+.vcp-auth-modal,
+.vcp-auth-modal * {
+  box-sizing: border-box;
+  flex: none !important;
+  align-self: auto !important;
+  grid-area: auto !important;
+}
+
+/* Modal container (fixed overlay) */
+.vcp-auth-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 99999 !important;
+  background: #fff;
+  width: 90%;
+  max-width: 420px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  padding: 2rem;
+  font-family: system-ui, sans-serif;
+}
+
+/* Overlay background */
+.vcp-auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 99998;
+}
+
+/* Tabs */
+.vcp-auth-tabs {
+  display: flex !important;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.vcp-auth-tab {
+  background: #eee;
+  color: #000;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+.vcp-auth-tab.is-active {
+  background: #000;
+  color: #fff;
 }

@@ -186,7 +186,7 @@ add_action('wp_enqueue_scripts', function () {
         'vcp-auth-js',
         plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js',
         ['jquery'],
-        '1.3',
+        '1.4',
         true
     );
 
@@ -213,7 +213,7 @@ add_action('wp_enqueue_scripts', function () {
         'isLoggedIn'     => is_user_logged_in(),
         'logoutRedirect' => home_url(),
     ]);
-});
+}, 99);
 
 add_action('init', function () {
     if (isset($_GET['vcp_auth']) && $_GET['vcp_auth'] === 'google') {
@@ -339,29 +339,38 @@ if (!function_exists('vcp_auth_handle_google')) {
     }
 }
 
-add_action('wp_footer', function () {
+add_action('wp_print_footer_scripts', 'vcp_render_auth_modal', 99);
+
+function vcp_render_auth_modal() {
     if (is_user_logged_in()) {
         return;
     }
 
-    static $printed = false;
-    if ($printed) {
+    static $rendered = false;
+    if ($rendered) {
         return;
     }
-    $printed = true;
+    $rendered = true;
 
     $nonce = wp_create_nonce('vcp_auth_nonce');
     ?>
-    <div class="vcp-auth-overlay" hidden></div>
-    <div class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
+    <div id="vcp-auth-overlay" class="vcp-auth-overlay" hidden></div>
+    <div
+        id="vcp-auth-modal"
+        class="vcp-auth-modal"
+        hidden
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="vcp-auth-title"
+    >
         <button class="vcp-auth-close" aria-label="<?php echo esc_attr__('Cerrar', 'villegas-course-plugin'); ?>">×</button>
 
-        <div class="vcp-auth-panels">
-            <div class="vcp-auth-tabs">
-                <button class="vcp-auth-tab is-active" data-target="#vcp-login">Iniciar sesión</button>
-                <button class="vcp-auth-tab" data-target="#vcp-register">Crear cuenta</button>
-            </div>
+        <div class="vcp-auth-tabs">
+            <button class="vcp-auth-tab is-active" data-target="#vcp-login">Iniciar sesión</button>
+            <button class="vcp-auth-tab" data-target="#vcp-register">Crear cuenta</button>
+        </div>
 
+        <div class="vcp-auth-panels">
             <form id="vcp-login" class="vcp-auth-panel is-active" novalidate>
                 <h3 id="vcp-auth-title">Iniciar sesión</h3>
                 <div class="vcp-field">
@@ -373,6 +382,7 @@ add_action('wp_footer', function () {
                     <label>Contraseña</label>
                     <input type="password" name="pwd" required>
                 </div>
+                <div class="vcp-captcha" data-type="login"></div>
                 <div class="vcp-actions">
                     <button type="submit">Entrar</button>
                 </div>
@@ -398,6 +408,7 @@ add_action('wp_footer', function () {
                     <label>Contraseña</label>
                     <input type="password" name="user_pass" minlength="6" required>
                 </div>
+                <div class="vcp-captcha" data-type="register"></div>
                 <div class="vcp-actions">
                     <button type="submit">Crear cuenta</button>
                 </div>
@@ -426,7 +437,7 @@ add_action('wp_footer', function () {
         </div>
     </div>
     <?php
-});
+}
 
 if (!function_exists('vcp_add_google_login_submenu')) {
     function vcp_add_google_login_submenu() {

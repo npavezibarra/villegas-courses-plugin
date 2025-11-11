@@ -1,16 +1,28 @@
 (function($){
   const qs = (selector, ctx = document) => ctx.querySelector(selector);
   const qsa = (selector, ctx = document) => Array.from(ctx.querySelectorAll(selector));
-  const overlay = qs('.vcp-auth-overlay');
-  const modal = qs('.vcp-auth-modal');
+  const getModalElements = () => ({
+    modal: qs('.vcp-auth-modal'),
+    overlay: qs('.vcp-auth-overlay'),
+  });
   const config = typeof VCP_AUTH !== 'undefined' ? VCP_AUTH : null;
   const redirectConfig = typeof VCP_AUTH_REDIRECT !== 'undefined' ? VCP_AUTH_REDIRECT : null;
   let lastFocus = null;
   const loginValidationTimers = new WeakMap();
 
   function showModal() {
-    if (!overlay || !modal) {
-      return;
+    let { modal, overlay } = getModalElements();
+
+    if (!modal || !overlay) {
+      // Retry in case the DOM was updated asynchronously.
+      const fresh = getModalElements();
+      modal = fresh.modal;
+      overlay = fresh.overlay;
+
+      if (!modal || !overlay) {
+        console.warn('Auth modal not found in DOM.');
+        return;
+      }
     }
 
     lastFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -31,7 +43,9 @@
   }
 
   function hideModal() {
-    if (!overlay || !modal) {
+    const { modal, overlay } = getModalElements();
+
+    if (!modal || !overlay) {
       return;
     }
 
@@ -110,8 +124,7 @@
       if (typeof showModal === 'function') {
         showModal();
       } else {
-        const modalEl = document.querySelector('.vcp-auth-modal');
-        const overlayEl = document.querySelector('.vcp-auth-overlay');
+        const { modal: modalEl, overlay: overlayEl } = getModalElements();
 
         if (modalEl && overlayEl) {
           modalEl.hidden = false;
@@ -133,6 +146,55 @@
     document.addEventListener('DOMContentLoaded', initGlobalAuthButton);
   } else {
     initGlobalAuthButton();
+  }
+
+  const initModalDelegates = () => {
+    if (initModalDelegates.initialized) {
+      return;
+    }
+
+    initModalDelegates.initialized = true;
+
+    document.addEventListener('click', (e) => {
+      const trigger = e.target.closest('#vcp-auth-button, .vcp-auth-open');
+      if (!trigger) {
+        return;
+      }
+
+      if (trigger.id === 'vcp-auth-button' && config && (config.isLoggedIn || config.isUser)) {
+        return;
+      }
+
+      e.preventDefault();
+
+      let { modal, overlay } = getModalElements();
+
+      if (!modal || !overlay) {
+        const fresh = getModalElements();
+        modal = fresh.modal;
+        overlay = fresh.overlay;
+      }
+
+      if (modal && overlay) {
+        showModal();
+      } else {
+        console.warn('Auth modal not found in DOM.');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.matches('.vcp-auth-close, .vcp-auth-overlay')) {
+        return;
+      }
+
+      hideModal();
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initModalDelegates);
+  } else {
+    initModalDelegates();
   }
 
   document.addEventListener('click', e => {
@@ -173,11 +235,6 @@
         window.location.href = config.google_url;
       }
 
-      return;
-    }
-
-    if (e.target.closest('.vcp-auth-open')) {
-      showModal();
       return;
     }
 
@@ -227,16 +284,10 @@
       return;
     }
 
-    if (!overlay || !modal) {
-      return;
-    }
-
-    if (e.target.closest('.vcp-auth-close') || e.target === overlay) {
-      hideModal();
-    }
   });
 
   document.addEventListener('keydown', e => {
+    const modal = qs('.vcp-auth-modal');
     if (!modal) {
       return;
     }
@@ -248,6 +299,7 @@
   });
 
   document.addEventListener('keydown', e => {
+    const modal = qs('.vcp-auth-modal');
     if (!modal || !modal.classList.contains('is-visible') || e.key !== 'Tab') {
       return;
     }
