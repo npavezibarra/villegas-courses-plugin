@@ -140,11 +140,14 @@ function vcp_auth_register() {
     wp_send_json_success(true);
 }
 
-add_action('wp_ajax_vcp_auth_logout', 'vcp_auth_logout');
-function vcp_auth_logout() {
+add_action('wp_ajax_vcp_auth_logout', function () {
     check_ajax_referer('vcp_auth_nonce', 'nonce');
 
     wp_logout();
 
-    wp_send_json_success(true);
-}
+    wp_send_json_success(['message' => 'Logged out']);
+});
+
+add_action('wp_ajax_nopriv_vcp_auth_logout', function () {
+    wp_send_json_error('Not logged in');
+});

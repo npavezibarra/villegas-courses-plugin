@@ -48,6 +48,99 @@
     }, 250);
   }
 
+  const initGlobalAuthButton = () => {
+    const authButton = document.getElementById('vcp-auth-button');
+    if (!authButton) {
+      return;
+    }
+
+    const applyState = (loggedIn) => {
+      if (authButton.disabled) {
+        authButton.disabled = false;
+      }
+
+      if (config) {
+        config.isLoggedIn = loggedIn;
+        config.isUser = loggedIn;
+      }
+
+      if (loggedIn) {
+        authButton.textContent = 'Salir';
+        authButton.classList.remove('ingresar');
+        authButton.classList.add('salir');
+      } else {
+        authButton.textContent = 'Ingresar';
+        authButton.classList.remove('salir');
+        authButton.classList.add('ingresar');
+      }
+    };
+
+    applyState(Boolean(config && (config.isLoggedIn || config.isUser)));
+
+    authButton.addEventListener('click', async (e) => {
+      e.preventDefault();
+
+      if (config && (config.isLoggedIn || config.isUser)) {
+        authButton.disabled = true;
+        authButton.textContent = 'Saliendo...';
+
+        try {
+          const resp = await fetch(config.ajax, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              action: 'vcp_auth_logout',
+              nonce: config.nonce,
+            }).toString(),
+          });
+
+          const json = await resp.json();
+
+          if (json.success) {
+            window.location.href = config.logoutRedirect || window.location.href;
+            return;
+          }
+
+          window.alert('Error al cerrar sesión.');
+          applyState(true);
+        } catch (err) {
+          console.error(err);
+          applyState(true);
+        } finally {
+          authButton.disabled = false;
+        }
+
+        return;
+      }
+
+      if (typeof showModal === 'function') {
+        showModal();
+      } else {
+        const modalEl = document.querySelector('.vcp-auth-modal');
+        const overlayEl = document.querySelector('.vcp-auth-overlay');
+
+        if (modalEl && overlayEl) {
+          modalEl.hidden = false;
+          overlayEl.hidden = false;
+          modalEl.classList.add('is-visible');
+          overlayEl.classList.add('is-visible');
+        } else {
+          console.warn('Modal de autenticación no encontrado en el DOM.');
+        }
+      }
+    });
+
+    document.addEventListener('vcp-login-success', () => {
+      applyState(true);
+    });
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initGlobalAuthButton);
+  } else {
+    initGlobalAuthButton();
+  }
+
   document.addEventListener('click', e => {
     const logoutBtn = e.target.closest('.vcp-auth-logout');
     if (logoutBtn) {
@@ -185,10 +278,18 @@
       .then(r => r.json())
       .then(json => {
         if (json.success) {
+          document.dispatchEvent(new CustomEvent('vcp-login-success', { detail: json }));
+
+          hideModal();
+
           const target = redirectConfig && redirectConfig.redirect
             ? redirectConfig.redirect
-            : window.location.href;
-          window.location.href = target;
+            : '';
+
+          if (target) {
+            window.location.href = target;
+          }
+
           return;
         } else {
           const msg = json.data || 'Authentication failed.';

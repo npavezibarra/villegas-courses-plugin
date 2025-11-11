@@ -54,31 +54,55 @@ add_action(
 );
 
 add_action('wp_enqueue_scripts', function () {
-    if (!is_singular() || !isset($GLOBALS['post'])) {
+    if (is_admin()) {
         return;
     }
 
-    if (has_shortcode($GLOBALS['post']->post_content, 'vcp_auth')) {
-        wp_enqueue_style('vcp-auth-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap', [], null);
-        wp_enqueue_style('vcp-auth-css', plugin_dir_url(__FILE__) . 'assets/css/vcp-auth.css', [], '1.1');
-        wp_enqueue_script('vcp-auth-js', plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js', ['jquery'], '1.1', true);
+    wp_enqueue_style(
+        'vcp-auth-fonts',
+        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+        [],
+        null
+    );
 
-        $recaptcha_site_key = (string) get_option('vcp_recaptcha_site_key', '');
-        $google_client_id   = (string) get_option('vcp_google_client_id', '');
+    wp_enqueue_style(
+        'vcp-auth-css',
+        plugin_dir_url(__FILE__) . 'assets/css/vcp-auth.css',
+        [],
+        '1.3'
+    );
 
-        if ($recaptcha_site_key) {
-            wp_enqueue_script('google-recaptcha', 'https://www.google.com/recaptcha/api.js?render=' . rawurlencode($recaptcha_site_key), [], null, true);
-        }
+    wp_enqueue_script(
+        'vcp-auth-js',
+        plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js',
+        ['jquery'],
+        '1.3',
+        true
+    );
 
-        wp_localize_script('vcp-auth-js', 'VCP_AUTH', [
-            'ajax'        => admin_url('admin-ajax.php'),
-            'nonce'       => wp_create_nonce('vcp_auth_nonce'),
-            'recaptcha_key' => $recaptcha_site_key,
-            'google_id'  => $google_client_id,
-            'google_url' => VCP_GOOGLE_REDIRECT_URI,
-            'isUser'      => is_user_logged_in(),
-        ]);
+    $recaptcha_site_key = (string) get_option('vcp_recaptcha_site_key', '');
+    $google_client_id   = (string) get_option('vcp_google_client_id', '');
+
+    if ($recaptcha_site_key) {
+        wp_enqueue_script(
+            'google-recaptcha',
+            'https://www.google.com/recaptcha/api.js?render=' . rawurlencode($recaptcha_site_key),
+            [],
+            null,
+            true
+        );
     }
+
+    wp_localize_script('vcp-auth-js', 'VCP_AUTH', [
+        'ajax'           => admin_url('admin-ajax.php'),
+        'nonce'          => wp_create_nonce('vcp_auth_nonce'),
+        'recaptcha_key'  => $recaptcha_site_key,
+        'google_id'      => $google_client_id,
+        'google_url'     => VCP_GOOGLE_REDIRECT_URI,
+        'isUser'         => is_user_logged_in(),
+        'isLoggedIn'     => is_user_logged_in(),
+        'logoutRedirect' => home_url(),
+    ]);
 });
 
 add_action('init', function () {
