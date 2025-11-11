@@ -29,7 +29,7 @@ final class VCP_Auth_Shortcode {
             </div>
 
             <div class="vcp-social-login">
-                <button class="vcp-google-login" data-provider="google">
+                <button type="button" class="vcp-google-login">
                     Continue with Google
                 </button>
             </div>

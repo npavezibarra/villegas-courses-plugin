@@ -12,9 +12,12 @@
   }
 
   document.addEventListener('click', e => {
-    if (e.target.closest('.vcp-google-login')) {
+    const googleBtn = e.target.closest('.vcp-google-login');
+    if (googleBtn) {
       e.preventDefault();
-      window.location.href = '/?vcp_auth=google';
+      if (typeof VCP_AUTH !== 'undefined' && VCP_AUTH.google_url) {
+        window.location.href = VCP_AUTH.google_url;
+      }
       return;
     }
 
