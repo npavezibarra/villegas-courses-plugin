@@ -13,6 +13,24 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/includes/class-vcp-auth-shortcode.php';
 require_once __DIR__ . '/includes/vcp-auth-ajax.php';
 
+add_action(
+    'init',
+    function () {
+        if (defined('WP_DEBUG') && WP_DEBUG) {
+            if (shortcode_exists('vcp_auth')) {
+                error_log('[vcp_auth] shortcode loaded successfully');
+            } else {
+                error_log('[vcp_auth] shortcode not loaded');
+            }
+        }
+
+        if (!has_filter('the_content', 'do_shortcode')) {
+            add_filter('the_content', 'do_shortcode', 11);
+        }
+    },
+    5
+);
+
 add_action('wp_enqueue_scripts', function () {
     if (!is_singular() || !isset($GLOBALS['post'])) {
         return;
