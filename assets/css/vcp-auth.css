@@ -252,3 +252,67 @@
   outline: 2px solid #111;
   outline-offset: 2px;
 }
+
+/* === Fix for Gutenberg/Block Theme Layout Conflicts === */
+
+/* Reset inherited flex/grid from theme containers */
+.vcp-auth-modal,
+.vcp-auth-modal * {
+  all: unset;
+  box-sizing: border-box;
+  font-family: inherit;
+  color: inherit;
+  flex: none !important;
+  align-self: auto !important;
+}
+
+/* Reapply modal-specific styles */
+.vcp-auth-modal {
+  all: initial;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 9999 !important;
+  display: block !important;
+  width: 90%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  font-family: system-ui, sans-serif;
+}
+
+/* Tabs inside modal */
+.vcp-auth-tabs {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  margin-bottom: 1.5rem !important;
+}
+
+/* Buttons reset */
+.vcp-auth-tab {
+  all: unset;
+  background: #eee;
+  color: #000;
+  padding: 8px 14px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  text-align: center;
+}
+
+.vcp-auth-tab.is-active {
+  background: #000;
+  color: #fff;
+}
+
+.vcp-auth-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(0,0,0,0.6);
+  z-index: 9998;
+}

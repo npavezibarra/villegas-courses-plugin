@@ -339,94 +339,6 @@ if (!function_exists('vcp_auth_handle_google')) {
     }
 }
 
-add_action('wp_footer', function () {
-    if (is_user_logged_in()) {
-        return;
-    }
-
-    static $printed = false;
-    if ($printed) {
-        return;
-    }
-    $printed = true;
-
-    $nonce = wp_create_nonce('vcp_auth_nonce');
-    ?>
-    <div class="vcp-auth-overlay" hidden></div>
-    <div class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
-        <button class="vcp-auth-close" aria-label="<?php echo esc_attr__('Cerrar', 'villegas-course-plugin'); ?>">×</button>
-
-        <div class="vcp-auth-panels">
-            <div class="vcp-auth-tabs">
-                <button class="vcp-auth-tab is-active" data-target="#vcp-login">Iniciar sesión</button>
-                <button class="vcp-auth-tab" data-target="#vcp-register">Crear cuenta</button>
-            </div>
-
-            <form id="vcp-login" class="vcp-auth-panel is-active" novalidate>
-                <h3 id="vcp-auth-title">Iniciar sesión</h3>
-                <div class="vcp-field">
-                    <label>Correo electrónico o nombre de usuario</label>
-                    <input type="text" name="log" id="vcp-login-user" required>
-                    <small class="vcp-login-error">Este correo no está registrado</small>
-                </div>
-                <div class="vcp-field">
-                    <label>Contraseña</label>
-                    <input type="password" name="pwd" required>
-                </div>
-                <div class="vcp-actions">
-                    <button type="submit">Entrar</button>
-                </div>
-                <p class="vcp-forgot">
-                    <a href="#" id="vcp-forgot-toggle">¿Olvidaste tu contraseña?</a>
-                </p>
-                <input type="hidden" name="action" value="vcp_auth_login">
-                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
-                <div class="vcp-auth-error" aria-live="polite"></div>
-            </form>
-
-            <form id="vcp-register" class="vcp-auth-panel" novalidate>
-                <h3>Crear cuenta</h3>
-                <div class="vcp-field">
-                    <label>Correo electrónico</label>
-                    <input type="email" name="user_email" required>
-                </div>
-                <div class="vcp-field">
-                    <label>Nombre de usuario</label>
-                    <input type="text" name="user_login" required>
-                </div>
-                <div class="vcp-field">
-                    <label>Contraseña</label>
-                    <input type="password" name="user_pass" minlength="6" required>
-                </div>
-                <div class="vcp-actions">
-                    <button type="submit">Crear cuenta</button>
-                </div>
-                <input type="hidden" name="action" value="vcp_auth_register">
-                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
-                <div class="vcp-auth-error" aria-live="polite"></div>
-            </form>
-
-            <form id="vcp-reset" class="vcp-auth-panel" novalidate>
-                <h3>Recuperar contraseña</h3>
-                <p>Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.</p>
-                <div class="vcp-field">
-                    <label>Correo electrónico</label>
-                    <input type="email" name="user_email" required>
-                </div>
-                <div class="vcp-actions">
-                    <button type="submit">Enviar enlace</button>
-                </div>
-                <p class="vcp-back">
-                    <a href="#" id="vcp-back-to-login">← Volver al inicio de sesión</a>
-                </p>
-                <input type="hidden" name="action" value="vcp_reset_password">
-                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
-                <div class="vcp-auth-error" aria-live="polite"></div>
-            </form>
-        </div>
-    </div>
-    <?php
-});
 
 if (!function_exists('vcp_add_google_login_submenu')) {
     function vcp_add_google_login_submenu() {
@@ -498,4 +410,101 @@ if (!function_exists('vcp_google_login_settings_page')) {
         </div>
         <?php
     }
+}
+add_action('wp_print_footer_scripts', 'vcp_inject_auth_modal', 99);
+
+function vcp_inject_auth_modal()
+{
+    if (is_user_logged_in()) {
+        return;
+    }
+
+    static $printed = false;
+    if ($printed) {
+        return;
+    }
+    $printed = true;
+
+    $nonce = wp_create_nonce('vcp_auth_nonce');
+    ?>
+    <div class="vcp-auth-overlay" hidden></div>
+    <div class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
+        <button class="vcp-auth-close" aria-label="<?php echo esc_attr__('Cerrar', 'villegas-course-plugin'); ?>">×</button>
+
+        <div class="vcp-auth-panels">
+            <div class="vcp-auth-tabs">
+                <button class="vcp-auth-tab is-active" data-target="#vcp-login"><?php echo esc_html__('Iniciar sesión', 'villegas-course-plugin'); ?></button>
+                <button class="vcp-auth-tab" data-target="#vcp-register"><?php echo esc_html__('Crear cuenta', 'villegas-course-plugin'); ?></button>
+            </div>
+
+            <div class="vcp-social-login">
+                <button type="button" class="vcp-google-login"><?php echo esc_html__('Continuar con Google', 'villegas-course-plugin'); ?></button>
+            </div>
+
+            <form id="vcp-login" class="vcp-auth-panel is-active" novalidate>
+                <h3 id="vcp-auth-title"><?php echo esc_html__('Iniciar sesión', 'villegas-course-plugin'); ?></h3>
+                <div class="vcp-field">
+                    <label><?php echo esc_html__('Correo electrónico o nombre de usuario', 'villegas-course-plugin'); ?></label>
+                    <input type="text" name="log" id="vcp-login-user" required>
+                    <small class="vcp-login-error" style="color:#c00;display:none;">
+                        <?php echo esc_html__('Este correo no está registrado', 'villegas-course-plugin'); ?>
+                    </small>
+                </div>
+                <div class="vcp-field">
+                    <label><?php echo esc_html__('Contraseña', 'villegas-course-plugin'); ?></label>
+                    <input type="password" name="pwd" required>
+                </div>
+                <div class="vcp-actions">
+                    <button type="submit"><?php echo esc_html__('Entrar', 'villegas-course-plugin'); ?></button>
+                </div>
+                <p class="vcp-forgot">
+                    <a href="#" id="vcp-forgot-toggle"><?php echo esc_html__('¿Olvidaste tu contraseña?', 'villegas-course-plugin'); ?></a>
+                </p>
+                <input type="hidden" name="action" value="vcp_auth_login">
+                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
+                <div class="vcp-auth-error" aria-live="polite"></div>
+            </form>
+
+            <form id="vcp-register" class="vcp-auth-panel" novalidate>
+                <h3><?php echo esc_html__('Crear cuenta', 'villegas-course-plugin'); ?></h3>
+                <div class="vcp-field">
+                    <label><?php echo esc_html__('Correo electrónico', 'villegas-course-plugin'); ?></label>
+                    <input type="email" name="user_email" required>
+                </div>
+                <div class="vcp-field">
+                    <label><?php echo esc_html__('Nombre de usuario', 'villegas-course-plugin'); ?></label>
+                    <input type="text" name="user_login" required>
+                </div>
+                <div class="vcp-field">
+                    <label><?php echo esc_html__('Contraseña', 'villegas-course-plugin'); ?></label>
+                    <input type="password" name="user_pass" minlength="6" required>
+                </div>
+                <div class="vcp-actions">
+                    <button type="submit"><?php echo esc_html__('Crear cuenta', 'villegas-course-plugin'); ?></button>
+                </div>
+                <input type="hidden" name="action" value="vcp_auth_register">
+                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
+                <div class="vcp-auth-error" aria-live="polite"></div>
+            </form>
+
+            <form id="vcp-reset" class="vcp-auth-panel" novalidate>
+                <h3><?php echo esc_html__('Recuperar contraseña', 'villegas-course-plugin'); ?></h3>
+                <p><?php echo esc_html__('Ingresa tu correo y te enviaremos un enlace para restablecer tu contraseña.', 'villegas-course-plugin'); ?></p>
+                <div class="vcp-field">
+                    <label><?php echo esc_html__('Correo electrónico', 'villegas-course-plugin'); ?></label>
+                    <input type="email" name="user_email" required>
+                </div>
+                <div class="vcp-actions">
+                    <button type="submit"><?php echo esc_html__('Enviar enlace', 'villegas-course-plugin'); ?></button>
+                </div>
+                <p class="vcp-back">
+                    <a href="#" id="vcp-back-to-login">← <?php echo esc_html__('Volver al inicio de sesión', 'villegas-course-plugin'); ?></a>
+                </p>
+                <input type="hidden" name="action" value="vcp_reset_password">
+                <input type="hidden" name="nonce" value="<?php echo esc_attr($nonce); ?>">
+                <div class="vcp-auth-error" aria-live="polite"></div>
+            </form>
+        </div>
+    </div>
+    <?php
 }
