@@ -252,3 +252,130 @@
   outline: 2px solid #111;
   outline-offset: 2px;
 }
+
+/* === SAFE RESET FOR BLOCK THEME CONFLICTS === */
+
+.vcp-auth-modal,
+.vcp-auth-overlay {
+  all: initial;
+  font-family: system-ui, sans-serif;
+  box-sizing: border-box;
+}
+
+.vcp-auth-modal * {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+/* === Modal container === */
+.vcp-auth-modal {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  z-index: 9999 !important;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  width: 90%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+  max-height: 90vh;
+}
+
+/* === Overlay === */
+.vcp-auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 9998;
+}
+
+/* === Tabs === */
+.vcp-auth-tabs {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.vcp-auth-tab {
+  background: #eee;
+  color: #000;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  font-size: 0.95rem;
+}
+
+.vcp-auth-tab.is-active {
+  background: #000;
+  color: #fff;
+}
+
+/* === Panels === */
+.vcp-auth-panel {
+  display: none;
+}
+
+.vcp-auth-panel.is-active {
+  display: block;
+}
+
+.vcp-field {
+  margin-bottom: 1rem;
+}
+
+.vcp-field label {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 4px;
+}
+
+.vcp-field input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+}
+
+/* === Buttons === */
+.vcp-actions button {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.vcp-actions button:hover {
+  background: #333;
+}
+
+/* === Footer links === */
+.vcp-forgot {
+  text-align: right;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+}
+
+.vcp-forgot a {
+  color: #333;
+  text-decoration: none;
+}
+
+.vcp-forgot a:hover {
+  text-decoration: underline;
+}
