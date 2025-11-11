@@ -82,7 +82,7 @@
     if (googleBtn) {
       e.preventDefault();
 
-      if (config && config.google_url) {
+      if (config && config.google_url && config.google_id) {
         window.location.href = config.google_url;
       }
 
@@ -158,9 +158,9 @@
     }
 
     let token = '';
-    if (window.grecaptcha && config.captcha_key !== 'YOUR_SITE_KEY') {
+    if (window.grecaptcha && config.recaptcha_key) {
       try {
-        token = await grecaptcha.execute(config.captcha_key, { action: 'submit' });
+        token = await grecaptcha.execute(config.recaptcha_key, { action: 'submit' });
       } catch (err) {
         console.error('Captcha failed', err);
       }

@@ -13,6 +13,28 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/includes/class-vcp-auth-shortcode.php';
 require_once __DIR__ . '/includes/vcp-auth-ajax.php';
 
+add_action('plugins_loaded', function () {
+    if (!defined('VCP_RECAPTCHA_SITE_KEY')) {
+        define('VCP_RECAPTCHA_SITE_KEY', (string) get_option('vcp_recaptcha_site_key', ''));
+    }
+
+    if (!defined('VCP_RECAPTCHA_SECRET_KEY')) {
+        define('VCP_RECAPTCHA_SECRET_KEY', (string) get_option('vcp_recaptcha_secret_key', ''));
+    }
+
+    if (!defined('VCP_GOOGLE_CLIENT_ID')) {
+        define('VCP_GOOGLE_CLIENT_ID', (string) get_option('vcp_google_client_id', ''));
+    }
+
+    if (!defined('VCP_GOOGLE_CLIENT_SECRET')) {
+        define('VCP_GOOGLE_CLIENT_SECRET', (string) get_option('vcp_google_client_secret', ''));
+    }
+
+    if (!defined('VCP_GOOGLE_REDIRECT_URI')) {
+        define('VCP_GOOGLE_REDIRECT_URI', home_url('/?vcp_auth=google'));
+    }
+});
+
 add_action(
     'init',
     function () {
@@ -41,14 +63,19 @@ add_action('wp_enqueue_scripts', function () {
         wp_enqueue_style('vcp-auth-css', plugin_dir_url(__FILE__) . 'assets/css/vcp-auth.css', [], '1.1');
         wp_enqueue_script('vcp-auth-js', plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js', ['jquery'], '1.1', true);
 
-        // Optional: comment this line until you add your real site key
-        // wp_enqueue_script('google-recaptcha', 'https://www.google.com/recaptcha/api.js?render=YOUR_SITE_KEY', [], null, true);
+        $recaptcha_site_key = (string) get_option('vcp_recaptcha_site_key', '');
+        $google_client_id   = (string) get_option('vcp_google_client_id', '');
+
+        if ($recaptcha_site_key) {
+            wp_enqueue_script('google-recaptcha', 'https://www.google.com/recaptcha/api.js?render=' . rawurlencode($recaptcha_site_key), [], null, true);
+        }
 
         wp_localize_script('vcp-auth-js', 'VCP_AUTH', [
             'ajax'        => admin_url('admin-ajax.php'),
             'nonce'       => wp_create_nonce('vcp_auth_nonce'),
-            'captcha_key' => 'YOUR_SITE_KEY',
-            'google_url'  => home_url('/?vcp_auth=google'),
+            'recaptcha_key' => $recaptcha_site_key,
+            'google_id'  => $google_client_id,
+            'google_url' => VCP_GOOGLE_REDIRECT_URI,
             'isUser'      => is_user_logged_in(),
         ]);
     }
@@ -63,7 +90,7 @@ add_action('init', function () {
 
 if (!function_exists('vcp_auth_handle_google')) {
     function vcp_auth_handle_google() {
-        if (!defined('VCP_GOOGLE_CLIENT_ID') || !defined('VCP_GOOGLE_CLIENT_SECRET') || !defined('VCP_GOOGLE_REDIRECT_URI')) {
+        if (empty(VCP_GOOGLE_CLIENT_ID) || empty(VCP_GOOGLE_CLIENT_SECRET) || empty(VCP_GOOGLE_REDIRECT_URI)) {
             wp_die(__('Google OAuth is not configured.', 'villegas-course-plugin'));
         }
 
@@ -175,5 +202,73 @@ if (!function_exists('vcp_auth_handle_google')) {
 
         wp_redirect('https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params));
         exit;
+    }
+}
+
+add_action('admin_menu', function () {
+    add_submenu_page(
+        'villegaslms',
+        __('Google Login Settings', 'villegas-course-plugin'),
+        __('Google Login', 'villegas-course-plugin'),
+        'manage_options',
+        'villegaslms-google-login',
+        'vcp_google_login_settings_page'
+    );
+});
+
+if (!function_exists('vcp_google_login_settings_page')) {
+    function vcp_google_login_settings_page() {
+        if (!current_user_can('manage_options')) {
+            return;
+        }
+
+        if (isset($_POST['vcp_save_google_settings'])) {
+            check_admin_referer('vcp_google_settings_save');
+
+            update_option('vcp_recaptcha_site_key', sanitize_text_field(wp_unslash($_POST['vcp_recaptcha_site_key'] ?? '')));
+            update_option('vcp_recaptcha_secret_key', sanitize_text_field(wp_unslash($_POST['vcp_recaptcha_secret_key'] ?? '')));
+            update_option('vcp_google_client_id', sanitize_text_field(wp_unslash($_POST['vcp_google_client_id'] ?? '')));
+            update_option('vcp_google_client_secret', sanitize_text_field(wp_unslash($_POST['vcp_google_client_secret'] ?? '')));
+
+            echo '<div class="updated"><p>' . esc_html__('Settings saved.', 'villegas-course-plugin') . '</p></div>';
+        }
+
+        $site_key      = get_option('vcp_recaptcha_site_key', '');
+        $secret_key    = get_option('vcp_recaptcha_secret_key', '');
+        $client_id     = get_option('vcp_google_client_id', '');
+        $client_secret = get_option('vcp_google_client_secret', '');
+        ?>
+        <div class="wrap">
+            <h1><?php esc_html_e('Google Login & reCAPTCHA Settings', 'villegas-course-plugin'); ?></h1>
+            <p><?php esc_html_e('Enter the keys obtained from your Google Cloud Console. These are used for reCAPTCHA and OAuth login.', 'villegas-course-plugin'); ?></p>
+
+            <form method="post">
+                <?php wp_nonce_field('vcp_google_settings_save'); ?>
+
+                <table class="form-table" role="presentation">
+                    <tr>
+                        <th scope="row"><label for="vcp_recaptcha_site_key"><?php esc_html_e('reCAPTCHA Site Key', 'villegas-course-plugin'); ?></label></th>
+                        <td><input name="vcp_recaptcha_site_key" id="vcp_recaptcha_site_key" type="text" value="<?php echo esc_attr($site_key); ?>" class="regular-text" /></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="vcp_recaptcha_secret_key"><?php esc_html_e('reCAPTCHA Secret Key', 'villegas-course-plugin'); ?></label></th>
+                        <td><input name="vcp_recaptcha_secret_key" id="vcp_recaptcha_secret_key" type="text" value="<?php echo esc_attr($secret_key); ?>" class="regular-text" /></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="vcp_google_client_id"><?php esc_html_e('Google Client ID', 'villegas-course-plugin'); ?></label></th>
+                        <td><input name="vcp_google_client_id" id="vcp_google_client_id" type="text" value="<?php echo esc_attr($client_id); ?>" class="regular-text" /></td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="vcp_google_client_secret"><?php esc_html_e('Google Client Secret', 'villegas-course-plugin'); ?></label></th>
+                        <td><input name="vcp_google_client_secret" id="vcp_google_client_secret" type="text" value="<?php echo esc_attr($client_secret); ?>" class="regular-text" /></td>
+                    </tr>
+                </table>
+
+                <p class="submit">
+                    <button type="submit" name="vcp_save_google_settings" class="button-primary"><?php esc_html_e('Save Settings', 'villegas-course-plugin'); ?></button>
+                </p>
+            </form>
+        </div>
+        <?php
     }
 }
