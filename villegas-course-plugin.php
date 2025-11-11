@@ -252,10 +252,6 @@ add_action('wp_footer', function () {
                 <button class="vcp-auth-tab" data-target="#vcp-register"><?php echo esc_html__('Register', 'villegas-course-plugin'); ?></button>
             </div>
 
-            <div class="vcp-social-login">
-                <button type="button" class="vcp-google-login"><?php echo esc_html__('Continue with Google', 'villegas-course-plugin'); ?></button>
-            </div>
-
             <form id="vcp-login" class="vcp-auth-panel is-active" novalidate>
                 <h3 id="vcp-auth-title"><?php echo esc_html__('Login', 'villegas-course-plugin'); ?></h3>
                 <div class="vcp-field">
