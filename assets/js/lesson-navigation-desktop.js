@@ -6,6 +6,24 @@
     const navTitle = nav ? nav.querySelector('.nav-title') : null;
     const navColumn = nav ? nav.closest('.lesson-navigation-column') : null;
 
+    const headerSelectors = [
+      'header[role="banner"]',
+      'header.wp-block-template-part',
+      'header.site-header',
+    ];
+
+    const findHeaderElement = () => {
+      for (let index = 0; index < headerSelectors.length; index += 1) {
+        const candidate = document.querySelector(headerSelectors[index]);
+        if (candidate) {
+          return candidate;
+        }
+      }
+      return null;
+    };
+
+    let headerElement = findHeaderElement();
+
     if (typeof window.IntersectionObserver !== 'function') {
       return;
     }
@@ -19,6 +37,8 @@
       active: false,
       fixed: false,
       lockedTop: 0,
+      adminOffset: 0,
+      headerHeight: 0,
       observing: false,
     };
 
@@ -26,45 +46,50 @@
 
     const isDesktop = () => desktopQuery.matches;
 
-    const computeFixedOffset = () => {
-      let offset = 0;
-
+    const measureAdminOffset = () => {
       const adminBar = document.getElementById('wpadminbar');
-      if (adminBar) {
-        const adminStyles = window.getComputedStyle(adminBar);
-        if (adminStyles.position === 'fixed') {
-          offset += adminBar.offsetHeight;
-        }
+      if (!adminBar) {
+        return 0;
       }
 
-      const headerSelectors = [
-        'header[role="banner"]',
-        'header.wp-block-template-part',
-        'header.site-header',
-      ];
-
-      for (let i = 0; i < headerSelectors.length; i += 1) {
-        const candidate = document.querySelector(headerSelectors[i]);
-        if (!candidate) {
-          continue;
-        }
-
-        const candidateStyles = window.getComputedStyle(candidate);
-        if (candidateStyles.position === 'fixed') {
-          offset += candidate.offsetHeight;
-          break;
-        }
-
-        if (candidateStyles.position === 'sticky') {
-          const rect = candidate.getBoundingClientRect();
-          if (rect.top <= 0) {
-            offset += candidate.offsetHeight;
-            break;
-          }
-        }
+      const adminStyles = window.getComputedStyle(adminBar);
+      if (adminStyles.position === 'fixed') {
+        return adminBar.offsetHeight;
       }
 
-      return offset;
+      return 0;
+    };
+
+    const ensureHeaderElement = () => {
+      if (headerElement && document.body.contains(headerElement)) {
+        return headerElement;
+      }
+
+      headerElement = findHeaderElement();
+      return headerElement;
+    };
+
+    const measureHeaderHeight = () => {
+      const candidate = ensureHeaderElement();
+      if (!candidate) {
+        return 0;
+      }
+
+      const rect = candidate.getBoundingClientRect();
+      if (rect.height > 0) {
+        return rect.height;
+      }
+
+      return candidate.offsetHeight || 0;
+    };
+
+    const refreshOffsets = () => {
+      state.adminOffset = measureAdminOffset();
+      state.headerHeight = measureHeaderHeight();
+    };
+
+    const computeFixedTop = () => {
+      return state.adminOffset + state.headerHeight;
     };
 
     const startObserving = () => {
@@ -156,7 +181,9 @@
 
       const columnRect = navColumn.getBoundingClientRect();
       const navHeight = nav.offsetHeight;
-      const lockedTop = computeFixedOffset();
+
+      refreshOffsets();
+      const lockedTop = computeFixedTop();
 
       stopObserving();
 
@@ -178,9 +205,12 @@
         return;
       }
 
-      const offset = computeFixedOffset();
+      refreshOffsets();
+
       const sentinelRect = sentinel.getBoundingClientRect();
-      if (sentinelRect.top <= offset) {
+      const triggerTop = state.adminOffset;
+
+      if (sentinelRect.top <= triggerTop) {
         applyFixed();
         return;
       }
@@ -198,13 +228,8 @@
           return;
         }
 
-        const offset = computeFixedOffset();
-        if (entry.boundingClientRect.top <= offset) {
-          applyFixed();
-          return;
-        }
-
         if (!entry.isIntersecting) {
+          applyFixed();
           return;
         }
 
@@ -218,6 +243,7 @@
       }
 
       state.active = true;
+      refreshOffsets();
       startObserving();
       sentinel.style.height = state.fixed ? sentinel.style.height : '0px';
       updateListHeight();
@@ -255,6 +281,8 @@
     }
 
     window.addEventListener('resize', () => {
+      refreshOffsets();
+
       if (!isDesktop()) {
         disable();
         return;
@@ -266,7 +294,7 @@
 
       if (state.fixed) {
         const columnRect = navColumn.getBoundingClientRect();
-        state.lockedTop = computeFixedOffset();
+        state.lockedTop = computeFixedTop();
         nav.style.left = columnRect.left + 'px';
         nav.style.width = columnRect.width + 'px';
         nav.style.top = state.lockedTop + 'px';
