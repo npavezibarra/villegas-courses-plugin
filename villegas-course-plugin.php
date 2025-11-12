@@ -215,6 +215,53 @@ add_action('wp_enqueue_scripts', function () {
     ]);
 }, 99);
 
+function vcp_render_learndash_newsreader_typography() {
+    if (is_admin()) {
+        return;
+    }
+
+    ?>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
+    <style>
+      /* Scope: ALL LearnDash tab panels (no post-specific IDs) */
+      .ld-tabs-content [role="tabpanel"] {
+        /* Local variables for this container only */
+        --p-size: 22px;
+        --h1-scale: 2.6;
+        --h2-scale: 2.0;
+        --h3-scale: 1.6;
+        --h4-scale: 1.35;
+      }
+
+      /* Apply Newsreader only inside panels */
+      .ld-tabs-content [role="tabpanel"] h1,
+      .ld-tabs-content [role="tabpanel"] h2,
+      .ld-tabs-content [role="tabpanel"] h3,
+      .ld-tabs-content [role="tabpanel"] h4,
+      .ld-tabs-content [role="tabpanel"] p {
+        font-family: "Newsreader", serif;
+        font-optical-sizing: auto;
+        font-style: normal;
+        margin: 0 0 .65em 0;
+      }
+
+      .ld-tabs-content [role="tabpanel"] h1,
+      .ld-tabs-content [role="tabpanel"] h2,
+      .ld-tabs-content [role="tabpanel"] h3,
+      .ld-tabs-content [role="tabpanel"] h4 { text-align: left !important; }
+
+      .ld-tabs-content [role="tabpanel"] h1 { font-weight: 800; font-size: calc(var(--p-size) * var(--h1-scale)); line-height: 1.1; }
+      .ld-tabs-content [role="tabpanel"] h2 { font-weight: 700; font-size: calc(var(--p-size) * var(--h2-scale)); line-height: 1.2; }
+      .ld-tabs-content [role="tabpanel"] h3 { font-weight: 600; font-size: calc(var(--p-size) * var(--h3-scale)); line-height: 1.25; }
+      .ld-tabs-content [role="tabpanel"] h4 { font-weight: 500; font-size: calc(var(--p-size) * var(--h4-scale)); line-height: 1.3; }
+      .ld-tabs-content [role="tabpanel"] p  { font-weight: 400; font-size: 22px !important; line-height: 1.5 !important; }
+    </style>
+    <?php
+}
+add_action('wp_head', 'vcp_render_learndash_newsreader_typography');
+
 add_action('init', function () {
     if (isset($_GET['vcp_auth']) && $_GET['vcp_auth'] === 'google') {
         vcp_auth_handle_google();

@@ -10,18 +10,69 @@
     <style>
         /* Styles for the layout */
         #lesson-wrapper {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 30%) minmax(0, 70%);
             width: 100%;
             max-width: 1280px;
             margin: 0 auto;
+            column-gap: 0;
+            align-items: start;
+        }
+
+        #lesson-nav-sentinel {
+            grid-column: 1 / 2;
+            grid-row: 1 / 2;
+            display: block;
+            width: 100%;
+            height: 0;
+        }
+
+        .lesson-navigation-column {
+            grid-column: 1 / 2;
+            grid-row: 1 / 2;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
         }
 
         #lesson-navigation {
-            width: 30%;
+            width: 100%;
             padding: 20px 0px;
             background-color: #f9f9f9;
             border-right: 1px solid #000000;
+            box-sizing: border-box;
+        }
+
+        #lesson-navigation .nav-inner {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0 20px;
+            min-height: 0;
+            box-sizing: border-box;
+        }
+
+        #lesson-navigation .nav-title {
+            margin: 0;
+        }
+
+        #lesson-navigation .nav-scroll-area {
             overflow-y: auto;
+            overscroll-behavior: contain;
+            margin-top: 16px;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        #lesson-navigation .nav-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        #lesson-navigation.is-fixed {
+            z-index: 1000;
         }
 
         li.course-section-header {
@@ -29,7 +80,8 @@
         }
 
         #lesson-content {
-            width: 70%;
+            grid-column: 2 / 3;
+            width: 100%;
             padding: 20px;
         }
 
@@ -76,8 +128,26 @@
         }
 
         @media (max-width: 971px) {
+            #lesson-wrapper {
+                display: flex;
+                flex-direction: column;
+            }
+
+            #lesson-nav-sentinel {
+                display: none;
+                height: 0;
+            }
+
+            .lesson-navigation-column {
+                width: 100%;
+            }
+
             #lesson-navigation {
                 margin-top: 20px;
+            }
+
+            #lesson-content {
+                width: 100%;
             }
         }
     </style>
@@ -91,8 +161,13 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
 <div id="lesson-wrapper" class="my-container-class">
     <!-- Lesson Navigation -->
-    <div id="lesson-navigation">
-        <h3>Contenido del curso</h3>
+    <div id="lesson-nav-sentinel" aria-hidden="true"></div>
+    <div class="lesson-navigation-column">
+        <div id="lesson-navigation">
+            <div class="nav-inner">
+                <h3 class="nav-title">Contenido del curso</h3>
+                <div class="nav-scroll-area">
+                    <ul class="nav-list">
         <?php
         // Navigation logic
         if (is_singular('sfwd-lessons')) {
@@ -122,8 +197,6 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 // Section headers
                 $course_builder_meta = get_post_meta($course_id, 'course_sections', true);
                 $section_headers = json_decode($course_builder_meta, true);
-
-                echo '<ul style="list-style-type: none; padding-left: 0;">';
 
                 $lessons = $lessons_query->posts;
                 $lesson_index = 0;
@@ -249,6 +322,9 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             }
         }
         ?>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Lesson Content -->

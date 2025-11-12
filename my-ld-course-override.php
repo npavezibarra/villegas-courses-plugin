@@ -98,6 +98,14 @@ add_action('wp_enqueue_scripts', function () {
             true
         );
 
+        wp_enqueue_script(
+            'vil-lesson-navigation-desktop',
+            plugin_dir_url(__FILE__) . 'assets/js/lesson-navigation-desktop.js',
+            [],
+            filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/lesson-navigation-desktop.js' ),
+            true
+        );
+
         wp_enqueue_style(
             'vil-lesson-navigation-mobile',
             plugin_dir_url(__FILE__) . 'assets/css/lesson-navigation-mobile.css',
