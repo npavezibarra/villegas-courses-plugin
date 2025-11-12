@@ -14,6 +14,13 @@
             width: 100%;
             max-width: 1280px;
             margin: 0 auto;
+            align-items: flex-start;
+            overflow: visible !important;
+        }
+
+        .my-container-class {
+            align-items: flex-start;
+            overflow: visible !important;
         }
 
         #lesson-navigation {
@@ -65,6 +72,8 @@
         /* Ensure the main content group keeps the lesson nav and content apart */
         body.single-sfwd-lessons .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-block-group-is-layout-flex {
             justify-content: space-between;
+            align-items: flex-start;
+            overflow: visible !important;
         }
 
         /* For screen sizes below 1020px */
@@ -83,7 +92,8 @@
         @media screen and (min-width: 970px) {
             #lesson-navigation {
                 position: sticky;
-                top: 0;
+                top: 32px;
+                z-index: 100;
                 max-height: 100vh;
                 display: flex;
                 flex-direction: column;
@@ -94,10 +104,11 @@
                 flex-shrink: 0;
             }
 
-            #lesson-navigation ul {
+            #lesson-navigation > ul {
                 flex: 1;
                 overflow-y: auto;
                 max-height: calc(100vh - 120px);
+                overscroll-behavior: contain;
             }
         }
     </style>
