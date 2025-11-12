@@ -21,7 +21,6 @@
             padding: 20px 0px;
             background-color: #f9f9f9;
             border-right: 1px solid #000000;
-            overflow-y: auto;
         }
 
         li.course-section-header {
@@ -78,6 +77,27 @@
         @media (max-width: 971px) {
             #lesson-navigation {
                 margin-top: 20px;
+            }
+        }
+
+        @media screen and (min-width: 970px) {
+            #lesson-navigation {
+                position: sticky;
+                top: 0;
+                max-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            #lesson-navigation > h3 {
+                flex-shrink: 0;
+            }
+
+            #lesson-navigation ul {
+                flex: 1;
+                overflow-y: auto;
+                max-height: calc(100vh - 120px);
             }
         }
     </style>
@@ -343,6 +363,79 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
     </svg>
   </button>
 <?php endif; ?>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const navigation = document.getElementById('lesson-navigation');
+        const mediaQuery = window.matchMedia('(min-width: 970px)');
+        const body = document.body;
+        const html = document.documentElement;
+
+        if (!navigation) {
+            return;
+        }
+
+        let scrollLocked = false;
+        let previousBodyOverflow = body.style.overflow;
+        let previousHtmlOverflow = html.style.overflow;
+
+        const lockBodyScroll = function () {
+            if (scrollLocked) {
+                return;
+            }
+
+            previousBodyOverflow = body.style.overflow;
+            previousHtmlOverflow = html.style.overflow;
+
+            body.style.overflow = 'hidden';
+            html.style.overflow = 'hidden';
+            scrollLocked = true;
+        };
+
+        const unlockBodyScroll = function () {
+            if (!scrollLocked) {
+                return;
+            }
+
+            body.style.overflow = previousBodyOverflow || '';
+            html.style.overflow = previousHtmlOverflow || '';
+            scrollLocked = false;
+        };
+
+        const handleMouseEnter = function () {
+            if (mediaQuery.matches) {
+                lockBodyScroll();
+            }
+        };
+
+        const handleMouseLeave = function () {
+            unlockBodyScroll();
+        };
+
+        const updateListeners = function () {
+            if (mediaQuery.matches) {
+                navigation.addEventListener('mouseenter', handleMouseEnter);
+                navigation.addEventListener('mouseleave', handleMouseLeave);
+            } else {
+                navigation.removeEventListener('mouseenter', handleMouseEnter);
+                navigation.removeEventListener('mouseleave', handleMouseLeave);
+                unlockBodyScroll();
+            }
+        };
+
+        updateListeners();
+
+        if (typeof mediaQuery.addEventListener === 'function') {
+            mediaQuery.addEventListener('change', function () {
+                updateListeners();
+            });
+        } else if (typeof mediaQuery.addListener === 'function') {
+            mediaQuery.addListener(function () {
+                updateListeners();
+            });
+        }
+    });
+</script>
 
 <?php
 // Load the default Twenty Twenty-Four footer template part
