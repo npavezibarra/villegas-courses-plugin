@@ -98,17 +98,23 @@ function mostrar_comprar_stats() {
         : '#';
 
     // Course progress based on lesson completion only
-    $lesson_progress    = function_exists( 'villegas_get_course_lesson_progress' )
+    $lesson_progress = function_exists( 'villegas_get_course_lesson_progress' )
         ? villegas_get_course_lesson_progress( $course_id, $user_id )
         : [
-            'total'               => 0,
-            'completed'           => 0,
-            'can_take_final_quiz' => false,
+            'total'     => 0,
+            'completed' => 0,
         ];
 
-    $total_lessons      = isset( $lesson_progress['total'] ) ? intval( $lesson_progress['total'] ) : 0;
-    $completed_lessons  = isset( $lesson_progress['completed'] ) ? intval( $lesson_progress['completed'] ) : 0;
-    $can_take_final_quiz = ! empty( $lesson_progress['can_take_final_quiz'] );
+    $total_lessons     = isset( $lesson_progress['total'] ) ? intval( $lesson_progress['total'] ) : 0;
+    $completed_lessons = isset( $lesson_progress['completed'] ) ? intval( $lesson_progress['completed'] ) : 0;
+
+    $can_take_final_quiz = ( function_exists( 'villegas_can_user_take_final_quiz' ) )
+        ? villegas_can_user_take_final_quiz( $user_id, $course_id )
+        : false;
+
+    if ( ! $can_take_final_quiz && isset( $lesson_progress['can_take_final_quiz'] ) ) {
+        $can_take_final_quiz = ! empty( $lesson_progress['can_take_final_quiz'] );
+    }
     $percentage_complete = $total_lessons > 0 ? min( 100, ( $completed_lessons / $total_lessons ) * 100 ) : 0;
 
     // Common styles
@@ -182,7 +188,10 @@ function mostrar_comprar_stats() {
                         </button>
                     <?php endif; ?>
                 </div>
-                <div id="final-test-button" class="tooltip" style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                <?php
+                $final_quiz_container_class = $can_take_final_quiz ? '' : 'tooltip';
+                ?>
+                <div id="final-test-button" <?php echo $final_quiz_container_class ? 'class="' . esc_attr( $final_quiz_container_class ) . '"' : ''; ?> style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                     <?php
                     global $wpdb;
                     $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
@@ -206,23 +215,27 @@ function mostrar_comprar_stats() {
                         $has_completed_final_quiz = ($final_quiz_score !== null && $final_quiz_score > 0);
                     }
 
-                    if ($can_take_final_quiz && $is_enrolled && !empty($final_quiz_url) && !$has_completed_final_quiz): ?>
-                        <button onclick="window.location.href='<?php echo esc_url($final_quiz_url); ?>'"
-                                style="<?php echo sprintf($button_style, '#4c8bf5'); ?> width: 100%; padding: 10px 0; font-size: 12px;">
-                            Evaluación Final
-                        </button>
-                    <?php elseif ($has_completed_final_quiz): ?>
+                    if ($has_completed_final_quiz): ?>
                         <div class="quiz-result" style="background-color: white; border: 1px solid #e2e2e2; text-align: center; padding: 10px;">
                             <strong><?php echo esc_html($final_quiz_score); ?>%</strong>
                             <p style="font-size: 9px;">Evaluación Final</p>
                         </div>
+                    <?php elseif ($can_take_final_quiz && $is_enrolled && !empty($final_quiz_url)): ?>
+                        <a id="final-evaluation-button"
+                           href="<?php echo esc_url($final_quiz_url); ?>"
+                           style="<?php echo sprintf($button_style, '#4c8bf5'); ?> width: 100%; padding: 10px 0; font-size: 12px; display: inline-block; text-align: center;">
+                            Evaluación Final
+                        </a>
                     <?php else: ?>
                         <button id="final-evaluation-button"
+                                disabled
                                 style="border: 2px solid #2196f3 !important; padding: 8px !important; color: #2196f3 !important; border-radius: 5px; font-size: 14px; cursor: not-allowed; width: 100%; background: white;">
                             Evaluación Final
                         </button>
                     <?php endif; ?>
-                    <span class="tooltiptext">Completa todas las lecciones de este curso para tomar la Evaluación Final</span>
+                    <?php if (!$can_take_final_quiz) : ?>
+                        <span class="tooltiptext">Completa todas las lecciones de este curso para tomar la Evaluación Final</span>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>

@@ -553,22 +553,21 @@ function villegas_get_course_lesson_ids( $course_id ) {
 }
 
 /**
- * Summarize a user's lesson completion status for a course.
+ * Calculate the lesson completion totals for a course/user pair.
  *
  * @param int $course_id Course post ID.
  * @param int $user_id   User ID.
  *
- * @return array{lesson_ids:array<int>,total:int,completed:int,can_take_final_quiz:bool}
+ * @return array{lesson_ids:array<int>,total:int,completed:int}
  */
-function villegas_get_course_lesson_progress( $course_id, $user_id = 0 ) {
+function villegas_calculate_course_lesson_stats( $course_id, $user_id = 0 ) {
     $course_id = intval( $course_id );
     $user_id   = intval( $user_id );
 
     $default = [
-        'lesson_ids'          => [],
-        'total'               => 0,
-        'completed'           => 0,
-        'can_take_final_quiz' => false,
+        'lesson_ids' => [],
+        'total'      => 0,
+        'completed'  => 0,
     ];
 
     if ( ! $course_id ) {
@@ -582,9 +581,9 @@ function villegas_get_course_lesson_progress( $course_id, $user_id = 0 ) {
         return $cache[ $cache_key ];
     }
 
-    $lesson_ids     = villegas_get_course_lesson_ids( $course_id );
-    $total_lessons  = count( $lesson_ids );
-    $completed      = 0;
+    $lesson_ids    = villegas_get_course_lesson_ids( $course_id );
+    $total_lessons = count( $lesson_ids );
+    $completed     = 0;
 
     if ( $user_id && $total_lessons > 0 ) {
         if ( function_exists( 'learndash_is_lesson_complete' ) ) {
@@ -609,13 +608,74 @@ function villegas_get_course_lesson_progress( $course_id, $user_id = 0 ) {
     }
 
     $summary = [
-        'lesson_ids'          => $lesson_ids,
-        'total'               => $total_lessons,
-        'completed'           => $completed,
-        'can_take_final_quiz' => ( $total_lessons > 0 && $completed >= $total_lessons ),
+        'lesson_ids' => $lesson_ids,
+        'total'      => $total_lessons,
+        'completed'  => $completed,
     ];
 
     $cache[ $cache_key ] = $summary;
+
+    return $summary;
+}
+
+/**
+ * Determine if a user can take the Final Quiz for a course.
+ *
+ * @param int $user_id   User ID.
+ * @param int $course_id Course post ID.
+ *
+ * @return bool
+ */
+function villegas_can_user_take_final_quiz( $user_id, $course_id ) {
+    $course_id = intval( $course_id );
+    $user_id   = intval( $user_id );
+
+    if ( ! $course_id || ! $user_id ) {
+        return false;
+    }
+
+    static $cache = [];
+    $cache_key    = $course_id . '|' . $user_id;
+
+    if ( isset( $cache[ $cache_key ] ) ) {
+        return $cache[ $cache_key ];
+    }
+
+    $stats             = villegas_calculate_course_lesson_stats( $course_id, $user_id );
+    $total_lessons     = isset( $stats['total'] ) ? intval( $stats['total'] ) : 0;
+    $completed_lessons = isset( $stats['completed'] ) ? intval( $stats['completed'] ) : 0;
+
+    $can_take = ( $total_lessons > 0 && $completed_lessons >= $total_lessons );
+
+    $cache[ $cache_key ] = $can_take;
+
+    return $can_take;
+}
+
+/**
+ * Summarize a user's lesson completion status for a course.
+ *
+ * @param int $course_id Course post ID.
+ * @param int $user_id   User ID.
+ *
+ * @return array{lesson_ids:array<int>,total:int,completed:int,can_take_final_quiz:bool}
+ */
+function villegas_get_course_lesson_progress( $course_id, $user_id = 0 ) {
+    $course_id = intval( $course_id );
+    $user_id   = intval( $user_id );
+
+    $stats = villegas_calculate_course_lesson_stats( $course_id, $user_id );
+
+    $summary = [
+        'lesson_ids'          => isset( $stats['lesson_ids'] ) ? (array) $stats['lesson_ids'] : [],
+        'total'               => isset( $stats['total'] ) ? intval( $stats['total'] ) : 0,
+        'completed'           => isset( $stats['completed'] ) ? intval( $stats['completed'] ) : 0,
+        'can_take_final_quiz' => false,
+    ];
+
+    if ( $course_id && $user_id ) {
+        $summary['can_take_final_quiz'] = villegas_can_user_take_final_quiz( $user_id, $course_id );
+    }
 
     return $summary;
 }
@@ -720,9 +780,7 @@ function isFinalQuizAccessible( $quiz_id, $user_id ) {
         return false;
     }
 
-    $lesson_progress = villegas_get_course_lesson_progress( $course_id, $user_id );
-
-    return ! empty( $lesson_progress['can_take_final_quiz'] );
+    return villegas_can_user_take_final_quiz( $user_id, $course_id );
 }
 
 /**
@@ -780,12 +838,25 @@ function villegas_enforce_quiz_access_control() {
     }
 
     $user_id      = get_current_user_id();
-    $has_access   = isFinalQuizAccessible( $quiz_id, $user_id );
-    $is_enrolled  = $user_id ? villegas_user_has_course_access( $course_id, $user_id ) : false;
     $course_title = get_the_title( $course_id );
+    $is_enrolled  = $user_id ? villegas_user_has_course_access( $course_id, $user_id ) : false;
 
-    if ( $has_access ) {
-        return;
+    $lesson_stats       = villegas_calculate_course_lesson_stats( $course_id, $user_id );
+    $total_lessons      = isset( $lesson_stats['total'] ) ? intval( $lesson_stats['total'] ) : 0;
+    $lessons_completed  = isset( $lesson_stats['completed'] ) ? intval( $lesson_stats['completed'] ) : 0;
+    $can_take_final_quiz = villegas_can_user_take_final_quiz( $user_id, $course_id );
+
+    if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+        error_log(
+            sprintf(
+                'Final Quiz gate debug -> course %d, quiz %d: total_lessons=%d, lessons_completed=%d, can_take_final_quiz=%s',
+                $course_id,
+                $final_quiz_id,
+                $total_lessons,
+                $lessons_completed,
+                $can_take_final_quiz ? 'true' : 'false'
+            )
+        );
     }
 
     if ( ! $user_id ) {
@@ -813,8 +884,9 @@ function villegas_enforce_quiz_access_control() {
         wp_die( wp_kses_post( $message ), esc_html__( 'Prueba Final bloqueada', 'villegas-courses' ), array( 'response' => 403 ) );
     }
 
-    $lesson_summary     = villegas_get_course_lesson_progress( $course_id, $user_id );
-    $can_take_final_quiz = ! empty( $lesson_summary['can_take_final_quiz'] );
+    if ( $can_take_final_quiz && $is_enrolled ) {
+        return;
+    }
 
     if ( ! $can_take_final_quiz ) {
         $course_url = get_permalink( $course_id );
