@@ -456,7 +456,7 @@ function villegas_get_course_progress_percentage( $course_id, $user_id ) {
         );
 
         if ( is_array( $progress ) && isset( $progress['percentage'] ) ) {
-            return floatval( $progress['percentage'] );
+            return villegas_normalize_course_progress_percentage( $progress['percentage'] );
         }
     }
 
@@ -464,11 +464,34 @@ function villegas_get_course_progress_percentage( $course_id, $user_id ) {
         $progress = learndash_user_get_course_progress( $user_id, $course_id );
 
         if ( is_array( $progress ) && isset( $progress['percentage'] ) ) {
-            return floatval( $progress['percentage'] );
+            return villegas_normalize_course_progress_percentage( $progress['percentage'] );
         }
     }
 
     return 0;
+}
+
+/**
+ * Normalize raw LearnDash course progress into a capped percentage.
+ *
+ * This prevents floating point quirks (e.g. 99.999999) from blocking 100 % access checks.
+ *
+ * @param mixed $percentage Raw percentage value returned by LearnDash helpers.
+ *
+ * @return float
+ */
+function villegas_normalize_course_progress_percentage( $percentage ) {
+    $value = floatval( $percentage );
+
+    if ( $value >= 99.5 ) {
+        return 100.0;
+    }
+
+    if ( $value <= 0 ) {
+        return 0.0;
+    }
+
+    return min( 100.0, $value );
 }
 
 /**
