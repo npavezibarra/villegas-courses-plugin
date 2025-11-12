@@ -148,6 +148,147 @@ add_action('wp_enqueue_scripts', function() {
     }
 });
 
+/**
+ * Recursively extract quiz IDs from the LearnDash course steps structure.
+ *
+ * @param mixed $steps Course steps array.
+ *
+ * @return array<int>
+ */
+function villegas_extract_quiz_ids_from_ld_steps( $steps ) {
+    if ( ! is_array( $steps ) ) {
+        return [];
+    }
+
+    $quiz_ids = [];
+
+    foreach ( $steps as $key => $value ) {
+        if ( 'sfwd-quiz' === $key && is_array( $value ) ) {
+            foreach ( $value as $quiz_id => $quiz_children ) {
+                if ( is_numeric( $quiz_id ) ) {
+                    $quiz_ids[] = intval( $quiz_id );
+                }
+            }
+        } elseif ( is_array( $value ) ) {
+            $quiz_ids = array_merge( $quiz_ids, villegas_extract_quiz_ids_from_ld_steps( $value ) );
+        }
+    }
+
+    return $quiz_ids;
+}
+
+add_action(
+    'wp_enqueue_scripts',
+    function () {
+        if ( ! is_singular( 'sfwd-courses' ) ) {
+            return;
+        }
+
+        $course_id = get_queried_object_id();
+
+        if ( ! $course_id ) {
+            return;
+        }
+
+        $total_lessons     = 0;
+        $lessons_completed = 0;
+        $user_id           = get_current_user_id();
+
+        if ( function_exists( 'learndash_get_course_steps' ) ) {
+            $lesson_steps = [];
+            $course_steps = learndash_get_course_steps( $course_id );
+
+            if ( is_object( $course_steps ) ) {
+                if ( method_exists( $course_steps, 'get_steps' ) ) {
+                    $lesson_steps = $course_steps->get_steps( 'sfwd-lessons' );
+                } elseif ( method_exists( $course_steps, 'get_steps_by_type' ) ) {
+                    $lesson_steps = $course_steps->get_steps_by_type( 'sfwd-lessons' );
+                }
+            } elseif ( is_array( $course_steps ) ) {
+                if ( isset( $course_steps['sfwd-lessons'] ) && is_array( $course_steps['sfwd-lessons'] ) ) {
+                    $lesson_steps = $course_steps['sfwd-lessons'];
+                } elseif ( isset( $course_steps['steps']['sfwd-lessons'] ) && is_array( $course_steps['steps']['sfwd-lessons'] ) ) {
+                    $lesson_steps = $course_steps['steps']['sfwd-lessons'];
+                }
+            }
+
+            if ( is_array( $lesson_steps ) ) {
+                $lesson_ids = array_filter(
+                    array_keys( $lesson_steps ),
+                    static function ( $key ) {
+                        return is_numeric( $key );
+                    }
+                );
+
+                $total_lessons = count( $lesson_ids );
+            }
+        }
+
+        if ( $user_id ) {
+            if ( function_exists( 'learndash_course_progress' ) ) {
+                $progress = learndash_course_progress(
+                    [
+                        'user_id'  => $user_id,
+                        'course_id'=> $course_id,
+                        'array'    => true,
+                    ]
+                );
+
+                if ( is_array( $progress ) ) {
+                    if ( isset( $progress['posts']['sfwd-lessons']['completed'] ) && is_array( $progress['posts']['sfwd-lessons']['completed'] ) ) {
+                        $lessons_completed = count( $progress['posts']['sfwd-lessons']['completed'] );
+                    } elseif ( isset( $progress['completed'] ) ) {
+                        $lessons_completed = intval( $progress['completed'] );
+                    }
+                }
+            }
+
+            if ( 0 === $lessons_completed && function_exists( 'learndash_user_get_course_progress' ) ) {
+                $progress = learndash_user_get_course_progress( $user_id, $course_id );
+
+                if ( is_array( $progress ) ) {
+                    if ( isset( $progress['posts']['sfwd-lessons']['completed'] ) && is_array( $progress['posts']['sfwd-lessons']['completed'] ) ) {
+                        $lessons_completed = count( $progress['posts']['sfwd-lessons']['completed'] );
+                    } elseif ( isset( $progress['completed'] ) ) {
+                        $lessons_completed = intval( $progress['completed'] );
+                    }
+                }
+            }
+        }
+
+        $final_quiz_id = 0;
+        $raw_steps     = get_post_meta( $course_id, 'ld_course_steps', true );
+
+        if ( ! empty( $raw_steps ) ) {
+            $parsed_steps = maybe_unserialize( $raw_steps );
+            $quiz_ids     = villegas_extract_quiz_ids_from_ld_steps( $parsed_steps );
+
+            if ( ! empty( $quiz_ids ) ) {
+                $final_quiz_id = intval( end( $quiz_ids ) );
+            }
+        }
+
+        wp_enqueue_script(
+            'villegas-course-console-inspector',
+            plugin_dir_url( __FILE__ ) . 'assets/js/course-console-inspector.js',
+            [],
+            filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/course-console-inspector.js' ),
+            true
+        );
+
+        wp_localize_script(
+            'villegas-course-console-inspector',
+            'VILLEGAS_COURSE_CONSOLE',
+            [
+                'courseId'         => intval( $course_id ),
+                'totalLessons'     => intval( $total_lessons ),
+                'lessonsCompleted' => intval( $lessons_completed ),
+                'finalQuizId'      => intval( $final_quiz_id ),
+            ]
+        );
+    }
+);
+
 /* AJAX PARA RESULTADOS QUIZ */
 add_action( 'wp_ajax_mostrar_resultados_curso', 'villegas_ajax_resultados_curso' );
 function villegas_ajax_resultados_curso() {
