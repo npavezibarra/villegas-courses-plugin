@@ -431,6 +431,196 @@ function villegas_user_has_course_access( $course_id, $user_id ) {
 }
 
 /**
+ * Recursively collect lesson IDs from a serialized LearnDash course steps tree.
+ *
+ * @param mixed $steps Course steps structure.
+ *
+ * @return array<int>
+ */
+function villegas_collect_lesson_ids_from_ld_steps( $steps ) {
+    if ( ! is_array( $steps ) ) {
+        return [];
+    }
+
+    $lesson_ids = [];
+
+    foreach ( $steps as $key => $value ) {
+        if ( 'sfwd-lessons' === $key && is_array( $value ) ) {
+            foreach ( $value as $lesson_id => $lesson_children ) {
+                if ( is_numeric( $lesson_id ) ) {
+                    $lesson_ids[] = intval( $lesson_id );
+                }
+            }
+        } elseif ( is_array( $value ) ) {
+            $lesson_ids = array_merge( $lesson_ids, villegas_collect_lesson_ids_from_ld_steps( $value ) );
+        } elseif ( is_numeric( $value ) && 'sfwd-lessons' === get_post_type( $value ) ) {
+            $lesson_ids[] = intval( $value );
+        }
+    }
+
+    return $lesson_ids;
+}
+
+/**
+ * Retrieve the list of lesson IDs associated with a LearnDash course.
+ *
+ * @param int $course_id Course post ID.
+ *
+ * @return array<int>
+ */
+function villegas_get_course_lesson_ids( $course_id ) {
+    $course_id = intval( $course_id );
+
+    if ( ! $course_id ) {
+        return [];
+    }
+
+    static $cache = [];
+
+    if ( isset( $cache[ $course_id ] ) ) {
+        return $cache[ $course_id ];
+    }
+
+    $lesson_ids = [];
+
+    if ( function_exists( 'learndash_get_course_steps' ) ) {
+        $course_steps = learndash_get_course_steps( $course_id );
+
+        if ( is_object( $course_steps ) ) {
+            $lesson_steps = [];
+
+            if ( method_exists( $course_steps, 'get_steps' ) ) {
+                $lesson_steps = $course_steps->get_steps( 'sfwd-lessons' );
+            } elseif ( method_exists( $course_steps, 'get_steps_by_type' ) ) {
+                $lesson_steps = $course_steps->get_steps_by_type( 'sfwd-lessons' );
+            }
+
+            if ( is_array( $lesson_steps ) ) {
+                foreach ( $lesson_steps as $lesson_id => $children ) {
+                    if ( is_numeric( $lesson_id ) ) {
+                        $lesson_ids[] = intval( $lesson_id );
+                    }
+                }
+            }
+        } elseif ( is_array( $course_steps ) ) {
+            if ( isset( $course_steps['sfwd-lessons'] ) && is_array( $course_steps['sfwd-lessons'] ) ) {
+                foreach ( $course_steps['sfwd-lessons'] as $lesson_id => $children ) {
+                    if ( is_numeric( $lesson_id ) ) {
+                        $lesson_ids[] = intval( $lesson_id );
+                    }
+                }
+            } elseif ( isset( $course_steps['steps']['sfwd-lessons'] ) && is_array( $course_steps['steps']['sfwd-lessons'] ) ) {
+                foreach ( $course_steps['steps']['sfwd-lessons'] as $lesson_id => $children ) {
+                    if ( is_numeric( $lesson_id ) ) {
+                        $lesson_ids[] = intval( $lesson_id );
+                    }
+                }
+            } else {
+                foreach ( $course_steps as $step_id ) {
+                    if ( is_numeric( $step_id ) && 'sfwd-lessons' === get_post_type( $step_id ) ) {
+                        $lesson_ids[] = intval( $step_id );
+                    } elseif ( is_array( $step_id ) ) {
+                        $lesson_ids = array_merge( $lesson_ids, villegas_collect_lesson_ids_from_ld_steps( $step_id ) );
+                    }
+                }
+            }
+        }
+    }
+
+    if ( empty( $lesson_ids ) ) {
+        $raw_steps = get_post_meta( $course_id, 'ld_course_steps', true );
+
+        if ( ! empty( $raw_steps ) ) {
+            $parsed_steps = maybe_unserialize( $raw_steps );
+            $lesson_ids   = villegas_collect_lesson_ids_from_ld_steps( $parsed_steps );
+        }
+    }
+
+    $lesson_ids = array_values(
+        array_unique(
+            array_filter(
+                array_map( 'intval', $lesson_ids ),
+                static function ( $lesson_id ) {
+                    return $lesson_id > 0;
+                }
+            )
+        )
+    );
+
+    $cache[ $course_id ] = $lesson_ids;
+
+    return $lesson_ids;
+}
+
+/**
+ * Summarize a user's lesson completion status for a course.
+ *
+ * @param int $course_id Course post ID.
+ * @param int $user_id   User ID.
+ *
+ * @return array{lesson_ids:array<int>,total:int,completed:int,can_take_final_quiz:bool}
+ */
+function villegas_get_course_lesson_progress( $course_id, $user_id = 0 ) {
+    $course_id = intval( $course_id );
+    $user_id   = intval( $user_id );
+
+    $default = [
+        'lesson_ids'          => [],
+        'total'               => 0,
+        'completed'           => 0,
+        'can_take_final_quiz' => false,
+    ];
+
+    if ( ! $course_id ) {
+        return $default;
+    }
+
+    static $cache = [];
+    $cache_key    = $course_id . '|' . $user_id;
+
+    if ( isset( $cache[ $cache_key ] ) ) {
+        return $cache[ $cache_key ];
+    }
+
+    $lesson_ids     = villegas_get_course_lesson_ids( $course_id );
+    $total_lessons  = count( $lesson_ids );
+    $completed      = 0;
+
+    if ( $user_id && $total_lessons > 0 ) {
+        if ( function_exists( 'learndash_is_lesson_complete' ) ) {
+            foreach ( $lesson_ids as $lesson_id ) {
+                if ( learndash_is_lesson_complete( $user_id, $lesson_id, $course_id ) ) {
+                    $completed++;
+                }
+            }
+        } elseif ( function_exists( 'learndash_course_progress' ) ) {
+            $progress = learndash_course_progress(
+                [
+                    'user_id'   => $user_id,
+                    'course_id' => $course_id,
+                    'array'     => true,
+                ]
+            );
+
+            if ( is_array( $progress ) && isset( $progress['posts']['sfwd-lessons']['completed'] ) && is_array( $progress['posts']['sfwd-lessons']['completed'] ) ) {
+                $completed = count( $progress['posts']['sfwd-lessons']['completed'] );
+            }
+        }
+    }
+
+    $summary = [
+        'lesson_ids'          => $lesson_ids,
+        'total'               => $total_lessons,
+        'completed'           => $completed,
+        'can_take_final_quiz' => ( $total_lessons > 0 && $completed >= $total_lessons ),
+    ];
+
+    $cache[ $cache_key ] = $summary;
+
+    return $summary;
+}
+
+/**
  * Retrieve the completion percentage for a user in a given course.
  *
  * @param int $course_id Course post ID.
@@ -530,9 +720,9 @@ function isFinalQuizAccessible( $quiz_id, $user_id ) {
         return false;
     }
 
-    $percentage = villegas_get_course_progress_percentage( $course_id, $user_id );
+    $lesson_progress = villegas_get_course_lesson_progress( $course_id, $user_id );
 
-    return $percentage >= 100;
+    return ! empty( $lesson_progress['can_take_final_quiz'] );
 }
 
 /**
@@ -592,7 +782,6 @@ function villegas_enforce_quiz_access_control() {
     $user_id      = get_current_user_id();
     $has_access   = isFinalQuizAccessible( $quiz_id, $user_id );
     $is_enrolled  = $user_id ? villegas_user_has_course_access( $course_id, $user_id ) : false;
-    $progress     = $user_id ? villegas_get_course_progress_percentage( $course_id, $user_id ) : 0;
     $course_title = get_the_title( $course_id );
 
     if ( $has_access ) {
@@ -624,7 +813,10 @@ function villegas_enforce_quiz_access_control() {
         wp_die( wp_kses_post( $message ), esc_html__( 'Prueba Final bloqueada', 'villegas-courses' ), array( 'response' => 403 ) );
     }
 
-    if ( $progress < 100 ) {
+    $lesson_summary     = villegas_get_course_lesson_progress( $course_id, $user_id );
+    $can_take_final_quiz = ! empty( $lesson_summary['can_take_final_quiz'] );
+
+    if ( ! $can_take_final_quiz ) {
         $course_url = get_permalink( $course_id );
 
         $message  = '<div class="villegas-quiz-gate villegas-quiz-gate--progress">';

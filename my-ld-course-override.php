@@ -194,66 +194,10 @@ add_action(
         $lessons_completed = 0;
         $user_id           = get_current_user_id();
 
-        if ( function_exists( 'learndash_get_course_steps' ) ) {
-            $lesson_steps = [];
-            $course_steps = learndash_get_course_steps( $course_id );
-
-            if ( is_object( $course_steps ) ) {
-                if ( method_exists( $course_steps, 'get_steps' ) ) {
-                    $lesson_steps = $course_steps->get_steps( 'sfwd-lessons' );
-                } elseif ( method_exists( $course_steps, 'get_steps_by_type' ) ) {
-                    $lesson_steps = $course_steps->get_steps_by_type( 'sfwd-lessons' );
-                }
-            } elseif ( is_array( $course_steps ) ) {
-                if ( isset( $course_steps['sfwd-lessons'] ) && is_array( $course_steps['sfwd-lessons'] ) ) {
-                    $lesson_steps = $course_steps['sfwd-lessons'];
-                } elseif ( isset( $course_steps['steps']['sfwd-lessons'] ) && is_array( $course_steps['steps']['sfwd-lessons'] ) ) {
-                    $lesson_steps = $course_steps['steps']['sfwd-lessons'];
-                }
-            }
-
-            if ( is_array( $lesson_steps ) ) {
-                $lesson_ids = array_filter(
-                    array_keys( $lesson_steps ),
-                    static function ( $key ) {
-                        return is_numeric( $key );
-                    }
-                );
-
-                $total_lessons = count( $lesson_ids );
-            }
-        }
-
-        if ( $user_id ) {
-            if ( function_exists( 'learndash_course_progress' ) ) {
-                $progress = learndash_course_progress(
-                    [
-                        'user_id'  => $user_id,
-                        'course_id'=> $course_id,
-                        'array'    => true,
-                    ]
-                );
-
-                if ( is_array( $progress ) ) {
-                    if ( isset( $progress['posts']['sfwd-lessons']['completed'] ) && is_array( $progress['posts']['sfwd-lessons']['completed'] ) ) {
-                        $lessons_completed = count( $progress['posts']['sfwd-lessons']['completed'] );
-                    } elseif ( isset( $progress['completed'] ) ) {
-                        $lessons_completed = intval( $progress['completed'] );
-                    }
-                }
-            }
-
-            if ( 0 === $lessons_completed && function_exists( 'learndash_user_get_course_progress' ) ) {
-                $progress = learndash_user_get_course_progress( $user_id, $course_id );
-
-                if ( is_array( $progress ) ) {
-                    if ( isset( $progress['posts']['sfwd-lessons']['completed'] ) && is_array( $progress['posts']['sfwd-lessons']['completed'] ) ) {
-                        $lessons_completed = count( $progress['posts']['sfwd-lessons']['completed'] );
-                    } elseif ( isset( $progress['completed'] ) ) {
-                        $lessons_completed = intval( $progress['completed'] );
-                    }
-                }
-            }
+        if ( function_exists( 'villegas_get_course_lesson_progress' ) ) {
+            $lesson_summary    = villegas_get_course_lesson_progress( $course_id, $user_id );
+            $total_lessons     = isset( $lesson_summary['total'] ) ? intval( $lesson_summary['total'] ) : 0;
+            $lessons_completed = isset( $lesson_summary['completed'] ) ? intval( $lesson_summary['completed'] ) : 0;
         }
 
         $final_quiz_id = 0;

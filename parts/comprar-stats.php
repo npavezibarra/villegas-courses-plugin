@@ -97,10 +97,19 @@ function mostrar_comprar_stats() {
         ? home_url('/evaluaciones/' . $quiz_post->post_name . '/')
         : '#';
 
-    // Course progress
-    $total_lessons = count(learndash_get_course_steps($course_id));
-    $completed_lessons = learndash_course_get_completed_steps_legacy($user_id, $course_id);
-    $percentage_complete = ($total_lessons > 0) ? min(100, ($completed_lessons / $total_lessons) * 100) : 0;
+    // Course progress based on lesson completion only
+    $lesson_progress    = function_exists( 'villegas_get_course_lesson_progress' )
+        ? villegas_get_course_lesson_progress( $course_id, $user_id )
+        : [
+            'total'               => 0,
+            'completed'           => 0,
+            'can_take_final_quiz' => false,
+        ];
+
+    $total_lessons      = isset( $lesson_progress['total'] ) ? intval( $lesson_progress['total'] ) : 0;
+    $completed_lessons  = isset( $lesson_progress['completed'] ) ? intval( $lesson_progress['completed'] ) : 0;
+    $can_take_final_quiz = ! empty( $lesson_progress['can_take_final_quiz'] );
+    $percentage_complete = $total_lessons > 0 ? min( 100, ( $completed_lessons / $total_lessons ) * 100 ) : 0;
 
     // Common styles
     $widget_style = "display: flex; align-items: center; background-color: white; padding: 20px; border-radius: 0px; border: 1px solid #e2e2e2; width: 100%;";
@@ -197,7 +206,7 @@ function mostrar_comprar_stats() {
                         $has_completed_final_quiz = ($final_quiz_score !== null && $final_quiz_score > 0);
                     }
 
-                    if ((int)$percentage_complete >= 100 && !empty($final_quiz_url) && !$has_completed_final_quiz): ?>
+                    if ($can_take_final_quiz && $is_enrolled && !empty($final_quiz_url) && !$has_completed_final_quiz): ?>
                         <button onclick="window.location.href='<?php echo esc_url($final_quiz_url); ?>'"
                                 style="<?php echo sprintf($button_style, '#4c8bf5'); ?> width: 100%; padding: 10px 0; font-size: 12px;">
                             Evaluación Final
