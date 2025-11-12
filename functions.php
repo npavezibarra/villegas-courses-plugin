@@ -472,6 +472,146 @@ function villegas_get_course_progress_percentage( $course_id, $user_id ) {
 }
 
 /**
+ * Flatten the LearnDash course steps array into a simple list of step IDs.
+ *
+ * @param mixed $steps Course steps structure returned by LearnDash.
+ *
+ * @return int[]
+ */
+function villegas_flatten_course_steps( $steps ) {
+    $flat_steps = array();
+
+    if ( empty( $steps ) ) {
+        return $flat_steps;
+    }
+
+    if ( is_object( $steps ) ) {
+        if ( method_exists( $steps, 'get_steps' ) ) {
+            $steps = $steps->get_steps();
+        } elseif ( $steps instanceof Traversable ) {
+            $steps = iterator_to_array( $steps );
+        } else {
+            $steps = (array) $steps;
+        }
+    }
+
+    foreach ( $steps as $key => $value ) {
+        $step_id = null;
+
+        if ( is_numeric( $key ) ) {
+            $step_id = intval( $key );
+        } elseif ( is_numeric( $value ) && ! is_array( $value ) && ! is_object( $value ) ) {
+            $step_id = intval( $value );
+        }
+
+        if ( $step_id ) {
+            $flat_steps[] = $step_id;
+        }
+
+        if ( is_object( $value ) ) {
+            if ( method_exists( $value, 'get_steps' ) ) {
+                $value = $value->get_steps();
+            } elseif ( $value instanceof Traversable ) {
+                $value = iterator_to_array( $value );
+            } else {
+                $value = (array) $value;
+            }
+        }
+
+        if ( is_array( $value ) && ! empty( $value ) ) {
+            $flat_steps = array_merge( $flat_steps, villegas_flatten_course_steps( $value ) );
+        }
+    }
+
+    return array_values( array_unique( $flat_steps ) );
+}
+
+/**
+ * Retrieve completion stats for lessons/topics only in a given course.
+ *
+ * @param int $course_id Course post ID.
+ * @param int $user_id   User ID.
+ *
+ * @return array{
+ *     total:int,
+ *     completed:int,
+ *     percentage:float
+ * }
+ */
+function villegas_get_lessons_topics_progress( $course_id, $user_id ) {
+    $course_id = intval( $course_id );
+    $user_id   = intval( $user_id );
+
+    $progress = array(
+        'total'      => 0,
+        'completed'  => 0,
+        'percentage' => 0,
+    );
+
+    if ( ! $course_id || ! $user_id ) {
+        return $progress;
+    }
+
+    if ( ! function_exists( 'learndash_get_course_steps' ) ) {
+        return $progress;
+    }
+
+    $steps = learndash_get_course_steps( $course_id );
+    $flat  = villegas_flatten_course_steps( $steps );
+
+    if ( empty( $flat ) ) {
+        return $progress;
+    }
+
+    foreach ( $flat as $step_id ) {
+        $step_id   = intval( $step_id );
+        $post_type = get_post_type( $step_id );
+
+        if ( ! $step_id || ! $post_type || 'sfwd-quiz' === $post_type ) {
+            continue;
+        }
+
+        if ( in_array( $post_type, array( 'sfwd-lessons', 'sfwd-lesson' ), true ) ) {
+            $progress['total']++;
+
+            if ( function_exists( 'learndash_is_lesson_complete' ) && learndash_is_lesson_complete( $user_id, $step_id, $course_id ) ) {
+                $progress['completed']++;
+            }
+
+            continue;
+        }
+
+        if ( in_array( $post_type, array( 'sfwd-topic', 'sfwd-topics' ), true ) ) {
+            $progress['total']++;
+
+            if ( function_exists( 'learndash_is_topic_complete' ) && learndash_is_topic_complete( $user_id, $step_id, $course_id ) ) {
+                $progress['completed']++;
+            }
+        }
+    }
+
+    if ( $progress['total'] > 0 ) {
+        $progress['percentage'] = min( 100, ( $progress['completed'] / $progress['total'] ) * 100 );
+    }
+
+    return $progress;
+}
+
+/**
+ * Retrieve the lessons/topics-only completion percentage for a user in a given course.
+ *
+ * @param int $course_id Course post ID.
+ * @param int $user_id   User ID.
+ *
+ * @return float Value from 0 to 100.
+ */
+function villegas_get_lessons_topics_progress_percentage( $course_id, $user_id ) {
+    $progress = villegas_get_lessons_topics_progress( $course_id, $user_id );
+
+    return isset( $progress['percentage'] ) ? floatval( $progress['percentage'] ) : 0;
+}
+
+/**
  * Determine if a Final Quiz is available for a user based on enrollment and completion.
  *
  * @param int $quiz_id Quiz post ID.
@@ -507,7 +647,7 @@ function isFinalQuizAccessible( $quiz_id, $user_id ) {
         return false;
     }
 
-    $percentage = villegas_get_course_progress_percentage( $course_id, $user_id );
+    $percentage = villegas_get_lessons_topics_progress_percentage( $course_id, $user_id );
 
     return $percentage >= 100;
 }
@@ -569,7 +709,7 @@ function villegas_enforce_quiz_access_control() {
     $user_id      = get_current_user_id();
     $has_access   = isFinalQuizAccessible( $quiz_id, $user_id );
     $is_enrolled  = $user_id ? villegas_user_has_course_access( $course_id, $user_id ) : false;
-    $progress     = $user_id ? villegas_get_course_progress_percentage( $course_id, $user_id ) : 0;
+    $progress     = $user_id ? villegas_get_lessons_topics_progress_percentage( $course_id, $user_id ) : 0;
     $course_title = get_the_title( $course_id );
 
     if ( $has_access ) {
