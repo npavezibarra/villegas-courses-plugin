@@ -4,7 +4,7 @@
     const sentinel = document.getElementById('lesson-nav-sentinel');
     const navScrollArea = nav ? nav.querySelector('.nav-scroll-area') : null;
     const navTitle = nav ? nav.querySelector('.nav-title') : null;
-    const navColumn = sentinel ? sentinel.parentElement : null;
+    const navColumn = nav ? nav.closest('.lesson-navigation-column') : null;
 
     if (typeof window.IntersectionObserver !== 'function') {
       return;
@@ -19,11 +19,77 @@
       active: false,
       fixed: false,
       lockedTop: 0,
+      observing: false,
     };
 
     let touchStartY = null;
 
     const isDesktop = () => desktopQuery.matches;
+
+    const computeFixedOffset = () => {
+      let offset = 0;
+
+      const adminBar = document.getElementById('wpadminbar');
+      if (adminBar) {
+        const adminStyles = window.getComputedStyle(adminBar);
+        if (adminStyles.position === 'fixed') {
+          offset += adminBar.offsetHeight;
+        }
+      }
+
+      const headerSelectors = [
+        'header[role="banner"]',
+        'header.wp-block-template-part',
+        'header.site-header',
+      ];
+
+      for (let i = 0; i < headerSelectors.length; i += 1) {
+        const candidate = document.querySelector(headerSelectors[i]);
+        if (!candidate) {
+          continue;
+        }
+
+        const candidateStyles = window.getComputedStyle(candidate);
+        if (candidateStyles.position === 'fixed') {
+          offset += candidate.offsetHeight;
+          break;
+        }
+
+        if (candidateStyles.position === 'sticky') {
+          const rect = candidate.getBoundingClientRect();
+          if (rect.top <= 0) {
+            offset += candidate.offsetHeight;
+            break;
+          }
+        }
+      }
+
+      return offset;
+    };
+
+    const startObserving = () => {
+      if (!state.observing) {
+        observer.observe(sentinel);
+        state.observing = true;
+      }
+    };
+
+    const stopObserving = () => {
+      if (state.observing) {
+        observer.unobserve(sentinel);
+        state.observing = false;
+      }
+    };
+
+    const restartObserver = () => {
+      if (!state.active) {
+        return;
+      }
+
+      window.requestAnimationFrame(() => {
+        startObserving();
+      });
+    };
 
     const clearPositioning = () => {
       nav.style.removeProperty('position');
@@ -63,9 +129,12 @@
       navScrollArea.style.maxHeight = height > 0 ? height + 'px' : '0px';
     };
 
-    const releaseFixed = () => {
-      if (!state.fixed) {
-        return;
+    const releaseFixed = (options = {}) => {
+      const { skipObserverRestart = false } = options;
+      const wasFixed = state.fixed;
+
+      if (wasFixed) {
+        stopObserving();
       }
 
       state.fixed = false;
@@ -74,6 +143,10 @@
       clearPositioning();
       sentinel.style.height = '0px';
       updateListHeight();
+
+      if (wasFixed && !skipObserverRestart) {
+        restartObserver();
+      }
     };
 
     const applyFixed = () => {
@@ -82,17 +155,22 @@
       }
 
       const columnRect = navColumn.getBoundingClientRect();
-      const navRect = nav.getBoundingClientRect();
+      const navHeight = nav.offsetHeight;
+      const lockedTop = computeFixedOffset();
 
-      state.lockedTop = Math.max(navRect.top, 0);
+      stopObserving();
+
+      state.lockedTop = lockedTop;
       nav.style.position = 'fixed';
-      nav.style.top = state.lockedTop + 'px';
+      nav.style.top = lockedTop + 'px';
       nav.style.left = columnRect.left + 'px';
       nav.style.width = columnRect.width + 'px';
       nav.classList.add('is-fixed');
       state.fixed = true;
+      sentinel.style.height = navHeight + 'px';
       updateListHeight();
-      sentinel.style.height = nav.offsetHeight + 'px';
+
+      restartObserver();
     };
 
     const refreshFixedState = () => {
@@ -100,12 +178,14 @@
         return;
       }
 
+      const offset = computeFixedOffset();
       const sentinelRect = sentinel.getBoundingClientRect();
-      if (sentinelRect.top < 0) {
+      if (sentinelRect.top <= offset) {
         applyFixed();
-      } else {
-        releaseFixed();
+        return;
       }
+
+      releaseFixed();
     };
 
     const observer = new IntersectionObserver((entries) => {
@@ -114,11 +194,21 @@
       }
 
       entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          releaseFixed();
-        } else {
-          applyFixed();
+        if (entry.target !== sentinel) {
+          return;
         }
+
+        const offset = computeFixedOffset();
+        if (entry.boundingClientRect.top <= offset) {
+          applyFixed();
+          return;
+        }
+
+        if (!entry.isIntersecting) {
+          return;
+        }
+
+        releaseFixed();
       });
     });
 
@@ -128,7 +218,8 @@
       }
 
       state.active = true;
-      observer.observe(sentinel);
+      startObserving();
+      sentinel.style.height = state.fixed ? sentinel.style.height : '0px';
       updateListHeight();
       refreshFixedState();
     };
@@ -138,9 +229,11 @@
         return;
       }
 
-      observer.disconnect();
       state.active = false;
-      releaseFixed();
+      stopObserving();
+      observer.disconnect();
+      state.observing = false;
+      releaseFixed({ skipObserverRestart: true });
       navScrollArea.style.removeProperty('max-height');
       sentinel.style.height = '0px';
     };
@@ -173,15 +266,15 @@
 
       if (state.fixed) {
         const columnRect = navColumn.getBoundingClientRect();
+        state.lockedTop = computeFixedOffset();
         nav.style.left = columnRect.left + 'px';
         nav.style.width = columnRect.width + 'px';
         nav.style.top = state.lockedTop + 'px';
-        updateListHeight();
-        sentinel.style.height = nav.offsetHeight + 'px';
       } else {
-        updateListHeight();
+        sentinel.style.height = '0px';
       }
 
+      updateListHeight();
       refreshFixedState();
     });
 

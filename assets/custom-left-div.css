@@ -165,7 +165,13 @@ ul {
 @media (max-width: 970px) {
 
     #lesson-wrapper {
+        display: flex;
         flex-direction: column;
+    }
+
+    #lesson-nav-sentinel {
+        display: none;
+        height: 0;
     }
 
     #lesson-navigation {

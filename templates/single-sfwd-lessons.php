@@ -10,26 +10,30 @@
     <style>
         /* Styles for the layout */
         #lesson-wrapper {
-            display: flex;
+            display: grid;
+            grid-template-columns: minmax(0, 30%) minmax(0, 70%);
             width: 100%;
             max-width: 1280px;
             margin: 0 auto;
+            column-gap: 0;
+            align-items: start;
+        }
+
+        #lesson-nav-sentinel {
+            grid-column: 1 / 2;
+            grid-row: 1 / 2;
+            display: block;
+            width: 100%;
+            height: 0;
         }
 
         .lesson-navigation-column {
-            width: 30%;
-            flex: 0 0 30%;
+            grid-column: 1 / 2;
+            grid-row: 1 / 2;
             position: relative;
             display: flex;
             flex-direction: column;
             min-height: 0;
-        }
-
-        .lesson-navigation-column #lesson-nav-sentinel {
-            display: block;
-            width: 100%;
-            height: 0;
-            flex: 0 0 auto;
         }
 
         #lesson-navigation {
@@ -76,8 +80,8 @@
         }
 
         #lesson-content {
-            width: 70%;
-            flex: 1 1 70%;
+            grid-column: 2 / 3;
+            width: 100%;
             padding: 20px;
         }
 
@@ -124,13 +128,26 @@
         }
 
         @media (max-width: 971px) {
+            #lesson-wrapper {
+                display: flex;
+                flex-direction: column;
+            }
+
+            #lesson-nav-sentinel {
+                display: none;
+                height: 0;
+            }
+
             .lesson-navigation-column {
                 width: 100%;
-                flex: 1 1 100%;
             }
 
             #lesson-navigation {
                 margin-top: 20px;
+            }
+
+            #lesson-content {
+                width: 100%;
             }
         }
     </style>
@@ -144,8 +161,8 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
 <div id="lesson-wrapper" class="my-container-class">
     <!-- Lesson Navigation -->
+    <div id="lesson-nav-sentinel" aria-hidden="true"></div>
     <div class="lesson-navigation-column">
-        <div id="lesson-nav-sentinel" aria-hidden="true"></div>
         <div id="lesson-navigation">
             <div class="nav-inner">
                 <h3 class="nav-title">Contenido del curso</h3>
