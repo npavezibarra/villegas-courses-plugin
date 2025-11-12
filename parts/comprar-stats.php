@@ -97,6 +97,10 @@ function mostrar_comprar_stats() {
         ? home_url('/evaluaciones/' . $quiz_post->post_name . '/')
         : '#';
 
+    // Final quiz metadata shared across CTA states
+    $final_quiz_id  = PoliteiaCourse::getFinalQuizId( $course_id );
+    $final_quiz_url = $final_quiz_id ? get_permalink( $final_quiz_id ) : '';
+
     // Course progress based on lesson completion only
     $lesson_progress = function_exists( 'villegas_get_course_lesson_progress' )
         ? villegas_get_course_lesson_progress( $course_id, $user_id )
@@ -194,8 +198,6 @@ function mostrar_comprar_stats() {
                 <div id="final-test-button" <?php echo $final_quiz_container_class ? 'class="' . esc_attr( $final_quiz_container_class ) . '"' : ''; ?> style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
                     <?php
                     global $wpdb;
-                    $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
-                    $final_quiz_url = $final_quiz_id ? get_permalink($final_quiz_id) : '';
 
                     $latest_attempt_final = $wpdb->get_row($wpdb->prepare(
                         "SELECT activity_id FROM {$wpdb->prefix}learndash_user_activity 
