@@ -16,8 +16,13 @@
             margin: 0 auto;
         }
 
-        #lesson-navigation {
+        .lesson-navigation-column {
             width: 30%;
+            flex: 0 0 30%;
+        }
+
+        #lesson-navigation {
+            width: 100%;
             padding: 20px 0px;
             background-color: #f9f9f9;
             border-right: 1px solid #000000;
@@ -76,9 +81,19 @@
         }
 
         @media (max-width: 971px) {
+            .lesson-navigation-column {
+                width: 100%;
+                flex: 1 1 auto;
+            }
+
             #lesson-navigation {
                 margin-top: 20px;
             }
+        }
+
+        #lesson-nav-sentinel {
+            height: 1px;
+            width: 100%;
         }
     </style>
 </head>
@@ -89,10 +104,12 @@
 echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
 ?>
 
+<div id="lesson-nav-sentinel" aria-hidden="true"></div>
 <div id="lesson-wrapper" class="my-container-class">
-    <!-- Lesson Navigation -->
-    <div id="lesson-navigation">
-        <h3>Contenido del curso</h3>
+    <div class="lesson-navigation-column">
+        <!-- Lesson Navigation -->
+        <div id="lesson-navigation">
+            <h3>Contenido del curso</h3>
         <?php
         // Navigation logic
         if (is_singular('sfwd-lessons')) {
