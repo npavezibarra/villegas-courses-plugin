@@ -203,10 +203,21 @@ function mostrar_comprar_stats() {
                     }
 
                     $final_quiz_missing_step = false;
-                    if ( $final_quiz_id && function_exists( 'learndash_get_course_steps' ) && function_exists( 'villegas_flatten_course_steps' ) ) {
-                        $course_steps = learndash_get_course_steps( $course_id );
-                        $flat_steps   = villegas_flatten_course_steps( $course_steps );
+                    if ( $final_quiz_id && function_exists( 'villegas_flatten_course_steps' ) ) {
+                        $steps_meta = get_post_meta( $course_id, 'ld_course_steps', true );
+                        $flat_steps = is_array( $steps_meta ) ? villegas_flatten_course_steps( $steps_meta ) : array();
+
                         $final_quiz_missing_step = ! in_array( intval( $final_quiz_id ), $flat_steps, true );
+
+                        if ( $final_quiz_missing_step && function_exists( 'learndash_course_add_step' ) && function_exists( 'learndash_is_step_in_course' ) ) {
+                            if ( ! learndash_is_step_in_course( $final_quiz_id, $course_id ) ) {
+                                learndash_course_add_step( $course_id, $final_quiz_id );
+                            }
+
+                            $steps_meta = get_post_meta( $course_id, 'ld_course_steps', true );
+                            $flat_steps = is_array( $steps_meta ) ? villegas_flatten_course_steps( $steps_meta ) : array();
+                            $final_quiz_missing_step = ! in_array( intval( $final_quiz_id ), $flat_steps, true );
+                        }
 
                         if ( $final_quiz_missing_step ) {
                             error_log( sprintf( 'Final quiz %d is not present in ld_course_steps for course %d.', intval( $final_quiz_id ), intval( $course_id ) ) );
