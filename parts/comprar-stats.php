@@ -102,6 +102,11 @@ function mostrar_comprar_stats() {
     $completed_lessons = learndash_course_get_completed_steps_legacy($user_id, $course_id);
     $percentage_complete = ($total_lessons > 0) ? min(100, ($completed_lessons / $total_lessons) * 100) : 0;
 
+    $lessons_topics_progress   = ($user_id && function_exists( 'villegas_get_lessons_topics_progress' ))
+        ? villegas_get_lessons_topics_progress( $course_id, $user_id )
+        : array( 'percentage' => 0 );
+    $lessons_topics_percentage = isset( $lessons_topics_progress['percentage'] ) ? floatval( $lessons_topics_progress['percentage'] ) : 0;
+
     // Common styles
     $widget_style = "display: flex; align-items: center; background-color: white; padding: 20px; border-radius: 0px; border: 1px solid #e2e2e2; width: 100%;";
     $progress_bar_style = "flex: 1; width: 50%; margin-right: 20px;";
@@ -197,23 +202,54 @@ function mostrar_comprar_stats() {
                         $has_completed_final_quiz = ($final_quiz_score !== null && $final_quiz_score > 0);
                     }
 
-                    if ((int)$percentage_complete >= 100 && !empty($final_quiz_url) && !$has_completed_final_quiz): ?>
-                        <button onclick="window.location.href='<?php echo esc_url($final_quiz_url); ?>'"
-                                style="<?php echo sprintf($button_style, '#4c8bf5'); ?> width: 100%; padding: 10px 0; font-size: 12px;">
-                            Evaluación Final
-                        </button>
-                    <?php elseif ($has_completed_final_quiz): ?>
+                    $final_quiz_missing_step = false;
+                    if ( $final_quiz_id && function_exists( 'villegas_flatten_course_steps' ) ) {
+                        $steps_meta = get_post_meta( $course_id, 'ld_course_steps', true );
+                        $flat_steps = is_array( $steps_meta ) ? villegas_flatten_course_steps( $steps_meta ) : array();
+
+                        $final_quiz_missing_step = ! in_array( intval( $final_quiz_id ), $flat_steps, true );
+
+                        if ( $final_quiz_missing_step && function_exists( 'learndash_course_add_step' ) && function_exists( 'learndash_is_step_in_course' ) ) {
+                            if ( ! learndash_is_step_in_course( $final_quiz_id, $course_id ) ) {
+                                learndash_course_add_step( $course_id, $final_quiz_id );
+                            }
+
+                            $steps_meta = get_post_meta( $course_id, 'ld_course_steps', true );
+                            $flat_steps = is_array( $steps_meta ) ? villegas_flatten_course_steps( $steps_meta ) : array();
+                            $final_quiz_missing_step = ! in_array( intval( $final_quiz_id ), $flat_steps, true );
+                        }
+
+                        if ( $final_quiz_missing_step ) {
+                            error_log( sprintf( 'Final quiz %d is not present in ld_course_steps for course %d.', intval( $final_quiz_id ), intval( $course_id ) ) );
+                        }
+                    }
+
+                    if ( $final_quiz_missing_step && current_user_can( 'manage_options' ) ) {
+                        echo '<div class="notice notice-warning" style="margin-bottom:10px;">' . esc_html__( 'Advertencia: la Evaluación Final no aparece en el constructor del curso. Revisa ld_course_steps.', 'villegas-courses' ) . '</div>';
+                    }
+
+                    $lessons_topics_complete = (int) $lessons_topics_percentage >= 100;
+                    $can_launch_final        = $lessons_topics_complete && ! empty( $final_quiz_url ) && ! $has_completed_final_quiz;
+
+                    if ($has_completed_final_quiz): ?>
                         <div class="quiz-result" style="background-color: white; border: 1px solid #e2e2e2; text-align: center; padding: 10px;">
                             <strong><?php echo esc_html($final_quiz_score); ?>%</strong>
                             <p style="font-size: 9px;">Evaluación Final</p>
                         </div>
+                    <?php elseif ( $can_launch_final ): ?>
+                        <button onclick="window.location.href='<?php echo esc_url($final_quiz_url); ?>'"
+                                style="<?php echo sprintf($button_style, '#4c8bf5'); ?> width: 100%; padding: 10px 0; font-size: 12px;">
+                            Evaluación Final
+                        </button>
                     <?php else: ?>
                         <button id="final-evaluation-button"
                                 style="border: 2px solid #2196f3 !important; padding: 8px !important; color: #2196f3 !important; border-radius: 5px; font-size: 14px; cursor: not-allowed; width: 100%; background: white;">
                             Evaluación Final
                         </button>
                     <?php endif; ?>
-                    <span class="tooltiptext">Completa todas las lecciones de este curso para tomar la Evaluación Final</span>
+                    <?php if ( ! $lessons_topics_complete ) : ?>
+                        <span class="tooltiptext">Completa todas las lecciones de este curso para tomar la Evaluación Final</span>
+                    <?php endif; ?>
                 </div>
             </div>
         <?php endif; ?>
