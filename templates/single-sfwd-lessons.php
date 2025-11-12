@@ -14,14 +14,40 @@
             width: 100%;
             max-width: 1280px;
             margin: 0 auto;
+            align-items: flex-start;
+            overflow: visible !important;
+        }
+
+        .my-container-class {
+            align-items: flex-start;
+            overflow: visible !important;
         }
 
         #lesson-navigation {
-            width: 30%;
+            width: 100%;
             padding: 20px 0px;
             background-color: #f9f9f9;
             border-right: 1px solid #000000;
-            overflow-y: auto;
+            position: relative;
+        }
+
+        #lesson-navigation .lesson-navigation-inner {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0 20px;
+            gap: 16px;
+        }
+
+        #lesson-navigation .lesson-navigation-title {
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        #lesson-navigation .lesson-navigation-list {
+            list-style-type: none;
+            margin: 0;
+            padding: 0;
         }
 
         li.course-section-header {
@@ -29,7 +55,7 @@
         }
 
         #lesson-content {
-            width: 70%;
+            width: 100%;
             padding: 20px;
         }
 
@@ -66,6 +92,8 @@
         /* Ensure the main content group keeps the lesson nav and content apart */
         body.single-sfwd-lessons .wp-block-group.alignwide.is-content-justification-space-between.is-layout-flex.wp-block-group-is-layout-flex {
             justify-content: space-between;
+            align-items: flex-start;
+            overflow: visible !important;
         }
 
         /* For screen sizes below 1020px */
@@ -75,9 +103,45 @@
             }
         }
 
+        .lesson-navigation-sentinel {
+            display: block;
+            width: 0;
+            height: 0;
+            margin: 0;
+            padding: 0;
+            visibility: hidden;
+            pointer-events: none;
+            flex: 0 0 0;
+        }
+
+        #lesson-navigation.is-fixed {
+            position: fixed;
+            z-index: 120;
+        }
+
         @media (max-width: 971px) {
             #lesson-navigation {
                 margin-top: 20px;
+            }
+        }
+
+        @media screen and (min-width: 970px) {
+            #lesson-navigation {
+                width: 30%;
+                overflow: hidden;
+            }
+
+            #lesson-content {
+                width: 70%;
+            }
+
+            #lesson-navigation .lesson-navigation-inner {
+                overflow: hidden;
+            }
+
+            #lesson-navigation .lesson-navigation-list {
+                overflow-y: auto;
+                overscroll-behavior: contain;
             }
         }
     </style>
@@ -91,9 +155,11 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
 <div id="lesson-wrapper" class="my-container-class">
     <!-- Lesson Navigation -->
+    <div id="lesson-navigation-sentinel" class="lesson-navigation-sentinel" aria-hidden="true"></div>
     <div id="lesson-navigation">
-        <h3>Contenido del curso</h3>
-        <?php
+        <div class="lesson-navigation-inner">
+            <h3 class="lesson-navigation-title">Contenido del curso</h3>
+            <?php
         // Navigation logic
         if (is_singular('sfwd-lessons')) {
             $course_id = learndash_get_course_id();
@@ -123,7 +189,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 $course_builder_meta = get_post_meta($course_id, 'course_sections', true);
                 $section_headers = json_decode($course_builder_meta, true);
 
-                echo '<ul style="list-style-type: none; padding-left: 0;">';
+                echo '<ul class="lesson-navigation-list">';
 
                 $lessons = $lessons_query->posts;
                 $lesson_index = 0;
@@ -249,6 +315,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             }
         }
         ?>
+        </div>
     </div>
 
     <!-- Lesson Content -->
@@ -343,6 +410,267 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
     </svg>
   </button>
 <?php endif; ?>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const DESKTOP_BREAKPOINT = 970;
+        const navigation = document.getElementById('lesson-navigation');
+        const sentinel = document.getElementById('lesson-navigation-sentinel');
+
+        if (!navigation || !sentinel) {
+            return;
+        }
+
+        const inner = navigation.querySelector('.lesson-navigation-inner');
+        const title = navigation.querySelector('.lesson-navigation-title');
+        const list = navigation.querySelector('.lesson-navigation-list');
+
+        if (!inner || !title || !list) {
+            return;
+        }
+
+        const toNumber = function (value) {
+            const parsed = parseFloat(value);
+            return Number.isNaN(parsed) ? 0 : parsed;
+        };
+
+        const headerSelectors = [
+            'header.wp-block-template-part',
+            '.wp-site-blocks > header',
+            'header.site-header'
+        ];
+
+        const getOffset = function () {
+            let offset = 0;
+            const adminBar = document.getElementById('wpadminbar');
+
+            if (adminBar) {
+                const adminStyle = window.getComputedStyle(adminBar);
+
+                if (adminStyle.position !== 'static') {
+                    offset += adminBar.getBoundingClientRect().height;
+                }
+            }
+
+            const processedHeaders = new Set();
+
+            headerSelectors.forEach(function (selector) {
+                const header = document.querySelector(selector);
+
+                if (!header || processedHeaders.has(header)) {
+                    return;
+                }
+
+                const headerStyle = window.getComputedStyle(header);
+
+                if (headerStyle.position === 'fixed' || headerStyle.position === 'sticky') {
+                    offset += header.getBoundingClientRect().height;
+                }
+
+                processedHeaders.add(header);
+            });
+
+            return offset;
+        };
+
+        let isFixed = false;
+
+        const resetSentinel = function () {
+            sentinel.style.height = '0';
+            sentinel.style.width = '0';
+            sentinel.style.flexBasis = '0';
+            sentinel.style.flexGrow = '0';
+            sentinel.style.flexShrink = '0';
+        };
+
+        const updatePlaceholder = function () {
+            if (!isFixed) {
+                resetSentinel();
+                return;
+            }
+
+            const rect = navigation.getBoundingClientRect();
+            sentinel.style.height = rect.height + 'px';
+            sentinel.style.width = rect.width + 'px';
+            sentinel.style.flexBasis = rect.width + 'px';
+            sentinel.style.flexGrow = '0';
+            sentinel.style.flexShrink = '0';
+        };
+
+        const updateListHeight = function () {
+            if (window.innerWidth < DESKTOP_BREAKPOINT) {
+                list.style.removeProperty('max-height');
+                list.style.removeProperty('overflow-y');
+                resetSentinel();
+                return;
+            }
+
+            const offset = getOffset();
+            const navRect = navigation.getBoundingClientRect();
+            const navTop = Math.max(navRect.top, offset);
+            const available = window.innerHeight - navTop;
+
+            const innerStyle = window.getComputedStyle(inner);
+            const innerPadding = toNumber(innerStyle.paddingTop) + toNumber(innerStyle.paddingBottom);
+
+            const titleStyle = window.getComputedStyle(title);
+            const titleOuterHeight = title.getBoundingClientRect().height + toNumber(titleStyle.marginTop) + toNumber(titleStyle.marginBottom);
+
+            const maxHeight = Math.max(0, available - innerPadding - titleOuterHeight);
+            list.style.maxHeight = maxHeight + 'px';
+            list.style.overflowY = 'auto';
+
+            if (isFixed) {
+                updatePlaceholder();
+            }
+        };
+
+        const applyFixed = function () {
+            if (isFixed) {
+                updateFixedPosition();
+                return;
+            }
+
+            const rect = navigation.getBoundingClientRect();
+            const computed = window.getComputedStyle(navigation);
+
+            ['marginTop', 'marginRight', 'marginBottom', 'marginLeft'].forEach(function (prop) {
+                sentinel.style[prop] = computed[prop];
+            });
+
+            navigation.classList.add('is-fixed');
+            navigation.style.position = 'fixed';
+            navigation.style.top = getOffset() + 'px';
+            navigation.style.left = rect.left + window.scrollX + 'px';
+            navigation.style.width = rect.width + 'px';
+
+            isFixed = true;
+            updateListHeight();
+            updatePlaceholder();
+        };
+
+        const removeFixed = function () {
+            if (!isFixed) {
+                return;
+            }
+
+            navigation.classList.remove('is-fixed');
+            navigation.style.position = '';
+            navigation.style.top = '';
+            navigation.style.left = '';
+            navigation.style.width = '';
+
+            isFixed = false;
+            updatePlaceholder();
+            updateListHeight();
+        };
+
+        const updateFixedPosition = function () {
+            if (!isFixed) {
+                return;
+            }
+
+            const placeholderRect = sentinel.getBoundingClientRect();
+            const referenceRect = placeholderRect.width > 0 ? placeholderRect : navigation.getBoundingClientRect();
+
+            navigation.style.left = referenceRect.left + window.scrollX + 'px';
+            navigation.style.width = referenceRect.width + 'px';
+            navigation.style.top = getOffset() + 'px';
+
+            updatePlaceholder();
+        };
+
+        const updateState = function () {
+            if (window.innerWidth < DESKTOP_BREAKPOINT) {
+                removeFixed();
+                resetSentinel();
+                updateListHeight();
+                return;
+            }
+
+            const offset = getOffset();
+            const sentinelRect = sentinel.getBoundingClientRect();
+            const needFix = sentinelRect.top <= offset;
+
+            if (needFix) {
+                applyFixed();
+            } else {
+                removeFixed();
+            }
+
+            updateListHeight();
+        };
+
+        const handleIntersection = function () {
+            updateState();
+        };
+
+        const observer = new IntersectionObserver(handleIntersection, { threshold: [0, 1] });
+        observer.observe(sentinel);
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth < DESKTOP_BREAKPOINT) {
+                updateState();
+                return;
+            }
+
+            if (isFixed) {
+                updateFixedPosition();
+            }
+
+            updateListHeight();
+        });
+
+        window.addEventListener('scroll', function () {
+            if (window.innerWidth < DESKTOP_BREAKPOINT) {
+                return;
+            }
+
+            if (isFixed) {
+                updateFixedPosition();
+            }
+
+            updateListHeight();
+        }, { passive: true });
+
+        const handleWheel = function (event) {
+            if (window.innerWidth < DESKTOP_BREAKPOINT) {
+                return;
+            }
+
+            if (!navigation.contains(event.target)) {
+                return;
+            }
+
+            let deltaY = event.deltaY;
+
+            if (event.deltaMode === 1) {
+                deltaY *= 16;
+            } else if (event.deltaMode === 2) {
+                deltaY *= window.innerHeight;
+            }
+
+            if (deltaY === 0) {
+                return;
+            }
+
+            const atTop = list.scrollTop <= 0;
+            const atBottom = Math.ceil(list.scrollTop + list.clientHeight) >= list.scrollHeight;
+
+            if ((deltaY < 0 && atTop) || (deltaY > 0 && atBottom)) {
+                return;
+            }
+
+            event.preventDefault();
+            list.scrollTop += deltaY;
+        };
+
+        navigation.addEventListener('wheel', handleWheel, { passive: false });
+
+        updateState();
+        updateListHeight();
+    });
+</script>
 
 <?php
 // Load the default Twenty Twenty-Four footer template part
