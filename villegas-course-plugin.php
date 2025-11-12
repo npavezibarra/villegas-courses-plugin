@@ -190,14 +190,6 @@ add_action('wp_enqueue_scripts', function () {
         true
     );
 
-    wp_enqueue_script(
-        'vcp-learndash-newsreader',
-        plugin_dir_url(__FILE__) . 'assets/js/vcp-learndash-newsreader.js',
-        [],
-        '1.0.0',
-        true
-    );
-
     $recaptcha_site_key = (string) get_option('vcp_recaptcha_site_key', '');
     $google_client_id   = (string) get_option('vcp_google_client_id', '');
 
@@ -236,12 +228,11 @@ function vcp_render_learndash_newsreader_typography() {
       /* Scope: ALL LearnDash tab panels (no post-specific IDs) */
       .ld-tabs-content [role="tabpanel"] {
         /* Local variables for this container only */
-        --p-size: 18px;     /* initial paragraph size */
+        --p-size: 22px;
         --h1-scale: 2.6;
         --h2-scale: 2.0;
         --h3-scale: 1.6;
         --h4-scale: 1.35;
-        --lh: 1.65;
       }
 
       /* Apply Newsreader only inside panels */
@@ -256,20 +247,16 @@ function vcp_render_learndash_newsreader_typography() {
         margin: 0 0 .65em 0;
       }
 
+      .ld-tabs-content [role="tabpanel"] h1,
+      .ld-tabs-content [role="tabpanel"] h2,
+      .ld-tabs-content [role="tabpanel"] h3,
+      .ld-tabs-content [role="tabpanel"] h4 { text-align: left !important; }
+
       .ld-tabs-content [role="tabpanel"] h1 { font-weight: 800; font-size: calc(var(--p-size) * var(--h1-scale)); line-height: 1.1; }
       .ld-tabs-content [role="tabpanel"] h2 { font-weight: 700; font-size: calc(var(--p-size) * var(--h2-scale)); line-height: 1.2; }
       .ld-tabs-content [role="tabpanel"] h3 { font-weight: 600; font-size: calc(var(--p-size) * var(--h3-scale)); line-height: 1.25; }
       .ld-tabs-content [role="tabpanel"] h4 { font-weight: 500; font-size: calc(var(--p-size) * var(--h4-scale)); line-height: 1.3; }
-      .ld-tabs-content [role="tabpanel"] p  { font-weight: 400; font-size: var(--p-size); line-height: var(--lh); }
-
-      /* Optional: mini control bar (scoped) */
-      .ld-tabs-content [role="tabpanel"] .nr-controls {
-        display: grid; grid-template-columns: auto 1fr auto; gap: .6rem; align-items: center;
-        padding: .75rem 1rem; margin: 0 0 1rem; border: 1px solid #e5e5e5; border-radius: 10px; background: #fff;
-      }
-      .ld-tabs-content [role="tabpanel"] .nr-controls label { font: 600 0.9rem system-ui, sans-serif; }
-      .ld-tabs-content [role="tabpanel"] .nr-controls input[type="range"] { width: 100%; accent-color: currentColor; }
-      .ld-tabs-content [role="tabpanel"] .nr-controls output { font: 500 0.9rem system-ui, sans-serif; }
+      .ld-tabs-content [role="tabpanel"] p  { font-weight: 400; font-size: 22px !important; line-height: 1.5 !important; }
     </style>
     <?php
 }
