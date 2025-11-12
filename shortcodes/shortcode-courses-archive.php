@@ -113,8 +113,10 @@ if ( ! function_exists( 'villegas_courses_archive_shortcode' ) ) {
                 } elseif ( 0 === intval( $first_progress ) ) {
                     echo '<span class="evaluation-title" style="opacity: 0.5; cursor: not-allowed;">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</span>';
                 } else {
-                    $completed = function_exists( 'learndash_is_user_complete' ) ? learndash_is_user_complete( $user_id, $course_id ) : false;
-                    $final_link = ( $completed && $final_quiz_id ) ? get_permalink( $final_quiz_id ) : $course_permalink;
+                    $completed           = function_exists( 'learndash_is_user_complete' ) ? learndash_is_user_complete( $user_id, $course_id ) : false;
+                    $progress_percentage = function_exists( 'villegas_get_course_progress_percentage' ) ? villegas_get_course_progress_percentage( $course_id, $user_id ) : 0;
+                    $can_access_final    = ( $progress_percentage >= 100 ) || $completed;
+                    $final_link          = ( $can_access_final && $final_quiz_id ) ? get_permalink( $final_quiz_id ) : $course_permalink;
                     echo '<a class="evaluation-title" href="' . esc_url( $final_link ) . '">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</a>';
                 }
                 echo '<div class="progress-bar" id="progress-final">';
