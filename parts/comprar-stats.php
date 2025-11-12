@@ -200,20 +200,20 @@ function mostrar_comprar_stats() {
                     if ((int)$percentage_complete >= 100 && !empty($final_quiz_url) && !$has_completed_final_quiz): ?>
                         <button onclick="window.location.href='<?php echo esc_url($final_quiz_url); ?>'"
                                 style="<?php echo sprintf($button_style, '#4c8bf5'); ?> width: 100%; padding: 10px 0; font-size: 12px;">
-                            Prueba Final
+                            Evaluación Final
                         </button>
                     <?php elseif ($has_completed_final_quiz): ?>
                         <div class="quiz-result" style="background-color: white; border: 1px solid #e2e2e2; text-align: center; padding: 10px;">
                             <strong><?php echo esc_html($final_quiz_score); ?>%</strong>
-                            <p style="font-size: 9px;">Prueba Final</p>
+                            <p style="font-size: 9px;">Evaluación Final</p>
                         </div>
                     <?php else: ?>
                         <button id="final-evaluation-button"
                                 style="border: 2px solid #2196f3 !important; padding: 8px !important; color: #2196f3 !important; border-radius: 5px; font-size: 14px; cursor: not-allowed; width: 100%; background: white;">
-                            Prueba Final
+                            Evaluación Final
                         </button>
                     <?php endif; ?>
-                    <span class="tooltiptext">Completa todas las lecciones de este curso para tomar la Prueba Final</span>
+                    <span class="tooltiptext">Completa todas las lecciones de este curso para tomar la Evaluación Final</span>
                 </div>
             </div>
         <?php endif; ?>
