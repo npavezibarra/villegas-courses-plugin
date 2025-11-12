@@ -5,6 +5,9 @@
     const navScrollArea = nav ? nav.querySelector('.nav-scroll-area') : null;
     const navTitle = nav ? nav.querySelector('.nav-title') : null;
     const navColumn = nav ? nav.closest('.lesson-navigation-column') : null;
+    const lessonContent = document.getElementById('lesson-content');
+
+    let contentSentinel = null;
 
     const headerSelectors = [
       'header[role="banner"]',
@@ -28,8 +31,17 @@
       return;
     }
 
-    if (!nav || !sentinel || !navScrollArea || !navColumn) {
+    if (!nav || !sentinel || !navScrollArea || !navColumn || !lessonContent) {
       return;
+    }
+
+    contentSentinel = lessonContent.querySelector('[data-lesson-content-sentinel]');
+
+    if (!contentSentinel) {
+      contentSentinel = document.createElement('div');
+      contentSentinel.setAttribute('data-lesson-content-sentinel', 'true');
+      contentSentinel.setAttribute('aria-hidden', 'true');
+      lessonContent.insertBefore(contentSentinel, lessonContent.firstChild || null);
     }
 
     const desktopQuery = window.matchMedia('(min-width: 970px)');
@@ -37,10 +49,18 @@
       active: false,
       fixed: false,
       lockedTop: 0,
+      lockedLeft: 0,
+      lockedWidth: 0,
       adminOffset: 0,
       headerHeight: 0,
-      observing: false,
+      observingHeader: false,
+      observingContent: false,
+      headerHidden: false,
+      contentAtTop: true,
     };
+
+    let observer = null;
+    let observerRootMargin = null;
 
     let touchStartY = null;
 
@@ -89,31 +109,100 @@
     };
 
     const computeFixedTop = () => {
-      return state.adminOffset + state.headerHeight;
+      return state.adminOffset;
+    };
+
+    const teardownObserver = () => {
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+
+      state.observingHeader = false;
+      state.observingContent = false;
+      observerRootMargin = null;
+    };
+
+    const setupObserver = () => {
+      const rootMargin = '-' + state.adminOffset + 'px 0px 0px 0px';
+
+      if (observer && observerRootMargin === rootMargin) {
+        return;
+      }
+
+      teardownObserver();
+
+      observerRootMargin = rootMargin;
+
+      observer = new IntersectionObserver((entries) => {
+        if (!state.active) {
+          return;
+        }
+
+        let changed = false;
+
+        entries.forEach((entry) => {
+          if (entry.target === sentinel) {
+            const headerHidden = entry.boundingClientRect.top <= state.adminOffset;
+            if (headerHidden !== state.headerHidden) {
+              state.headerHidden = headerHidden;
+              changed = true;
+            }
+            return;
+          }
+
+          if (entry.target === contentSentinel) {
+            const contentAtTop = entry.boundingClientRect.top >= state.adminOffset + state.headerHeight;
+            if (contentAtTop !== state.contentAtTop) {
+              state.contentAtTop = contentAtTop;
+              changed = true;
+            }
+          }
+        });
+
+        if (changed) {
+          syncFixedState();
+        }
+      }, { rootMargin, threshold: [0, 1] });
+
+      state.observingHeader = false;
+      state.observingContent = false;
     };
 
     const startObserving = () => {
-      if (!state.observing) {
+      if (!observer) {
+        setupObserver();
+      }
+
+      if (!observer) {
+        return;
+      }
+
+      if (!state.observingHeader) {
         observer.observe(sentinel);
-        state.observing = true;
+        state.observingHeader = true;
+      }
+
+      if (!state.observingContent) {
+        observer.observe(contentSentinel);
+        state.observingContent = true;
       }
     };
 
     const stopObserving = () => {
-      if (state.observing) {
-        observer.unobserve(sentinel);
-        state.observing = false;
-      }
-    };
-
-    const restartObserver = () => {
-      if (!state.active) {
+      if (!observer) {
         return;
       }
 
-      window.requestAnimationFrame(() => {
-        startObserving();
-      });
+      if (state.observingHeader) {
+        observer.unobserve(sentinel);
+        state.observingHeader = false;
+      }
+
+      if (state.observingContent) {
+        observer.unobserve(contentSentinel);
+        state.observingContent = false;
+      }
     };
 
     const clearPositioning = () => {
@@ -121,6 +210,23 @@
       nav.style.removeProperty('top');
       nav.style.removeProperty('left');
       nav.style.removeProperty('width');
+    };
+
+    const lockCurrentMetrics = () => {
+      const columnRect = navColumn.getBoundingClientRect();
+
+      refreshOffsets();
+
+      state.lockedTop = computeFixedTop();
+      state.lockedLeft = columnRect.left;
+      state.lockedWidth = columnRect.width;
+    };
+
+    const applyLockedMetrics = () => {
+      nav.style.position = 'fixed';
+      nav.style.top = state.lockedTop + 'px';
+      nav.style.left = state.lockedLeft + 'px';
+      nav.style.width = state.lockedWidth + 'px';
     };
 
     const updateListHeight = () => {
@@ -154,24 +260,35 @@
       navScrollArea.style.maxHeight = height > 0 ? height + 'px' : '0px';
     };
 
-    const releaseFixed = (options = {}) => {
-      const { skipObserverRestart = false } = options;
-      const wasFixed = state.fixed;
+    const refreshSentinelStates = () => {
+      const headerRect = sentinel.getBoundingClientRect();
+      const contentRect = contentSentinel.getBoundingClientRect();
 
-      if (wasFixed) {
-        stopObserving();
+      const headerHidden = headerRect.top <= state.adminOffset;
+      const contentAtTop = contentRect.top >= state.adminOffset + state.headerHeight;
+
+      const changed = headerHidden !== state.headerHidden || contentAtTop !== state.contentAtTop;
+
+      state.headerHidden = headerHidden;
+      state.contentAtTop = contentAtTop;
+
+      return changed;
+    };
+
+    const releaseFixed = () => {
+      if (!state.fixed) {
+        updateListHeight();
+        return;
       }
 
       state.fixed = false;
       state.lockedTop = 0;
+      state.lockedLeft = 0;
+      state.lockedWidth = 0;
       nav.classList.remove('is-fixed');
       clearPositioning();
       sentinel.style.height = '0px';
       updateListHeight();
-
-      if (wasFixed && !skipObserverRestart) {
-        restartObserver();
-      }
     };
 
     const applyFixed = () => {
@@ -179,63 +296,60 @@
         return;
       }
 
-      const columnRect = navColumn.getBoundingClientRect();
       const navHeight = nav.offsetHeight;
 
-      refreshOffsets();
-      const lockedTop = computeFixedTop();
-
-      stopObserving();
-
-      state.lockedTop = lockedTop;
-      nav.style.position = 'fixed';
-      nav.style.top = lockedTop + 'px';
-      nav.style.left = columnRect.left + 'px';
-      nav.style.width = columnRect.width + 'px';
+      lockCurrentMetrics();
+      applyLockedMetrics();
       nav.classList.add('is-fixed');
       state.fixed = true;
       sentinel.style.height = navHeight + 'px';
       updateListHeight();
-
-      restartObserver();
     };
 
-    const refreshFixedState = () => {
+    const syncFixedState = (options = {}) => {
+      const { forceUpdate = false } = options;
+
       if (!state.active) {
         return;
       }
 
-      refreshOffsets();
+      const shouldBeFixed = state.headerHidden && !state.contentAtTop;
 
-      const sentinelRect = sentinel.getBoundingClientRect();
-      const triggerTop = state.adminOffset;
+      if (shouldBeFixed) {
+        if (!state.fixed) {
+          applyFixed();
+          return;
+        }
 
-      if (sentinelRect.top <= triggerTop) {
-        applyFixed();
+        if (forceUpdate) {
+          lockCurrentMetrics();
+          applyLockedMetrics();
+          updateListHeight();
+        }
+
+        return;
+      }
+
+      if (!state.fixed) {
+        if (forceUpdate) {
+          updateListHeight();
+        }
         return;
       }
 
       releaseFixed();
     };
 
-    const observer = new IntersectionObserver((entries) => {
+    const refreshFixedState = (options = {}) => {
       if (!state.active) {
         return;
       }
 
-      entries.forEach((entry) => {
-        if (entry.target !== sentinel) {
-          return;
-        }
+      const { forceUpdate = false } = options;
+      const changed = refreshSentinelStates();
 
-        if (!entry.isIntersecting) {
-          applyFixed();
-          return;
-        }
-
-        releaseFixed();
-      });
-    });
+      syncFixedState({ forceUpdate: forceUpdate || (changed && state.fixed) });
+    };
 
     const enable = () => {
       if (state.active) {
@@ -244,10 +358,11 @@
 
       state.active = true;
       refreshOffsets();
+      setupObserver();
       startObserving();
-      sentinel.style.height = state.fixed ? sentinel.style.height : '0px';
+      sentinel.style.height = '0px';
+      refreshFixedState({ forceUpdate: true });
       updateListHeight();
-      refreshFixedState();
     };
 
     const disable = () => {
@@ -257,11 +372,12 @@
 
       state.active = false;
       stopObserving();
-      observer.disconnect();
-      state.observing = false;
-      releaseFixed({ skipObserverRestart: true });
+      teardownObserver();
+      releaseFixed();
       navScrollArea.style.removeProperty('max-height');
       sentinel.style.height = '0px';
+      state.headerHidden = false;
+      state.contentAtTop = true;
     };
 
     const handleViewportChange = () => {
@@ -282,6 +398,7 @@
 
     window.addEventListener('resize', () => {
       refreshOffsets();
+      setupObserver();
 
       if (!isDesktop()) {
         disable();
@@ -290,24 +407,36 @@
 
       if (!state.active) {
         enable();
+        return;
       }
 
-      if (state.fixed) {
-        const columnRect = navColumn.getBoundingClientRect();
-        state.lockedTop = computeFixedTop();
-        nav.style.left = columnRect.left + 'px';
-        nav.style.width = columnRect.width + 'px';
-        nav.style.top = state.lockedTop + 'px';
-      } else {
-        sentinel.style.height = '0px';
-      }
-
-      updateListHeight();
-      refreshFixedState();
+      startObserving();
+      refreshFixedState({ forceUpdate: true });
     });
 
     window.addEventListener('scroll', () => {
-      if (!state.active || state.fixed) {
+      if (!state.active) {
+        return;
+      }
+
+      refreshFixedState();
+
+      if (state.fixed) {
+        const previousLeft = state.lockedLeft;
+        const previousWidth = state.lockedWidth;
+
+        lockCurrentMetrics();
+
+        if (
+          Math.abs(previousLeft - state.lockedLeft) > 0.5 ||
+          Math.abs(previousWidth - state.lockedWidth) > 0.5
+        ) {
+          applyLockedMetrics();
+        } else {
+          state.lockedTop = computeFixedTop();
+          nav.style.top = state.lockedTop + 'px';
+        }
+
         return;
       }
 
