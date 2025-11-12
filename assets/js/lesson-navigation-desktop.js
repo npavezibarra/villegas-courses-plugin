@@ -37,6 +37,8 @@
       active: false,
       fixed: false,
       lockedTop: 0,
+      lockedLeft: 0,
+      lockedWidth: 0,
       adminOffset: 0,
       headerHeight: 0,
       observing: false,
@@ -123,6 +125,23 @@
       nav.style.removeProperty('width');
     };
 
+    const lockCurrentMetrics = () => {
+      const columnRect = navColumn.getBoundingClientRect();
+
+      refreshOffsets();
+
+      state.lockedTop = computeFixedTop();
+      state.lockedLeft = columnRect.left;
+      state.lockedWidth = columnRect.width;
+    };
+
+    const applyLockedMetrics = () => {
+      nav.style.position = 'fixed';
+      nav.style.top = state.lockedTop + 'px';
+      nav.style.left = state.lockedLeft + 'px';
+      nav.style.width = state.lockedWidth + 'px';
+    };
+
     const updateListHeight = () => {
       if (!state.active) {
         navScrollArea.style.removeProperty('max-height');
@@ -164,6 +183,8 @@
 
       state.fixed = false;
       state.lockedTop = 0;
+      state.lockedLeft = 0;
+      state.lockedWidth = 0;
       nav.classList.remove('is-fixed');
       clearPositioning();
       sentinel.style.height = '0px';
@@ -179,19 +200,11 @@
         return;
       }
 
-      const columnRect = navColumn.getBoundingClientRect();
       const navHeight = nav.offsetHeight;
 
-      refreshOffsets();
-      const lockedTop = computeFixedTop();
-
       stopObserving();
-
-      state.lockedTop = lockedTop;
-      nav.style.position = 'fixed';
-      nav.style.top = lockedTop + 'px';
-      nav.style.left = columnRect.left + 'px';
-      nav.style.width = columnRect.width + 'px';
+      lockCurrentMetrics();
+      applyLockedMetrics();
       nav.classList.add('is-fixed');
       state.fixed = true;
       sentinel.style.height = navHeight + 'px';
@@ -293,11 +306,8 @@
       }
 
       if (state.fixed) {
-        const columnRect = navColumn.getBoundingClientRect();
-        state.lockedTop = computeFixedTop();
-        nav.style.left = columnRect.left + 'px';
-        nav.style.width = columnRect.width + 'px';
-        nav.style.top = state.lockedTop + 'px';
+        lockCurrentMetrics();
+        applyLockedMetrics();
       } else {
         sentinel.style.height = '0px';
       }
@@ -307,7 +317,26 @@
     });
 
     window.addEventListener('scroll', () => {
-      if (!state.active || state.fixed) {
+      if (!state.active) {
+        return;
+      }
+
+      if (state.fixed) {
+        const previousLeft = state.lockedLeft;
+        const previousWidth = state.lockedWidth;
+
+        lockCurrentMetrics();
+
+        if (
+          Math.abs(previousLeft - state.lockedLeft) > 0.5 ||
+          Math.abs(previousWidth - state.lockedWidth) > 0.5
+        ) {
+          applyLockedMetrics();
+        } else {
+          state.lockedTop = computeFixedTop();
+          nav.style.top = state.lockedTop + 'px';
+        }
+
         return;
       }
 
