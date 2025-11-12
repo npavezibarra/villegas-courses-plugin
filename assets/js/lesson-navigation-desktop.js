@@ -61,10 +61,6 @@
       const available = window.innerHeight - topOffset - extraSpace;
       const height = Math.max(0, Math.floor(available));
       navScrollArea.style.maxHeight = height > 0 ? height + 'px' : '0px';
-
-      if (state.fixed) {
-        sentinel.style.height = nav.offsetHeight + 'px';
-      }
     };
 
     const releaseFixed = () => {
@@ -94,9 +90,9 @@
       nav.style.left = columnRect.left + 'px';
       nav.style.width = columnRect.width + 'px';
       nav.classList.add('is-fixed');
-      sentinel.style.height = navRect.height + 'px';
       state.fixed = true;
       updateListHeight();
+      sentinel.style.height = nav.offsetHeight + 'px';
     };
 
     const refreshFixedState = () => {
@@ -177,14 +173,15 @@
 
       if (state.fixed) {
         const columnRect = navColumn.getBoundingClientRect();
-        state.lockedTop = Math.max(navColumn.getBoundingClientRect().top, 0);
-        nav.style.top = state.lockedTop + 'px';
         nav.style.left = columnRect.left + 'px';
         nav.style.width = columnRect.width + 'px';
+        nav.style.top = state.lockedTop + 'px';
+        updateListHeight();
         sentinel.style.height = nav.offsetHeight + 'px';
+      } else {
+        updateListHeight();
       }
 
-      updateListHeight();
       refreshFixedState();
     });
 
