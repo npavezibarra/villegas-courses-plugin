@@ -16,12 +16,59 @@
             margin: 0 auto;
         }
 
-        #lesson-navigation {
+        .lesson-navigation-column {
             width: 30%;
+            flex: 0 0 30%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .lesson-navigation-column #lesson-nav-sentinel {
+            display: block;
+            width: 100%;
+            height: 0;
+            flex: 0 0 auto;
+        }
+
+        #lesson-navigation {
+            width: 100%;
             padding: 20px 0px;
             background-color: #f9f9f9;
             border-right: 1px solid #000000;
+            box-sizing: border-box;
+        }
+
+        #lesson-navigation .nav-inner {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            padding: 0 20px;
+            min-height: 0;
+            box-sizing: border-box;
+        }
+
+        #lesson-navigation .nav-title {
+            margin: 0;
+        }
+
+        #lesson-navigation .nav-scroll-area {
             overflow-y: auto;
+            overscroll-behavior: contain;
+            margin-top: 16px;
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+
+        #lesson-navigation .nav-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin: 0;
+        }
+
+        #lesson-navigation.is-fixed {
+            z-index: 1000;
         }
 
         li.course-section-header {
@@ -30,6 +77,7 @@
 
         #lesson-content {
             width: 70%;
+            flex: 1 1 70%;
             padding: 20px;
         }
 
@@ -76,6 +124,11 @@
         }
 
         @media (max-width: 971px) {
+            .lesson-navigation-column {
+                width: 100%;
+                flex: 1 1 100%;
+            }
+
             #lesson-navigation {
                 margin-top: 20px;
             }
@@ -91,8 +144,13 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
 <div id="lesson-wrapper" class="my-container-class">
     <!-- Lesson Navigation -->
-    <div id="lesson-navigation">
-        <h3>Contenido del curso</h3>
+    <div class="lesson-navigation-column">
+        <div id="lesson-nav-sentinel" aria-hidden="true"></div>
+        <div id="lesson-navigation">
+            <div class="nav-inner">
+                <h3 class="nav-title">Contenido del curso</h3>
+                <div class="nav-scroll-area">
+                    <ul class="nav-list">
         <?php
         // Navigation logic
         if (is_singular('sfwd-lessons')) {
@@ -122,8 +180,6 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 // Section headers
                 $course_builder_meta = get_post_meta($course_id, 'course_sections', true);
                 $section_headers = json_decode($course_builder_meta, true);
-
-                echo '<ul style="list-style-type: none; padding-left: 0;">';
 
                 $lessons = $lessons_query->posts;
                 $lesson_index = 0;
@@ -249,6 +305,9 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             }
         }
         ?>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Lesson Content -->

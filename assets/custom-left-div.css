@@ -19,7 +19,7 @@ header > div > div {
     justify-content: flex-end !important;
 }
 
-#lesson-navigation>h3 {
+#lesson-navigation .nav-title {
  margin-left: 10px;
 }
 
@@ -172,7 +172,7 @@ ul {
         width: 100% !important;
     }
 
-    #lesson-navigation>h3 {
+    #lesson-navigation .nav-title {
         text-align: center !important;
     }
     main#wp--skip-link--target {
@@ -189,7 +189,7 @@ ul {
         border-top: 1px solid #c0bebe;
     }
 
-    #lesson-navigation>h3 {
+    #lesson-navigation .nav-title {
         margin-left: 0px;
        }
 
