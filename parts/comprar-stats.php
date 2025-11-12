@@ -99,7 +99,9 @@ function mostrar_comprar_stats() {
 
     // Final quiz metadata shared across CTA states
     $final_quiz_id  = PoliteiaCourse::getFinalQuizId( $course_id );
-    $final_quiz_url = $final_quiz_id ? get_permalink( $final_quiz_id ) : '';
+    $final_quiz_url = ( $final_quiz_id && function_exists( 'villegas_get_quiz_canonical_permalink' ) )
+        ? villegas_get_quiz_canonical_permalink( $final_quiz_id )
+        : '';
 
     // Course progress based on lesson completion only
     $lesson_progress = function_exists( 'villegas_get_course_lesson_progress' )

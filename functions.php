@@ -722,6 +722,33 @@ function villegas_get_course_progress_percentage( $course_id, $user_id ) {
 }
 
 /**
+ * Retrieve the canonical permalink for a quiz without prepending the course URL.
+ *
+ * @param int $quiz_id Quiz post ID.
+ *
+ * @return string Quiz permalink or empty string when unavailable.
+ */
+function villegas_get_quiz_canonical_permalink( $quiz_id ) {
+    $quiz_id = intval( $quiz_id );
+
+    if ( ! $quiz_id ) {
+        return '';
+    }
+
+    $permalink = get_permalink( $quiz_id );
+
+    if ( ! $permalink ) {
+        $quiz_post = get_post( $quiz_id );
+
+        if ( $quiz_post instanceof WP_Post ) {
+            $permalink = home_url( '/evaluaciones/' . $quiz_post->post_name . '/' );
+        }
+    }
+
+    return $permalink ? esc_url_raw( $permalink ) : '';
+}
+
+/**
  * Normalize raw LearnDash course progress into a capped percentage.
  *
  * This prevents floating point quirks (e.g. 99.999999) from blocking 100 % access checks.
