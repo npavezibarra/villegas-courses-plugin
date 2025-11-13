@@ -162,17 +162,15 @@ if ( ! $quiz->isHideResultPoints() ) {
     }
 
     if ( $is_final_quiz ) {
-        $final_quiz_pro_id = (int) $quiz->getID();
         $final_quiz_user   = (int) get_current_user_id();
-        $final_course_id   = learndash_get_course_id( $final_quiz_pro_id );
-        $final_course_id   = $final_course_id ? (int) $final_course_id : 0;
+        $final_course_id   = $quiz_course_id ? (int) $quiz_course_id : 0;
 
         wp_localize_script(
             'custom-quiz-message',
             'FinalQuizEmailData',
             array(
                 'ajaxUrl'     => admin_url( 'admin-ajax.php' ),
-                'quizId'      => $final_quiz_pro_id,
+                'quizId'      => $quiz_id,
                 'courseId'    => $final_course_id,
                 'userId'      => $final_quiz_user,
                 'nonce'       => wp_create_nonce( 'villegas_final_quiz_email' ),

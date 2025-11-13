@@ -22,6 +22,43 @@ jQuery(document).ready(function ($) {
     const finalQuizEmailMaxAttempts = 10;
     const finalQuizRetryDelay = 500;
 
+    function resolveFinalQuizConfig() {
+        const localizedConfig = typeof FinalQuizEmailData !== 'undefined' ? FinalQuizEmailData : null;
+        const hasFinalQuizType = typeof quizData !== 'undefined' && quizData && quizData.type === 'final';
+
+        if (!localizedConfig && !hasFinalQuizType) {
+            return null;
+        }
+
+        const ajaxUrl = localizedConfig && localizedConfig.ajaxUrl ? localizedConfig.ajaxUrl : '';
+        const fallbackAjaxUrl = (window.villegasAjax && window.villegasAjax.ajaxUrl) || window.ajaxurl || '';
+
+        const nonce = localizedConfig && localizedConfig.nonce
+            ? localizedConfig.nonce
+            : (typeof quizData !== 'undefined' ? quizData.finalQuizNonce : '');
+
+        const quizId = localizedConfig && localizedConfig.quizId
+            ? localizedConfig.quizId
+            : (typeof quizData !== 'undefined' ? quizData.quizId : 0);
+
+        const courseId = localizedConfig && typeof localizedConfig.courseId !== 'undefined'
+            ? localizedConfig.courseId
+            : (typeof quizData !== 'undefined' ? quizData.courseId : 0);
+
+        const userId = localizedConfig && localizedConfig.userId
+            ? localizedConfig.userId
+            : (typeof quizData !== 'undefined' ? quizData.userId : 0);
+
+        return {
+            ajaxUrl: ajaxUrl || fallbackAjaxUrl,
+            nonce: nonce || '',
+            quizId: quizId || 0,
+            courseId: courseId || 0,
+            userId: userId || 0,
+            isFinalQuiz: localizedConfig ? !!localizedConfig.isFinalQuiz : hasFinalQuizType,
+        };
+    }
+
     function parsePercent(text) {
         if (!text) {
             return null;
@@ -41,7 +78,13 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        if (typeof FinalQuizEmailData === 'undefined' || !FinalQuizEmailData.isFinalQuiz) {
+        const config = resolveFinalQuizConfig();
+
+        if (!config || !config.isFinalQuiz) {
+            return;
+        }
+
+        if (!config.ajaxUrl || !config.nonce || !config.quizId || !config.userId) {
             return;
         }
 
@@ -61,30 +104,28 @@ jQuery(document).ready(function ($) {
             return;
         }
 
-        const ajaxUrl = FinalQuizEmailData.ajaxUrl || window.ajaxurl || '';
-
-        if (!ajaxUrl) {
-            console.error('[FinalQuizEmail] Missing AJAX URL.');
-            return;
-        }
-
         finalQuizEmailSent = true;
 
-        $.post(ajaxUrl, {
+        $.post(config.ajaxUrl, {
             action: 'enviar_correo_final_quiz',
-            nonce: FinalQuizEmailData.nonce,
+            nonce: config.nonce,
             first_quiz_percentage: initialScore,
             final_quiz_percentage: finalScore,
-            quiz_id: FinalQuizEmailData.quizId,
-            course_id: FinalQuizEmailData.courseId,
-            user_id: FinalQuizEmailData.userId
+            quiz_id: config.quizId,
+            course_id: config.courseId,
+            user_id: config.userId
         })
-            .done(function (response) {
-                console.log('[FinalQuizEmail] Server response:', response);
+            .done(function () {
+                finalQuizEmailSent = true;
             })
-            .fail(function (error) {
-                console.error('[FinalQuizEmail] AJAX error:', error);
+            .fail(function () {
                 finalQuizEmailSent = false;
+
+                finalQuizEmailAttempts += 1;
+
+                if (finalQuizEmailAttempts <= finalQuizEmailMaxAttempts) {
+                    setTimeout(sendFinalQuizEmail, finalQuizRetryDelay);
+                }
             });
     }
 

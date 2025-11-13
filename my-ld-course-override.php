@@ -470,7 +470,7 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     $type      = $analytics->isFirstQuiz() ? 'first' : 'final';
 
     $first_quiz_nonce = wp_create_nonce( 'villegas_send_first_quiz_email' );
-    $final_quiz_nonce = wp_create_nonce( 'enviar_correo_final_quiz' );
+    $final_quiz_nonce = wp_create_nonce( 'villegas_final_quiz_email' );
 
 
     $quiz_description_raw = get_post_field('post_content', $quiz_id);
@@ -480,6 +480,7 @@ if ( is_singular( 'sfwd-quiz' ) ) {
         'quizId'          => $quiz_id,
         'userId'          => get_current_user_id(),
         'courseName'      => $course_title,
+        'courseId'        => $course_id ? (int) $course_id : 0,
         'type'            => $type,
         'description'     => $quiz_description,
         'firstQuizNonce'  => $first_quiz_nonce,
