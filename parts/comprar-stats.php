@@ -99,9 +99,7 @@ function mostrar_comprar_stats() {
 
     // Final quiz metadata shared across CTA states
     $final_quiz_id  = PoliteiaCourse::getFinalQuizId( $course_id );
-    $final_quiz_url = ( $final_quiz_id && function_exists( 'villegas_get_quiz_canonical_permalink' ) )
-        ? villegas_get_quiz_canonical_permalink( $final_quiz_id )
-        : '';
+    $final_quiz_url = $final_quiz_id ? get_permalink( $final_quiz_id, false ) : '';
 
     // Course progress based on lesson completion only
     $lesson_progress = function_exists( 'villegas_get_course_lesson_progress' )
@@ -227,6 +225,7 @@ function mostrar_comprar_stats() {
                     <?php elseif ($can_take_final_quiz && $is_enrolled && !empty($final_quiz_url)): ?>
                         <a id="final-evaluation-button"
                            href="<?php echo esc_url($final_quiz_url); ?>"
+                           class="vcp-final-quiz-button"
                            style="<?php echo sprintf($button_style, '#4c8bf5'); ?> width: 100%; padding: 10px 0; font-size: 12px; display: inline-block; text-align: center;">
                             Evaluación Final
                         </a>
