@@ -8,4 +8,6 @@
     console.log('Course Number of Lessons:', courseData.totalLessons);
     console.log('Lessons Completed:', courseData.lessonsCompleted);
     console.log('Final Quiz id:', courseData.finalQuizId);
+    console.log('Quiz slug:', courseData.quizSlug);
+    console.log('Site URL:', courseData.siteUrl);
 })();

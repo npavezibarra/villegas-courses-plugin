@@ -201,6 +201,7 @@ add_action(
         }
 
         $final_quiz_id = 0;
+        $quiz_slug     = '';
         $raw_steps     = get_post_meta( $course_id, 'ld_course_steps', true );
 
         if ( ! empty( $raw_steps ) ) {
@@ -209,8 +210,14 @@ add_action(
 
             if ( ! empty( $quiz_ids ) ) {
                 $final_quiz_id = intval( end( $quiz_ids ) );
+                $quiz_post     = get_post( $final_quiz_id );
+                if ( $quiz_post instanceof WP_Post ) {
+                    $quiz_slug = $quiz_post->post_name;
+                }
             }
         }
+
+        $site_url = home_url( '/' );
 
         wp_enqueue_script(
             'villegas-course-console-inspector',
@@ -228,6 +235,8 @@ add_action(
                 'totalLessons'     => intval( $total_lessons ),
                 'lessonsCompleted' => intval( $lessons_completed ),
                 'finalQuizId'      => intval( $final_quiz_id ),
+                'quizSlug'         => $quiz_slug,
+                'siteUrl'          => $site_url,
             ]
         );
     }
