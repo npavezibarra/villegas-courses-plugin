@@ -668,7 +668,7 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
 }
 
 require_once plugin_dir_path( __FILE__ ) . '../emails/first-quiz-email.php';
-require_once plugin_dir_path( __FILE__ ) . '../emails/final-quiz-email.php';
+require_once plugin_dir_path( __FILE__ ) . '../emails/final-quiz-email-template.php';
 
 if ( ! function_exists( 'villegas_quiz_completed_handler' ) ) {
     function villegas_quiz_completed_handler( $quiz_data, $user ) {

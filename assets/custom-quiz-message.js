@@ -14,74 +14,84 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 });
 
-/**
- * Espera hasta que LearnDash haya actualizado el DOM con las respuestas correctas.
- */
-function getFinalPercentage(callback, attempts = 0) {
-    const correct = parseInt(jQuery('.wpProQuiz_correct_answer').text(), 10);
-    const total = parseInt(jQuery('.total-questions').text(), 10);
+let villegasFirstQuizEmailSent = false;
 
-    if (!isNaN(correct) && total > 0) {
-        const pct = Math.round((correct / total) * 100);
-        callback(pct);
-    } else if (attempts < 10) {
-        // Retry every 200 ms (total up to ~2 s)
-        setTimeout(() => getFinalPercentage(callback, attempts + 1), 200);
-    } else {
-        console.warn('No se pudo obtener el puntaje final después de varios intentos.');
-        callback(0);
-    }
-}
+jQuery(document).ready(function ($) {
+    let finalQuizEmailSent = false;
+    let finalQuizEmailAttempts = 0;
+    const finalQuizEmailMaxAttempts = 10;
+    const finalQuizRetryDelay = 500;
 
-jQuery(document).on('learndash-quiz-finished', function () {
-    if (typeof quizData === 'undefined') return;
+    function parsePercent(text) {
+        if (!text) {
+            return null;
+        }
 
-    const ajaxConfig = window.villegasAjax || {};
-    const ajaxUrl = ajaxConfig.ajaxUrl || window.ajaxurl || '';
-    if (!ajaxUrl) {
-        console.error('No se pudo determinar la URL de AJAX para enviar los correos de quiz.');
-        return;
+        const numeric = parseFloat(String(text).replace('%', '').trim());
+
+        if (Number.isNaN(numeric)) {
+            return null;
+        }
+
+        return numeric;
     }
 
-    // Wait for LearnDash DOM update before sending the email
-    getFinalPercentage(function (percentage) {
-        console.log('[FirstQuizEmail] Final computed percentage:', percentage);
-        // --- FINAL QUIZ (keep original logic) ---
-        if (quizData.type === 'final') {
-            const finalQuizNonce = quizData.finalQuizNonce || '';
-            if (!finalQuizNonce) return;
+    function sendFinalQuizEmail() {
+        if (finalQuizEmailSent) {
+            return;
+        }
 
-            function intentarEnviar(reintentoCount) {
-                if (reintentoCount > 5) {
-                    console.error('No se encontró intento tras varios reintentos. Abortando envío.');
-                    return;
-                }
+        if (typeof FinalQuizEmailData === 'undefined' || !FinalQuizEmailData.isFinalQuiz) {
+            return;
+        }
 
-                jQuery.post(ajaxUrl, {
-                    action: 'enviar_correo_final_quiz',
-                    quiz_id: quizData.quizId,
-                    quiz_percentage: percentage,
-                    nonce: finalQuizNonce
-                }, function (response) {
-                    if (response.success) return;
-                    if (response.data === 'Intento no encontrado') {
-                        setTimeout(function () {
-                            intentarEnviar(reintentoCount + 1);
-                        }, 500);
-                    } else {
-                        console.error('Error al enviar correo Final Quiz:', response);
-                    }
-                }).fail(function (response) {
-                    console.error('Error al comunicarse con AJAX del Final Quiz:', response);
-                });
+        const initialText = $('.villegas-donut-percent-initial').text();
+        const finalText = $('.villegas-donut-percent-final').text();
+
+        const initialScore = parsePercent(initialText);
+        const finalScore = parsePercent(finalText);
+
+        if (initialScore === null || finalScore === null) {
+            finalQuizEmailAttempts += 1;
+
+            if (finalQuizEmailAttempts <= finalQuizEmailMaxAttempts) {
+                setTimeout(sendFinalQuizEmail, finalQuizRetryDelay);
             }
 
-            intentarEnviar(0);
+            return;
         }
+
+        const ajaxUrl = FinalQuizEmailData.ajaxUrl || window.ajaxurl || '';
+
+        if (!ajaxUrl) {
+            console.error('[FinalQuizEmail] Missing AJAX URL.');
+            return;
+        }
+
+        finalQuizEmailSent = true;
+
+        $.post(ajaxUrl, {
+            action: 'enviar_correo_final_quiz',
+            nonce: FinalQuizEmailData.nonce,
+            first_quiz_percentage: initialScore,
+            final_quiz_percentage: finalScore,
+            quiz_id: FinalQuizEmailData.quizId,
+            course_id: FinalQuizEmailData.courseId,
+            user_id: FinalQuizEmailData.userId
+        })
+            .done(function (response) {
+                console.log('[FinalQuizEmail] Server response:', response);
+            })
+            .fail(function (error) {
+                console.error('[FinalQuizEmail] AJAX error:', error);
+                finalQuizEmailSent = false;
+            });
+    }
+
+    $(document).on('learndash-quiz-finished', function () {
+        setTimeout(sendFinalQuizEmail, 1500);
     });
 });
-
-let villegasFirstQuizEmailSent = false;
 
 (function ($) {
     $(document).on('learndash-quiz-finished', function () {
