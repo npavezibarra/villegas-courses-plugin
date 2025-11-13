@@ -394,7 +394,7 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
             . " WHERE ua.user_id = %d"
             . "   AND ua.activity_type = 'quiz'"
             . "   AND ua.activity_completed IS NOT NULL"
-            . "   AND ua.activity_post_id = %d"
+            . "   AND ua.post_id = %d"
             . " ORDER BY ua.activity_completed DESC"
             . " LIMIT 1",
             "SELECT ua.activity_id, ua.activity_completed"
