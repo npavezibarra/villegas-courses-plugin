@@ -107,16 +107,58 @@ if ( ! $quiz->isHideResultPoints() ) {
         require_once plugin_dir_path( __FILE__ ) . '../classes/class-course-quiz-helper.php';
     }
 
-    $quiz_id      = $quiz_post_id ? $quiz_post_id : intval( $quiz->getID() );
+    if ( ! class_exists( 'PoliteiaCourse' ) ) {
+        require_once plugin_dir_path( __FILE__ ) . '../classes/class-politeia-course.php';
+    }
 
-    $average_chart_markup = '';
+    $quiz_id = $quiz_post_id ? $quiz_post_id : intval( $quiz->getID() );
 
-    if ( $quiz_id ) {
-        if ( shortcode_exists( 'villegas_quiz_attempts' ) ) {
-            do_shortcode( sprintf( '[villegas_quiz_attempts id="%d"]', $quiz_id ) );
+    $quiz_course_id = $quiz_id ? learndash_get_course_id( $quiz_id ) : 0;
+
+    if ( ! $quiz_course_id && class_exists( 'CourseQuizMetaHelper' ) ) {
+        $quiz_course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+    }
+
+    $first_quiz_id = $quiz_course_id ? (int) get_post_meta( $quiz_course_id, '_first_quiz_id', true ) : 0;
+
+    if ( ! $first_quiz_id && class_exists( 'CourseQuizMetaHelper' ) ) {
+        $first_quiz_id = (int) CourseQuizMetaHelper::getFirstQuizId( $quiz_course_id );
+    }
+
+    $final_quiz_id = 0;
+
+    if ( $quiz_course_id ) {
+        if ( class_exists( 'PoliteiaCourse' ) ) {
+            $final_quiz_id = (int) PoliteiaCourse::getFinalQuizId( $quiz_course_id );
         }
 
+        if ( ! $final_quiz_id ) {
+            $final_quiz_id = (int) get_post_meta( $quiz_course_id, '_final_quiz_id', true );
+        }
+    }
+
+    $is_first_quiz = $first_quiz_id && $quiz_id === (int) $first_quiz_id;
+    $is_final_quiz = $final_quiz_id && $quiz_id === (int) $final_quiz_id;
+
+    $user_id                 = get_current_user_id();
+    $first_quiz_percentage   = null;
+    $final_quiz_percentage   = null;
+    $average_chart_markup    = '';
+
+    if ( $quiz_id && shortcode_exists( 'villegas_quiz_attempts' ) ) {
+        do_shortcode( sprintf( '[villegas_quiz_attempts id="%d"]', $quiz_id ) );
+    }
+
+    if ( $quiz_id && ! $is_final_quiz ) {
         $average_chart_markup = do_shortcode( sprintf( '[villegas_quiz_average_score quiz_id="%d" title="%s"]', $quiz_id, esc_attr__( 'Puntaje Promedio', 'villegas-courses' ) ) );
+    }
+
+    if ( $is_final_quiz && function_exists( 'villegas_get_last_quiz_percentage' ) ) {
+        $final_quiz_percentage = villegas_get_last_quiz_percentage( $user_id, $quiz_id );
+
+        if ( $first_quiz_id ) {
+            $first_quiz_percentage = villegas_get_last_quiz_percentage( $user_id, $first_quiz_id );
+        }
     }
 ?>
 <p class="wpProQuiz_points wpProQuiz_points--message" style="display: none;">
@@ -135,19 +177,63 @@ array(
 );
 ?>
 </p>
-<div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart" aria-live="polite" data-chart-id="user-score" data-chart-title="<?php esc_attr_e( 'Tu Puntaje', 'villegas-courses' ); ?>" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 1em 1em 0;">
-    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
-        <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
-        <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
-    </svg>
-    <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
-    <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
-        <?php esc_html_e( 'Tu Puntaje', 'villegas-courses' ); ?>
+<?php if ( $is_final_quiz ) : ?>
+    <div class="wpProQuiz_pointsChart<?php echo null === $first_quiz_percentage ? ' wpProQuiz_pointsChart--empty' : ''; ?>" aria-live="polite" data-chart-id="first-quiz-score" data-chart-title="<?php esc_attr_e( 'First Quiz', 'villegas-courses' ); ?>"<?php if ( null === $first_quiz_percentage ) : ?> aria-label="<?php echo esc_attr__( 'First Quiz sin datos', 'villegas-courses' ); ?>"<?php endif; ?><?php if ( null !== $first_quiz_percentage ) : ?> data-static-percent="<?php echo esc_attr( $first_quiz_percentage ); ?>"<?php endif; ?> style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 1em 1em 0;<?php echo null === $first_quiz_percentage ? ' opacity: 0.6;' : ''; ?>">
+        <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
+            <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
+            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+        </svg>
+        <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
+            <?php
+            if ( null === $first_quiz_percentage ) {
+                esc_html_e( 'Sin datos', 'villegas-courses' );
+            } else {
+                echo esc_html( number_format_i18n( $first_quiz_percentage ) . '%' );
+            }
+            ?>
+        </div>
+        <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
+            <?php esc_html_e( 'Evaluación Inicial', 'villegas-courses' ); ?>
+        </div>
+        <div class="wpProQuiz_pointsChart__subcaption" style="font-size: 12px; color: #666; text-align: center;">
+            <?php esc_html_e( 'Tu puntaje inicial', 'villegas-courses' ); ?>
+        </div>
     </div>
-</div>
-<div id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px; vertical-align: middle;"></div>
-<?php if ( ! empty( $average_chart_markup ) ) : ?>
-    <?php echo $average_chart_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+    <div id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px; vertical-align: middle;"></div>
+    <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart" aria-live="polite" data-chart-id="final-quiz-score" data-chart-role="live-user-score" data-chart-title="<?php esc_attr_e( 'Final Quiz', 'villegas-courses' ); ?>" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0 1em 1em;">
+        <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
+            <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
+            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+        </svg>
+        <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
+            <?php
+            if ( null !== $final_quiz_percentage ) {
+                echo esc_html( number_format_i18n( $final_quiz_percentage ) . '%' );
+            }
+            ?>
+        </div>
+        <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
+            <?php esc_html_e( 'Evaluación Final', 'villegas-courses' ); ?>
+        </div>
+        <div class="wpProQuiz_pointsChart__subcaption" style="font-size: 12px; color: #666; text-align: center;">
+            <?php esc_html_e( 'Tu puntaje final', 'villegas-courses' ); ?>
+        </div>
+    </div>
+<?php else : ?>
+    <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart" aria-live="polite" data-chart-id="user-score" data-chart-role="live-user-score" data-chart-title="<?php esc_attr_e( 'Tu Puntaje', 'villegas-courses' ); ?>" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 1em 1em 0;">
+        <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
+            <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
+            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+        </svg>
+        <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
+        <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
+            <?php esc_html_e( 'Tu Puntaje', 'villegas-courses' ); ?>
+        </div>
+    </div>
+    <div id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px; vertical-align: middle;"></div>
+    <?php if ( ! empty( $average_chart_markup ) ) : ?>
+        <?php echo $average_chart_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+    <?php endif; ?>
 <?php endif; ?>
 <?php
 
@@ -183,52 +269,45 @@ if ( ! function_exists( 'villegas_is_user_enrolled_in_course' ) ) {
     }
 }
 
-if ( class_exists( 'CourseQuizMetaHelper' ) && $quiz_id ) {
-    $resolved_course_id = CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+if ( $quiz_course_id ) {
+    $course_id      = $quiz_course_id;
+    $course_display = $course_id;
 
-    if ( $resolved_course_id ) {
-        $course_id      = $resolved_course_id;
-        $course_display = $course_id;
+    if ( $is_first_quiz ) {
+        $course_label = 'First Quiz';
+    } elseif ( $is_final_quiz ) {
+        $course_label = 'Final Quiz';
+    }
 
-        $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
-        $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+    if ( function_exists( 'villegas_get_course_product_id' ) ) {
+        $related_product_id = (int) villegas_get_course_product_id( $course_id );
 
-        if ( $quiz_id === $first_quiz_id ) {
-            $course_label = 'First Quiz';
-        } elseif ( $quiz_id === $final_quiz_id ) {
-            $course_label = 'Final Quiz';
+        if ( $related_product_id ) {
+            $product_id      = $related_product_id;
+            $product_display = $product_id;
         }
+    }
 
-        if ( function_exists( 'villegas_get_course_product_id' ) ) {
-            $related_product_id = (int) villegas_get_course_product_id( $course_id );
-
-            if ( $related_product_id ) {
-                $product_id      = $related_product_id;
-                $product_display = $product_id;
-            }
-        }
-
-        if ( ! $product_id ) {
-            $related_products = get_posts(
-                array(
-                    'post_type'      => 'product',
-                    'post_status'    => 'any',
-                    'fields'         => 'ids',
-                    'posts_per_page' => 1,
-                    'meta_query'     => array(
-                        array(
-                            'key'     => '_related_course',
-                            'value'   => sprintf( 'i:%d;', $course_id ),
-                            'compare' => 'LIKE',
-                        ),
+    if ( ! $product_id ) {
+        $related_products = get_posts(
+            array(
+                'post_type'      => 'product',
+                'post_status'    => 'any',
+                'fields'         => 'ids',
+                'posts_per_page' => 1,
+                'meta_query'     => array(
+                    array(
+                        'key'     => '_related_course',
+                        'value'   => sprintf( 'i:%d;', $course_id ),
+                        'compare' => 'LIKE',
                     ),
-                )
-            );
+                ),
+            )
+        );
 
-            if ( ! empty( $related_products ) ) {
-                $product_id      = (int) $related_products[0];
-                $product_display = $product_id;
-            }
+        if ( ! empty( $related_products ) ) {
+            $product_id      = (int) $related_products[0];
+            $product_display = $product_id;
         }
     }
 }
@@ -356,55 +435,57 @@ endif;
             }
         }
 
-        function setupChart(messageEl) {
-            var chartContainer = messageEl.nextElementSibling;
-
-            if (!chartContainer || !chartContainer.classList.contains('wpProQuiz_pointsChart')) {
+        function setupLiveCharts(messageEl) {
+            if (!messageEl) {
                 return;
             }
 
-            var svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
-            var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
+            var liveCharts = document.querySelectorAll('.wpProQuiz_pointsChart[data-chart-role="live-user-score"]');
 
-            if (!svg) {
-                return;
-            }
-
-            if (chartContainer.dataset.chartInitialized) {
-                return;
-            }
-
-            chartContainer.dataset.chartInitialized = 'true';
-
-            var updateChart = function() {
-                var percent = parsePercentage(messageEl);
-
-                if (percent === null) {
+            liveCharts.forEach(function(chartContainer) {
+                if (!chartContainer || chartContainer.dataset.chartInitialized) {
                     return;
                 }
 
-                drawChart(svg, percent, labelEl);
+                var svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
+                var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
 
-                var labelText = percent.toFixed(0) + '%';
-                var chartTitle = chartContainer.dataset.chartTitle || '';
-
-                if (chartTitle) {
-                    svg.setAttribute('aria-label', chartTitle + ' ' + labelText);
-                } else {
-                    svg.setAttribute('aria-label', labelText + ' quiz score');
+                if (!svg) {
+                    return;
                 }
-            };
 
-            updateChart();
+                chartContainer.dataset.chartInitialized = 'true';
 
-            var observer = new MutationObserver(function() {
+                var updateChart = function() {
+                    var percent = parsePercentage(messageEl);
+
+                    if (percent === null) {
+                        return;
+                    }
+
+                    drawChart(svg, percent, labelEl);
+
+                    var labelText = percent.toFixed(0) + '%';
+                    var chartTitle = chartContainer.dataset.chartTitle || '';
+
+                    if (chartTitle) {
+                        svg.setAttribute('aria-label', chartTitle + ' ' + labelText);
+                    } else {
+                        svg.setAttribute('aria-label', labelText + ' quiz score');
+                    }
+                };
+
                 updateChart();
-            });
 
-            observer.observe(messageEl, {
-                childList: true,
-                characterData: true,
-                subtree: true
+                var observer = new MutationObserver(function() {
+                    updateChart();
+                });
+
+                observer.observe(messageEl, {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                });
             });
         }
 
@@ -448,7 +529,7 @@ endif;
             var messageEls = document.querySelectorAll('.wpProQuiz_points.wpProQuiz_points--message');
 
             messageEls.forEach(function(messageEl) {
-                setupChart(messageEl);
+                setupLiveCharts(messageEl);
             });
 
             initializeStaticCharts();

@@ -220,6 +220,62 @@ function get_user_quiz_attempts($user_id, $quiz_id) {
     return $attempts_count;
 }
 
+/**
+ * Retrieve the percentage value from the latest LearnDash quiz attempt for a user.
+ *
+ * @param int $user_id WordPress user ID.
+ * @param int $quiz_id LearnDash quiz post ID.
+ *
+ * @return int|null Percentage (0-100) or null when no attempt exists.
+ */
+function villegas_get_last_quiz_percentage( $user_id, $quiz_id ) {
+    $user_id = intval( $user_id );
+    $quiz_id = intval( $quiz_id );
+
+    if ( ! $user_id || ! $quiz_id ) {
+        return null;
+    }
+
+    global $wpdb;
+
+    $activity_table     = $wpdb->prefix . 'learndash_user_activity';
+    $activity_meta_table = $wpdb->prefix . 'learndash_user_activity_meta';
+
+    $activity_id = $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT activity_id FROM {$activity_table} WHERE user_id = %d AND post_id = %d AND activity_type = %s ORDER BY activity_completed DESC LIMIT 1",
+            $user_id,
+            $quiz_id,
+            'quiz'
+        )
+    );
+
+    if ( ! $activity_id ) {
+        return null;
+    }
+
+    $percentage = learndash_get_user_activity_meta( $activity_id, 'percentage', true );
+
+    if ( '' === $percentage || null === $percentage ) {
+        $percentage = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT activity_meta_value FROM {$activity_meta_table} WHERE activity_id = %d AND activity_meta_key = %s LIMIT 1",
+                $activity_id,
+                'percentage'
+            )
+        );
+    }
+
+    if ( '' === $percentage || null === $percentage ) {
+        return null;
+    }
+
+    $percentage = (float) $percentage;
+    $percentage = max( 0, min( 100, $percentage ) );
+
+    return (int) round( $percentage );
+}
+
 // Hook de mensaje de advertencia
 add_action('learndash-quiz-attempts-alert-before', 'villegas_mensaje_personalizado_intentos', 10, 3);
 
