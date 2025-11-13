@@ -47,6 +47,9 @@ if ( ! function_exists( 'villegas_courses_archive_shortcode' ) ) {
                 $course_id       = get_the_ID();
                 $first_quiz_id   = CourseQuizMetaHelper::getFirstQuizId( $course_id );
                 $final_quiz_id   = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+                $final_quiz_url  = ( $final_quiz_id && function_exists( 'villegas_get_quiz_canonical_permalink' ) )
+                    ? villegas_get_quiz_canonical_permalink( $final_quiz_id )
+                    : '';
                 $first_score     = 0;
                 $final_score     = 0;
                 $first_completed = false;
@@ -107,14 +110,16 @@ if ( ! function_exists( 'villegas_courses_archive_shortcode' ) ) {
 
                 echo '<div class="evaluation-row">';
                 if ( ! is_user_logged_in() ) {
-                    $final_redirect = $final_quiz_id ? get_permalink( $final_quiz_id ) : $course_permalink;
+                    $final_redirect = $final_quiz_url ? $final_quiz_url : $course_permalink;
                     $final_login    = add_query_arg( 'redirect_to', rawurlencode( $final_redirect ), home_url( '/mi-cuenta/' ) );
                     echo '<a class="evaluation-title" href="' . esc_url( $final_login ) . '">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</a>';
                 } elseif ( 0 === intval( $first_progress ) ) {
                     echo '<span class="evaluation-title" style="opacity: 0.5; cursor: not-allowed;">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</span>';
                 } else {
-                    $completed = function_exists( 'learndash_is_user_complete' ) ? learndash_is_user_complete( $user_id, $course_id ) : false;
-                    $final_link = ( $completed && $final_quiz_id ) ? get_permalink( $final_quiz_id ) : $course_permalink;
+                    $completed           = function_exists( 'learndash_is_user_complete' ) ? learndash_is_user_complete( $user_id, $course_id ) : false;
+                    $progress_percentage = function_exists( 'villegas_get_course_progress_percentage' ) ? villegas_get_course_progress_percentage( $course_id, $user_id ) : 0;
+                    $can_access_final    = ( $progress_percentage >= 100 ) || $completed;
+                    $final_link          = ( $can_access_final && $final_quiz_url ) ? $final_quiz_url : $course_permalink;
                     echo '<a class="evaluation-title" href="' . esc_url( $final_link ) . '">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</a>';
                 }
                 echo '<div class="progress-bar" id="progress-final">';

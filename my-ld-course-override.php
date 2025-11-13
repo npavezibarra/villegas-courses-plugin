@@ -148,6 +148,100 @@ add_action('wp_enqueue_scripts', function() {
     }
 });
 
+/**
+ * Recursively extract quiz IDs from the LearnDash course steps structure.
+ *
+ * @param mixed $steps Course steps array.
+ *
+ * @return array<int>
+ */
+function villegas_extract_quiz_ids_from_ld_steps( $steps ) {
+    if ( ! is_array( $steps ) ) {
+        return [];
+    }
+
+    $quiz_ids = [];
+
+    foreach ( $steps as $key => $value ) {
+        if ( 'sfwd-quiz' === $key && is_array( $value ) ) {
+            foreach ( $value as $quiz_id => $quiz_children ) {
+                if ( is_numeric( $quiz_id ) ) {
+                    $quiz_ids[] = intval( $quiz_id );
+                }
+            }
+        } elseif ( is_array( $value ) ) {
+            $quiz_ids = array_merge( $quiz_ids, villegas_extract_quiz_ids_from_ld_steps( $value ) );
+        }
+    }
+
+    return $quiz_ids;
+}
+
+add_action(
+    'wp_enqueue_scripts',
+    function () {
+        if ( ! is_singular( 'sfwd-courses' ) ) {
+            return;
+        }
+
+        $course_id = get_queried_object_id();
+
+        if ( ! $course_id ) {
+            return;
+        }
+
+        $total_lessons     = 0;
+        $lessons_completed = 0;
+        $user_id           = get_current_user_id();
+
+        if ( function_exists( 'villegas_get_course_lesson_progress' ) ) {
+            $lesson_summary    = villegas_get_course_lesson_progress( $course_id, $user_id );
+            $total_lessons     = isset( $lesson_summary['total'] ) ? intval( $lesson_summary['total'] ) : 0;
+            $lessons_completed = isset( $lesson_summary['completed'] ) ? intval( $lesson_summary['completed'] ) : 0;
+        }
+
+        $final_quiz_id = 0;
+        $quiz_slug     = '';
+        $raw_steps     = get_post_meta( $course_id, 'ld_course_steps', true );
+
+        if ( ! empty( $raw_steps ) ) {
+            $parsed_steps = maybe_unserialize( $raw_steps );
+            $quiz_ids     = villegas_extract_quiz_ids_from_ld_steps( $parsed_steps );
+
+            if ( ! empty( $quiz_ids ) ) {
+                $final_quiz_id = intval( end( $quiz_ids ) );
+                $quiz_post     = get_post( $final_quiz_id );
+                if ( $quiz_post instanceof WP_Post ) {
+                    $quiz_slug = $quiz_post->post_name;
+                }
+            }
+        }
+
+        $site_url = home_url( '/' );
+
+        wp_enqueue_script(
+            'villegas-course-console-inspector',
+            plugin_dir_url( __FILE__ ) . 'assets/js/course-console-inspector.js',
+            [],
+            filemtime( plugin_dir_path( __FILE__ ) . 'assets/js/course-console-inspector.js' ),
+            true
+        );
+
+        wp_localize_script(
+            'villegas-course-console-inspector',
+            'VILLEGAS_COURSE_CONSOLE',
+            [
+                'courseId'         => intval( $course_id ),
+                'totalLessons'     => intval( $total_lessons ),
+                'lessonsCompleted' => intval( $lessons_completed ),
+                'finalQuizId'      => intval( $final_quiz_id ),
+                'quizSlug'         => $quiz_slug,
+                'siteUrl'          => $site_url,
+            ]
+        );
+    }
+);
+
 /* AJAX PARA RESULTADOS QUIZ */
 add_action( 'wp_ajax_mostrar_resultados_curso', 'villegas_ajax_resultados_curso' );
 function villegas_ajax_resultados_curso() {

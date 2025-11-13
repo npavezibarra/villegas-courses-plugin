@@ -27,6 +27,9 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                         // Obtener el ID de la Primera y Final Evaluación
                         $first_quiz_id = CourseQuizMetaHelper::getFirstQuizId( $course_id );
                         $final_quiz_id = CourseQuizMetaHelper::getFinalQuizId( $course_id );
+                        $final_quiz_url = ( $final_quiz_id && function_exists( 'villegas_get_quiz_canonical_permalink' ) )
+                            ? villegas_get_quiz_canonical_permalink( $final_quiz_id )
+                            : '';
 
                         // Valores por defecto
                         $first_quiz_score = 0;
@@ -122,16 +125,20 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                                 <!-- Evaluación Final -->
                                 <div class="evaluation-row">
                                     <?php if (!is_user_logged_in()) : ?>
-                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode($final_quiz_id ? get_permalink($final_quiz_id) : get_permalink($course_id)); ?>">Evaluación Final</a>
+                                        <a class="evaluation-title" href="/mi-cuenta/?redirect_to=<?php echo urlencode($final_quiz_url ? $final_quiz_url : get_permalink($course_id)); ?>">Evaluación Final</a>
                                     <?php elseif ($first_quiz_score === 0) : ?>
                                         <span class="evaluation-title" style="opacity: 0.5; cursor: not-allowed;">Evaluación Final</span>
                                     <?php else : ?>
                                         <?php
-                                            // Verificar si el usuario completó el curso
-                                            $completed = function_exists('learndash_is_user_complete') 
-                                                ? learndash_is_user_complete($user_id, $course_id) 
+                                            // Verificar si el usuario completó el curso o alcanzó el 100 % de avance.
+                                            $completed = function_exists('learndash_is_user_complete')
+                                                ? learndash_is_user_complete($user_id, $course_id)
                                                 : false;
-                                            $final_link = ($completed && $final_quiz_id) ? get_permalink($final_quiz_id) : get_permalink($course_id);
+                                            $progress_percentage = function_exists('villegas_get_course_progress_percentage')
+                                                ? villegas_get_course_progress_percentage($course_id, $user_id)
+                                                : 0;
+                                            $can_access_final = ($progress_percentage >= 100) || $completed;
+                                            $final_link = ($can_access_final && $final_quiz_url) ? $final_quiz_url : get_permalink($course_id);
                                         ?>
                                         <a class="evaluation-title" href="<?php echo esc_url($final_link); ?>">Evaluación Final</a>
                                     <?php endif; ?>
