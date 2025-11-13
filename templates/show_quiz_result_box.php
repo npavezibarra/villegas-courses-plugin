@@ -193,7 +193,7 @@ array(
             ?>
         </div>
         <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
-            <?php esc_html_e( 'First Quiz', 'villegas-courses' ); ?>
+            <?php esc_html_e( 'Evaluación Inicial', 'villegas-courses' ); ?>
         </div>
         <div class="wpProQuiz_pointsChart__subcaption" style="font-size: 12px; color: #666; text-align: center;">
             <?php esc_html_e( 'Tu puntaje inicial', 'villegas-courses' ); ?>
@@ -213,7 +213,7 @@ array(
             ?>
         </div>
         <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
-            <?php esc_html_e( 'Final Quiz', 'villegas-courses' ); ?>
+            <?php esc_html_e( 'Evaluación Final', 'villegas-courses' ); ?>
         </div>
         <div class="wpProQuiz_pointsChart__subcaption" style="font-size: 12px; color: #666; text-align: center;">
             <?php esc_html_e( 'Tu puntaje final', 'villegas-courses' ); ?>
