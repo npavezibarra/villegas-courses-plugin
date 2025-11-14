@@ -52,7 +52,10 @@ array(
 
     <?php if ( ! $quiz->isHideResultCorrectQuestion() ) : ?>
         <p class="text-lg text-gray-700 mb-2">
-            <span class="wpProQuiz_correct_answer font-bold text-primary-yellow">0</span><?php echo esc_html__( ' de ', 'villegas-courses' ); ?><span class="font-bold"><?php echo esc_html( $question_count ); ?></span><?php echo esc_html__( ' Preguntas respondieron correctamente', 'villegas-courses' ); ?>
+            <span class="wpProQuiz_correct_answer font-bold text-primary-yellow">0</span>
+            <?php echo esc_html__( ' de ', 'villegas-courses' ); ?>
+            <span class="font-bold"><?php echo esc_html( $question_count ); ?></span>
+            <?php echo esc_html__( ' Preguntas respondieron correctamente', 'villegas-courses' ); ?>
         </p>
     <?php endif; ?>
 
@@ -332,10 +335,10 @@ if ( ! $quiz->isHideResultPoints() ) {
                     </div>
                 </div>
 
-                <div id="quiz-score-divider"
+                <div
                     class="hidden md:block bg-light-gray-track mx-7"
                     style="width: 1px; height: 240px; vertical-align: middle;"></div>
-                <div id="quiz-score-divider"
+                <div
                     class="block md:hidden bg-light-gray-track my-4 w-2/3"
                     style="height: 1px;"></div>
 
@@ -398,10 +401,10 @@ if ( ! $quiz->isHideResultPoints() ) {
                 </div>
 
                 <?php if ( ! empty( $average_chart_markup ) ) : ?>
-                    <div id="quiz-score-divider"
+                    <div
                         class="hidden md:block bg-light-gray-track mx-7"
                         style="width: 1px; height: 240px; vertical-align: middle;"></div>
-                    <div id="quiz-score-divider"
+                    <div
                         class="block md:hidden bg-light-gray-track my-4 w-2/3"
                         style="height: 1px;"></div>
 
