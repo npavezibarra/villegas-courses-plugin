@@ -21,9 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 $quiz_post_id = function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ? intval( learndash_get_quiz_id_by_pro_quiz_id( $quiz->getID() ) ) : 0;
 ?>
 <div style="display: none;" class="wpProQuiz_sending">
-<h4 class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
-<p>
-<div>
+    <p>
+        <div>
 <?php
 echo wp_kses_post(
 SFWD_LMS::get_template(
@@ -37,16 +36,17 @@ array(
 )
 );
 ?>
-</div>
-<div>
-<dd class="course_progress">
-<div class="course_progress_blue sending_progress_bar" style="width: 0%;">
-</div>
-</dd>
-</div>
-</p>
+        </div>
+        <div>
+            <dd class="course_progress">
+                <div class="course_progress_blue sending_progress_bar" style="width: 0%;">
+                </div>
+            </dd>
+        </div>
+    </p>
 </div>
 
+<hr class="border-gray-200 my-8" style="border: 0; border-top: 1px solid #e5e7eb; margin: 0.5rem 0;">
 <div style="display: none;" class="wpProQuiz_results text-center">
     <div class="villegas-results-wrapper" style="max-width: 920px; margin: 0 auto;">
 <?php if ( ! $quiz->isHideResultCorrectQuestion() ) : ?>
@@ -220,7 +220,7 @@ array(
                 </div>
             </div>
         </div>
-        <hr class="border-gray-200 my-8" style="border: 0; border-top: 1px solid #e5e7eb; margin: 2.5rem 0;">
+        <hr class="border-gray-200 my-8" style="border: 0; border-top: 1px solid #e5e7eb; margin: 0.5rem 0;">
         <div class="text-center" style="margin-top: 12px;">
             <div id="variacion-evaluacion" class="w-full h-24" style="width: 100%; height: 96px;"></div>
         </div>
@@ -323,7 +323,6 @@ if ( $quiz_course_id ) {
     }
 }
 ?>
-<hr style="margin-bottom: 40px;">
 <table class="wpProQuiz_pointsChart__meta debug_table" style="text-align: center; font-size: 14px; display: none;">
     <tbody>
         <tr>
@@ -375,7 +374,7 @@ if ( $is_enrolled_course && $course_url ) {
     $button_url   = $product_url;
 }
 
-if ( $button_label && $button_url ) :
+if ( $button_label && $button_url && ! $is_final_quiz ) :
     ?>
     <div style="text-align: center; margin-top: 12px;">
         <a class="wpProQuiz_pointsChart__cta" href="<?php echo esc_url( $button_url ); ?>" style="display: inline-block; padding: 10px 20px; background-color: black; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600;">
@@ -516,13 +515,13 @@ endif;
 
             if (difference > 0) {
                 messageHtml = '' +
-                    '<div class="h-full w-full flex flex-col justify-center items-center bg-white p-4 rounded-lg" style="background-color:#ffffff; border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
+                    '<div class="h-full w-full flex flex-col justify-center items-center p-4 rounded-lg" style="border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
                     '<p class="text-xl font-bold text-gray-900" style="font-size:20px; font-weight:700; color:#111827; margin:0;">¡Gran Progreso!</p>' +
                     '<p class="text-gray-700 mt-1" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">Has mejorado un <span class="text-2xl font-extrabold" style="font-size:24px; font-weight:800; color:#111827;">' + absDifference.toFixed(0) + '%</span> respecto a tu evaluación inicial.</p>' +
                     '</div>';
             } else {
                 messageHtml = '' +
-                    '<div class="h-full w-full flex flex-col justify-center items-center bg-white p-4 rounded-lg" style="background-color:#ffffff; border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
+                    '<div class="h-full w-full flex flex-col justify-center items-center p-4 rounded-lg" style="border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
                     '<p class="text-xl font-bold text-gray-900" style="font-size:20px; font-weight:700; color:#111827; margin:0;">¡Felicidades por Terminar!</p>' +
                     '<p class="text-gray-700 text-sm md:text-base mt-1 text-center" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">Tu puntaje es similar o inferior (Diferencia: ' + difference.toFixed(0) + '%). Te recomendamos repasar los temas.</p>' +
                     '</div>';

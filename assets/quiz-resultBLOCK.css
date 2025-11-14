@@ -86,8 +86,14 @@ input.wpProQuiz_button {
     padding: 9px 20px !important;
 }
 
+.learndash-wrapper .course_progress .sending_progress_bar {
+    background: #f9c504;
+    height: 7px;
+}
+
 .wpProQuiz_sending {
-    text-align: center;
+    max-width: 300px;
+    margin: auto;
 }
 
 .wpProQuiz_question_text {
