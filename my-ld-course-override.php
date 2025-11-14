@@ -599,6 +599,7 @@ add_action( 'wp_ajax_enviar_correo_final_quiz', 'enviar_correo_final_quiz_handle
 add_action( 'wp_ajax_nopriv_enviar_correo_final_quiz', 'enviar_correo_final_quiz_handler' );
 
 function enviar_correo_final_quiz_handler() {
+        error_log( '[FinalQuizEmail] AJAX handler START' );
         check_ajax_referer( 'villegas_final_quiz_email', 'nonce' );
 
         $first_percentage = isset( $_POST['first_quiz_percentage'] ) ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) ) : 0;
@@ -606,6 +607,19 @@ function enviar_correo_final_quiz_handler() {
         $quiz_id          = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
         $course_id        = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
         $user_id          = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
+
+        error_log(
+                '[FinalQuizEmail] AJAX data: ' . print_r(
+                        array(
+                                'first_quiz_percentage' => $first_percentage,
+                                'final_quiz_percentage' => $final_percentage,
+                                'quiz_id'               => $quiz_id,
+                                'course_id'             => $course_id,
+                                'user_id'               => $user_id,
+                        ),
+                        true
+                )
+        );
 
         if ( ! $user_id || ! $quiz_id ) {
                 wp_send_json_error( 'Datos faltantes' );
@@ -649,7 +663,15 @@ function enviar_correo_final_quiz_handler() {
         $subject = __( 'Has finalizado la Evaluación Final', 'villegas-courses' );
         $headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
+        error_log( '[FinalQuizEmail] AJAX about to call wp_mail()' );
+        error_log( '[FinalQuizEmail] To: ' . $user_email . ' | Subject: ' . $subject );
         $sent = wp_mail( $user_email, $subject, $email_content, $headers );
+
+        if ( $sent ) {
+                error_log( '[FinalQuizEmail] AJAX wp_mail() TRUE' );
+        } else {
+                error_log( '[FinalQuizEmail] AJAX wp_mail() FALSE' );
+        }
 
         if ( $sent ) {
                 wp_send_json_success( 'Correo de Evaluación Final enviado' );

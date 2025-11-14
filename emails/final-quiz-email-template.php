@@ -4,6 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function villegas_get_final_quiz_email_content( array $quiz_data, WP_User $user ): array {
+    error_log( '[FinalQuizEmail] villegas_get_final_quiz_email_content START' );
     $debug = villegas_get_quiz_debug_data( $quiz_data, $user );
 
     if ( empty( $debug['is_final_quiz'] ) ) {
@@ -46,6 +47,14 @@ function villegas_get_final_quiz_email_content( array $quiz_data, WP_User $user 
 
     $first_score = null !== $first_score ? max( 0.0, min( 100.0, $first_score ) ) : 0.0;
     $final_score = null !== $final_score ? max( 0.0, min( 100.0, $final_score ) ) : 0.0;
+
+    error_log(
+        sprintf(
+            '[FinalQuizEmail] Email percentages: initial=%s final=%s',
+            $first_score,
+            $final_score
+        )
+    );
 
     $first_timestamp = ! empty( $debug['first_attempt']['timestamp'] ) ? (int) $debug['first_attempt']['timestamp'] : null;
     $final_timestamp = ! empty( $debug['final_attempt']['timestamp'] ) ? (int) $debug['final_attempt']['timestamp'] : current_time( 'timestamp' );

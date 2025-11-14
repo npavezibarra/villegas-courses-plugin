@@ -672,6 +672,9 @@ require_once plugin_dir_path( __FILE__ ) . '../emails/final-quiz-email-template.
 
 if ( ! function_exists( 'villegas_quiz_completed_handler' ) ) {
     function villegas_quiz_completed_handler( $quiz_data, $user ) {
+        error_log( '[FinalQuizEmail] villegas_quiz_completed_handler START' );
+        error_log( '[FinalQuizEmail] quiz_data: ' . print_r( $quiz_data, true ) );
+
         if ( ! ( $user instanceof WP_User ) ) {
             return;
         }
@@ -681,6 +684,7 @@ if ( ! function_exists( 'villegas_quiz_completed_handler' ) ) {
         if ( $debug['is_first_quiz'] ) {
             $email = villegas_get_first_quiz_email_content( $quiz_data, $user );
         } elseif ( $debug['is_final_quiz'] ) {
+            error_log( '[FinalQuizEmail] This quiz is detected as FINAL. Preparing email...' );
             $email = villegas_get_final_quiz_email_content( $quiz_data, $user );
         } else {
             return;
@@ -700,12 +704,24 @@ if ( ! function_exists( 'villegas_quiz_completed_handler' ) ) {
             return;
         }
 
-        wp_mail(
+        if ( ! empty( $debug['is_final_quiz'] ) ) {
+            error_log( '[FinalQuizEmail] About to send email' );
+            error_log( '[FinalQuizEmail] To: ' . $admin_email . ' | Subject: ' . ( $email['subject'] ?? '' ) );
+        }
+        $mail_sent = wp_mail(
             $admin_email,
             $email['subject'],
             $email['body'],
             [ 'Content-Type: text/html; charset=UTF-8' ]
         );
+
+        if ( ! empty( $debug['is_final_quiz'] ) ) {
+            if ( $mail_sent ) {
+                error_log( '[FinalQuizEmail] wp_mail() returned TRUE (email sent)' );
+            } else {
+                error_log( '[FinalQuizEmail] wp_mail() returned FALSE (email NOT sent)' );
+            }
+        }
     }
 }
 add_action( 'learndash_quiz_completed', 'villegas_quiz_completed_handler', 10, 2 );
