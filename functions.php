@@ -986,3 +986,61 @@ function villegas_enforce_quiz_access_control() {
 
 add_action( 'template_redirect', 'villegas_enforce_quiz_access_control' );
 
+
+add_action( 'wp_enqueue_scripts', 'villegas_enqueue_final_quiz_result_assets' );
+function villegas_enqueue_final_quiz_result_assets() {
+    if ( is_admin() || ! is_singular( 'sfwd-quiz' ) ) {
+        return;
+    }
+
+    $quiz_id = get_the_ID();
+
+    if ( ! $quiz_id ) {
+        return;
+    }
+
+    if ( ! class_exists( 'PoliteiaCourse' ) ) {
+        require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-course.php';
+    }
+
+    $course_id = 0;
+
+    if ( function_exists( 'learndash_get_course_id' ) ) {
+        $course_id = learndash_get_course_id( $quiz_id );
+    }
+
+    if ( ! $course_id && class_exists( 'PoliteiaCourse' ) ) {
+        $course_id = PoliteiaCourse::getCourseFromQuiz( $quiz_id );
+    }
+
+    $final_quiz_id = 0;
+
+    if ( $course_id && class_exists( 'PoliteiaCourse' ) ) {
+        $final_quiz_id = PoliteiaCourse::getFinalQuizId( $course_id );
+    }
+
+    if ( ! $final_quiz_id || intval( $final_quiz_id ) !== intval( $quiz_id ) ) {
+        return;
+    }
+
+    $plugin_url  = plugin_dir_url( __FILE__ );
+    $plugin_path = plugin_dir_path( __FILE__ );
+
+    $style_path  = $plugin_path . 'assets/css/vcp-final-quiz-results.css';
+    $script_path = $plugin_path . 'assets/js/vcp-final-quiz-results.js';
+
+    wp_enqueue_style(
+        'vcp-final-quiz-results',
+        $plugin_url . 'assets/css/vcp-final-quiz-results.css',
+        array(),
+        file_exists( $style_path ) ? filemtime( $style_path ) : false
+    );
+
+    wp_enqueue_script(
+        'vcp-final-quiz-results',
+        $plugin_url . 'assets/js/vcp-final-quiz-results.js',
+        array(),
+        file_exists( $script_path ) ? filemtime( $script_path ) : false,
+        true
+    );
+}

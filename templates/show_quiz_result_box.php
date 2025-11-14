@@ -196,49 +196,179 @@ array(
 ?>
 </p>
 <?php if ( $is_final_quiz ) : ?>
-    <div class="wpProQuiz_pointsChart villegas-donut villegas-donut--initial<?php echo null === $first_quiz_percentage ? ' wpProQuiz_pointsChart--empty' : ''; ?>" aria-live="polite" data-chart-id="first-quiz-score" data-chart-title="<?php esc_attr_e( 'First Quiz', 'villegas-courses' ); ?>"<?php if ( null === $first_quiz_percentage ) : ?> aria-label="<?php echo esc_attr__( 'First Quiz sin datos', 'villegas-courses' ); ?>"<?php endif; ?><?php if ( null !== $first_quiz_percentage ) : ?> data-static-percent="<?php echo esc_attr( $first_quiz_percentage ); ?>"<?php endif; ?> style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 1em 1em 0;<?php echo null === $first_quiz_percentage ? ' opacity: 0.6;' : ''; ?>">
-        <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
-            <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
-            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
-        </svg>
-        <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
-            <span class="villegas-donut-percent-initial">
-            <?php
-            if ( null === $first_quiz_percentage ) {
-                esc_html_e( 'Sin datos', 'villegas-courses' );
-            } else {
-                echo esc_html( number_format_i18n( $first_quiz_percentage ) . '%' );
+    <?php
+    $course_title = '';
+    if ( $course_id ) {
+        $course_title = get_the_title( $course_id );
+    } elseif ( $quiz_id ) {
+        $course_title = get_the_title( $quiz_id );
+    }
+
+    if ( ! $course_title && method_exists( $quiz, 'getName' ) ) {
+        $course_title = (string) $quiz->getName();
+    }
+
+    $course_permalink = $course_id ? get_permalink( $course_id ) : '';
+    $certificate_url  = '';
+    $result_date      = '';
+    $correct_answers  = null;
+    $total_questions  = $question_count ? intval( $question_count ) : null;
+    $time_string      = '';
+    $attempt_meta     = array();
+    $final_attempt    = null;
+
+    if ( function_exists( 'politeia_get_latest_completed_quiz_attempt' ) ) {
+        $final_attempt = politeia_get_latest_completed_quiz_attempt( $user_id, $quiz_id );
+    }
+
+    if ( is_array( $final_attempt ) ) {
+        $attempt_meta = isset( $final_attempt['meta'] ) && is_array( $final_attempt['meta'] ) ? $final_attempt['meta'] : array();
+
+        if ( ! empty( $final_attempt['formatted_date'] ) ) {
+            $result_date = $final_attempt['formatted_date'];
+        } elseif ( ! empty( $final_attempt['timestamp'] ) ) {
+            $result_date = date_i18n( get_option( 'date_format' ), (int) $final_attempt['timestamp'] );
+        }
+
+        if ( isset( $final_attempt['score'] ) && null !== $final_attempt['score'] ) {
+            $correct_answers = (int) round( floatval( $final_attempt['score'] ) );
+        }
+
+        if ( null === $total_questions && isset( $final_attempt['total_points'] ) && null !== $final_attempt['total_points'] ) {
+            $total_questions = (int) round( floatval( $final_attempt['total_points'] ) );
+        }
+    }
+
+    if ( empty( $result_date ) ) {
+        $result_date = date_i18n( get_option( 'date_format' ), current_time( 'timestamp' ) );
+    }
+
+    if ( null === $correct_answers ) {
+        foreach ( array( 'correct', 'score', 'points' ) as $meta_key ) {
+            if ( isset( $attempt_meta[ $meta_key ] ) && is_numeric( $attempt_meta[ $meta_key ] ) ) {
+                $correct_answers = (int) round( floatval( $attempt_meta[ $meta_key ] ) );
+                break;
             }
-            ?>
-            </span>
-        </div>
-        <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
-            <?php esc_html_e( 'Evaluación Inicial', 'villegas-courses' ); ?>
-        </div>
-        <div class="wpProQuiz_pointsChart__subcaption" style="font-size: 12px; color: #666; text-align: center;">
-            <?php esc_html_e( 'Tu puntaje inicial', 'villegas-courses' ); ?>
-        </div>
-    </div>
-    <div id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px; vertical-align: middle;"></div>
-    <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart villegas-donut villegas-donut--final" aria-live="polite" data-chart-id="final-quiz-score" data-chart-role="live-user-score" data-chart-title="<?php esc_attr_e( 'Final Quiz', 'villegas-courses' ); ?>" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0 1em 1em;">
-        <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
-            <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
-            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
-        </svg>
-        <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
-            <span class="villegas-donut-percent-final">
-            <?php
-            if ( null !== $final_quiz_percentage ) {
-                echo esc_html( number_format_i18n( $final_quiz_percentage ) . '%' );
+        }
+    }
+
+    if ( null === $total_questions ) {
+        foreach ( array( 'question_count', 'count', 'total_questions', 'total', 'questions', 'total_points' ) as $meta_key ) {
+            if ( isset( $attempt_meta[ $meta_key ] ) && is_numeric( $attempt_meta[ $meta_key ] ) ) {
+                $total_questions = (int) round( floatval( $attempt_meta[ $meta_key ] ) );
+                break;
             }
-            ?>
-            </span>
-        </div>
-        <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
-            <?php esc_html_e( 'Evaluación Final', 'villegas-courses' ); ?>
-        </div>
-        <div class="wpProQuiz_pointsChart__subcaption" style="font-size: 12px; color: #666; text-align: center;">
-            <?php esc_html_e( 'Tu puntaje final', 'villegas-courses' ); ?>
+        }
+    }
+
+    $duration_seconds = null;
+    foreach ( array( 'time_spent', 'timespent', 'duration' ) as $time_key ) {
+        if ( isset( $attempt_meta[ $time_key ] ) && is_numeric( $attempt_meta[ $time_key ] ) ) {
+            $duration_seconds = (int) $attempt_meta[ $time_key ];
+            break;
+        }
+    }
+
+    if ( null !== $duration_seconds && $duration_seconds >= 0 ) {
+        $hours   = floor( $duration_seconds / HOUR_IN_SECONDS );
+        $minutes = floor( ( $duration_seconds % HOUR_IN_SECONDS ) / MINUTE_IN_SECONDS );
+        $seconds = $duration_seconds % MINUTE_IN_SECONDS;
+
+        if ( $hours > 0 ) {
+            $time_string = sprintf( '%02d:%02d:%02d', $hours, $minutes, $seconds );
+        } else {
+            $time_string = sprintf( '%02d:%02d', $minutes, $seconds );
+        }
+    }
+
+    if ( empty( $time_string ) && ! empty( $attempt_meta['time_formatted'] ) ) {
+        $time_string = (string) $attempt_meta['time_formatted'];
+    }
+
+    if ( ! $total_questions ) {
+        $total_questions = intval( $question_count );
+    }
+
+    if ( function_exists( 'learndash_get_course_certificate_link' ) && $course_id && $user_id ) {
+        $certificate_url = learndash_get_course_certificate_link( $course_id, $user_id );
+    }
+
+    if ( empty( $certificate_url ) && function_exists( 'learndash_get_certificate_link' ) && $quiz_id && $user_id ) {
+        $certificate_url = learndash_get_certificate_link( $quiz_id, $user_id );
+    }
+
+    $initial_percent = null === $first_quiz_percentage ? null : (float) $first_quiz_percentage;
+    $final_percent   = null === $final_quiz_percentage ? null : (float) $final_quiz_percentage;
+
+    $correct_answers_display = null !== $correct_answers ? $correct_answers : 0;
+    $total_questions_display = $total_questions ? $total_questions : 0;
+    $time_display            = $time_string ? $time_string : '—';
+    $result_date_display     = $result_date ? $result_date : '';
+    ?>
+    <div class="villegas-final-quiz-result">
+        <div id="quiz-card" class="villegas-final-card">
+
+            <div class="quiz-page-header">
+                <h3 class="quiz-subtitle"><?php esc_html_e( 'Resultados EvaluaciÃ³n Final', 'villegas-courses' ); ?></h3>
+                <h2 class="quiz-title"><?php echo esc_html( $course_title ); ?></h2>
+                <p class="quiz-date"><?php echo esc_html( $result_date_display ); ?></p>
+            </div>
+
+            <div class="ld-tabs">
+                <div class="learndash" id="learndash_post_<?php echo intval( $quiz_id ); ?>">
+                    <div class="learndash-wrapper">
+
+                        <div class="wpProQuiz_results">
+                            <hr class="quiz-separator" />
+
+                            <p class="quiz-summary">
+                                <span class="quiz-summary-correct"><?php echo esc_html( number_format_i18n( $correct_answers_display ) ); ?></span>
+                                <?php esc_html_e( 'de', 'villegas-courses' ); ?>
+                                <span class="quiz-summary-total"><?php echo esc_html( number_format_i18n( $total_questions_display ) ); ?></span>
+                                <?php esc_html_e( 'Preguntas respondieron correctamente', 'villegas-courses' ); ?>
+                            </p>
+
+                            <p class="quiz-time">
+                                <?php esc_html_e( 'Tu tiempo:', 'villegas-courses' ); ?>
+                                <span class="quiz-time-value"><?php echo esc_html( $time_display ); ?></span>
+                            </p>
+
+                            <div class="quiz-charts-wrapper">
+
+                                <div class="wpProQuiz_pointsChart villegas-donut villegas-donut--initial<?php echo null === $initial_percent ? ' wpProQuiz_pointsChart--empty' : ''; ?>" data-static-percent="<?php echo esc_attr( null === $initial_percent ? 0 : $initial_percent ); ?>">
+                                    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" aria-label="<?php esc_attr_e( 'EvaluaciÃ³n Inicial', 'villegas-courses' ); ?>">
+                                        <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke-width="4"></circle>
+                                        <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke-width="4" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
+                                    </svg>
+                                    <div class="wpProQuiz_pointsChart__label"><?php if ( null === $initial_percent ) { esc_html_e( 'Sin datos', 'villegas-courses' ); } ?></div>
+                                    <div class="wpProQuiz_pointsChart__caption"><?php esc_html_e( 'EvaluaciÃ³n Inicial', 'villegas-courses' ); ?></div>
+                                </div>
+
+                                <div class="quiz-score-divider quiz-score-divider--vertical"></div>
+                                <div class="quiz-score-divider quiz-score-divider--horizontal"></div>
+
+                                <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart villegas-donut villegas-donut--final" data-chart-role="live-user-score" data-static-percent="<?php echo esc_attr( null === $final_percent ? 0 : $final_percent ); ?>">
+                                    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" aria-label="<?php esc_attr_e( 'EvaluaciÃ³n Final', 'villegas-courses' ); ?>">
+                                        <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke-width="4"></circle>
+                                        <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke-width="4" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
+                                    </svg>
+                                    <div class="wpProQuiz_pointsChart__label"></div>
+                                    <div class="wpProQuiz_pointsChart__caption"><?php esc_html_e( 'EvaluaciÃ³n Final', 'villegas-courses' ); ?></div>
+                                </div>
+                            </div>
+
+                            <hr class="quiz-separator quiz-separator--bottom" />
+
+                            <div class="quiz-variation-wrapper">
+                                <div id="variacion-evaluacion" class="quiz-variation-content" data-course-url="<?php echo esc_url( $course_permalink ); ?>" data-certificate-url="<?php echo esc_url( $certificate_url ); ?>"></div>
+                            </div>
+
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 <?php else : ?>
@@ -386,7 +516,7 @@ if ( $is_enrolled_course && $course_url ) {
     $button_url   = $product_url;
 }
 
-if ( $button_label && $button_url ) :
+if ( ! $is_final_quiz && $button_label && $button_url ) :
     ?>
     <div style="text-align: center; margin-top: 12px;">
         <a class="wpProQuiz_pointsChart__cta" href="<?php echo esc_url( $button_url ); ?>" style="display: inline-block; padding: 10px 20px; background-color: black; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600;">
