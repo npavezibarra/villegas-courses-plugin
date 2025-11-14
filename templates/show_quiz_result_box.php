@@ -375,7 +375,7 @@ if ( $is_enrolled_course && $course_url ) {
     $button_url   = $product_url;
 }
 
-if ( $button_label && $button_url ) :
+if ( $button_label && $button_url && ! $is_final_quiz ) :
     ?>
     <div style="text-align: center; margin-top: 12px;">
         <a class="wpProQuiz_pointsChart__cta" href="<?php echo esc_url( $button_url ); ?>" style="display: inline-block; padding: 10px 20px; background-color: black; color: #fff; border-radius: 4px; text-decoration: none; font-weight: 600;">

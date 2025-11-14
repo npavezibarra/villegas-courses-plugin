@@ -6,6 +6,27 @@
     const $container = $('.wpProQuiz_content');
     if (!$container.length) return;
 
+    const $title = $header.find('h3').first();
+    const originalTitle = $title.text().trim();
+
+    function updateTitleForResults() {
+      if (!$title.length) return;
+
+      const current = $title.text().trim();
+
+      if (originalTitle === 'Evaluación Final' && !current.startsWith('Resultados')) {
+        $title.text(`Resultados ${originalTitle}`);
+      }
+    }
+
+    function resetTitle() {
+      if (!$title.length) return;
+
+      if (originalTitle && $title.text().trim() !== originalTitle) {
+        $title.text(originalTitle);
+      }
+    }
+
     const show = () => $header.stop(true, true).fadeIn(120);
     const hide = () => $header.stop(true, true).fadeOut(120);
 
@@ -18,6 +39,11 @@
         $container.find('.wpProQuiz_question:visible').length > 0;
 
       if (hasResults || hasIntro) {
+        if (hasResults) {
+          updateTitleForResults();
+        } else {
+          resetTitle();
+        }
         show();
       } else if (hasQuestions) {
         hide();
@@ -34,10 +60,12 @@
     $(document)
       .on('learndash-quiz-started', function () {
         // User clicked "Start" → enter question flow.
+        resetTitle();
         hide();
       })
       .on('learndash-quiz-finished', function () {
         // Results rendered → show again and stop observing further DOM swaps.
+        updateTitleForResults();
         show();
         if (observer) observer.disconnect();
       });

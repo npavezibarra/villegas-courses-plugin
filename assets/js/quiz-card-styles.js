@@ -5,16 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
       font-family: 'Arial', sans-serif;
       font-size: 24px;
       text-align: center;
-      margin-bottom: 15px;
+      margin-bottom: 0px;
       margin-top: 4px;
       font-weight: 600;
     }
 
     #quiz-card h3 {
       font-family: sans-serif;
-      font-size: 25px;
+      font-size: 18px;
       text-align: center;
       margin-bottom: 6px;
+      margin-top: 0px;
     }
 
     #quiz-card h4 {
