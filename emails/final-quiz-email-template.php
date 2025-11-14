@@ -32,6 +32,9 @@ function villegas_get_final_quiz_email_content( array $debug, WP_User $user ): a
 
     $course_title = $debug['course_title'] ?: ( $debug['quiz_title'] ?? '' );
     $quiz_title   = $debug['quiz_title'] ?: $course_title;
+    $quiz_id      = isset( $debug['quiz_id'] ) ? (int) $debug['quiz_id'] : 0;
+    $quiz_post_id = ! empty( $debug['quiz_post_id'] ) ? (int) $debug['quiz_post_id'] : 0;
+    $course_id    = ! empty( $debug['course_id'] ) ? (int) $debug['course_id'] : 0;
 
     $email_file = plugin_dir_path( __FILE__ ) . 'final-quiz-email.php';
     if ( file_exists( $email_file ) ) {
@@ -40,15 +43,165 @@ function villegas_get_final_quiz_email_content( array $debug, WP_User $user ): a
         $email_body = '<p>Has finalizado la Evaluación Final.</p>';
     }
 
+    $default_background_image_url = 'https://elvillegas.cl/wp-content/uploads/2025/04/default-bg.jpg';
+    $background_image_url         = '';
+
+    if ( $quiz_post_id ) {
+        $background_image_id = get_post_meta( $quiz_post_id, '_quiz_style_image', true );
+
+        if ( $background_image_id ) {
+            $background_image_url = wp_get_attachment_url( (int) $background_image_id );
+        }
+    }
+
+    if ( ! $background_image_url && $quiz_id && (int) $quiz_id !== $quiz_post_id ) {
+        $background_image_id = get_post_meta( (int) $quiz_id, '_quiz_style_image', true );
+
+        if ( $background_image_id ) {
+            $background_image_url = wp_get_attachment_url( (int) $background_image_id );
+        }
+    }
+
+    $background_image_url = function_exists( 'villegas_normalize_email_asset_url' )
+        ? villegas_normalize_email_asset_url( $background_image_url ?: '', $default_background_image_url )
+        : ( $background_image_url ?: $default_background_image_url );
+
+    $background_color          = '#f6f6f6';
+    $background_image_attr_url = $background_image_url ? esc_url( $background_image_url ) : '';
+
+    $background_style_rules = [ 'background-color:' . $background_color . ';' ];
+
+    if ( $background_image_attr_url ) {
+        $background_style_rules[] = "background-image:url('{$background_image_attr_url}');";
+        $background_style_rules[] = 'background-repeat:no-repeat;';
+        $background_style_rules[] = 'background-position:center center;';
+        $background_style_rules[] = 'background-size:cover;';
+    }
+
+    $wrapper_background_style = implode( '', $background_style_rules );
+    $wrapper_div_style        = $wrapper_background_style . 'padding:32px 0;';
+
+    $mso_background_block = '';
+
+    if ( $background_image_attr_url ) {
+        $mso_background_block  = '<!--[if gte mso 9]>'; 
+        $mso_background_block .= '<v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">';
+        $mso_background_block .= '<v:fill type="frame" src="' . $background_image_attr_url . '" color="' . esc_attr( $background_color ) . '" />';
+        $mso_background_block .= '</v:background>';
+        $mso_background_block .= '<![endif]-->';
+    }
+
+    $logo_candidates = [
+        'https://elvillegas.cl/wp-content/plugins/villegas-courses-plugin/assets/jpg/academia-email-logo.jpeg',
+        'https://raw.githubusercontent.com/npavezibarra/villegas-courses-plugin/main/assets/jpg/academia-email-logo.jpeg',
+    ];
+
+    $logo_url = '';
+
+    if ( function_exists( 'wp_remote_head' ) ) {
+        foreach ( $logo_candidates as $candidate_url ) {
+            $response = wp_remote_head( $candidate_url, [ 'timeout' => 5 ] );
+
+            if ( is_wp_error( $response ) ) {
+                continue;
+            }
+
+            $status_code = (int) wp_remote_retrieve_response_code( $response );
+
+            if ( $status_code >= 200 && $status_code < 400 ) {
+                $logo_url = $candidate_url;
+                break;
+            }
+        }
+    }
+
+    if ( ! $logo_url ) {
+        $logo_url = reset( $logo_candidates );
+    }
+
+    if ( ! $logo_url ) {
+        $logo_url = get_site_icon_url( 192 );
+    }
+
+    $logo_image_html = '';
+
+    if ( $logo_url ) {
+        $logo_image_html = '<img src="' . esc_url( $logo_url ) . '" alt="Academia Villegas" style="width:100%;max-width:720px;height:200px;object-fit:cover;object-position:center;display:block;margin:0 auto;border-top-left-radius:8px;border-top-right-radius:8px;">';
+    }
+
+    $completion_timestamp = ! empty( $debug['final_attempt']['timestamp'] ) ? (int) $debug['final_attempt']['timestamp'] : current_time( 'timestamp' );
+    $completion_date      = date_i18n( get_option( 'date_format' ), $completion_timestamp );
+
     $first_display = null !== $first_score ? Villegas_Quiz_Stats::format_percentage( (float) $first_score ) : null;
     $final_display = null !== $final_score ? Villegas_Quiz_Stats::format_percentage( (float) $final_score ) : null;
 
+    $initial_value       = null !== $first_score ? (float) $first_score : 0.0;
+    $initial_display_val = null !== $first_display ? (float) $first_display : null;
+    $final_value         = null !== $final_score ? (float) $final_score : 0.0;
+    $final_display_val   = null !== $final_display ? (float) $final_display : null;
+
+    $initial_chart_url = function_exists( 'villegas_generate_quickchart_url' )
+        ? villegas_generate_quickchart_url( $initial_value, $initial_display_val )
+        : '';
+    $final_chart_url   = function_exists( 'villegas_generate_quickchart_url' )
+        ? villegas_generate_quickchart_url( $final_value, $final_display_val )
+        : '';
+
+    $initial_percentage_text = null !== $first_display
+        ? sprintf( '%d%%', (int) $first_display )
+        : __( 'Sin datos', 'villegas-courses' );
+    $final_percentage_text   = null !== $final_display
+        ? sprintf( '%d%%', (int) $final_display )
+        : __( 'Sin datos', 'villegas-courses' );
+
+    $cta_message = __( 'Sigue reforzando tus aprendizajes revisando el contenido del curso.', 'villegas-courses' );
+
+    $course_url = $course_id ? get_permalink( $course_id ) : home_url( '/' );
+
+    $course_price_type = $course_id && function_exists( 'learndash_get_setting' )
+        ? learndash_get_setting( $course_id, 'course_price_type' )
+        : '';
+
+    $is_free_course = in_array( $course_price_type, [ 'free', 'open' ], true );
+    $has_access     = $course_id ? Villegas_Course::user_has_access( $course_id, $user->ID ) : false;
+
+    $button_label = __( 'Ver curso', 'villegas-courses' );
+    $button_url   = $course_url;
+    $button_note  = __( 'Revisa nuevamente las lecciones y recursos para consolidar tu aprendizaje.', 'villegas-courses' );
+
+    if ( ! $is_free_course && ! $has_access ) {
+        $product_id = $course_id ? Villegas_Course::get_related_product_id( $course_id ) : 0;
+
+        if ( $product_id && function_exists( 'wc_get_checkout_url' ) ) {
+            $button_url = add_query_arg( 'add-to-cart', $product_id, wc_get_checkout_url() );
+        } elseif ( $product_id ) {
+            $button_url = get_permalink( $product_id );
+        } else {
+            $button_url = home_url( '/courses/' );
+        }
+
+        $button_label = __( 'Comprar curso', 'villegas-courses' );
+        $button_note  = __( 'Adquiere el curso para volver a revisar las lecciones y mejorar tus resultados.', 'villegas-courses' );
+    }
+
     $replacements = [
-        '{{user_name}}'              => $user->display_name,
-        '{{course_name}}'            => $course_title,
-        '{{quiz_name}}'              => $quiz_title,
-        '{{first_quiz_percentage}}'  => null !== $first_display ? $first_display : __( 'Sin datos', 'villegas-courses' ),
-        '{{final_quiz_percentage}}'  => null !== $final_display ? $final_display : __( 'Sin datos', 'villegas-courses' ),
+        '{{background_color}}'        => esc_attr( $background_color ),
+        '{{background_image_url}}'    => $background_image_attr_url,
+        '{{wrapper_background_style}}'=> esc_attr( $wrapper_background_style ),
+        '{{wrapper_div_style}}'       => esc_attr( $wrapper_div_style ),
+        '{{mso_background_block}}'    => $mso_background_block,
+        '{{logo_image}}'              => $logo_image_html,
+        '{{completion_date}}'         => esc_html( $completion_date ),
+        '{{user_name}}'               => esc_html( $user->display_name ),
+        '{{quiz_name}}'               => esc_html( $quiz_title ),
+        '{{initial_chart_url}}'       => esc_url( $initial_chart_url ),
+        '{{final_chart_url}}'         => esc_url( $final_chart_url ),
+        '{{initial_percentage}}'      => esc_html( $initial_percentage_text ),
+        '{{final_percentage}}'        => esc_html( $final_percentage_text ),
+        '{{cta_message}}'             => esc_html( $cta_message ),
+        '{{button_url}}'              => esc_url( $button_url ),
+        '{{button_label}}'            => esc_html( $button_label ),
+        '{{button_note}}'             => esc_html( $button_note ),
     ];
 
     $body = strtr( $email_body, $replacements );
