@@ -53,8 +53,22 @@ class Villegas_Quiz_Emails {
             $activity->activity_id
         ) );
 
+        $percentage_display = 'None';
+
+        if ( null !== $percentage ) {
+            $normalized = max( 0, min( 100, (float) $percentage ) );
+
+            if ( class_exists( 'Villegas_Quiz_Stats' ) ) {
+                $normalized = Villegas_Quiz_Stats::format_percentage( $normalized );
+            } else {
+                $normalized = (int) round( $normalized );
+            }
+
+            $percentage_display = sprintf( '%d%%', $normalized );
+        }
+
         return [
-            'percentage'  => $percentage !== null ? intval( $percentage ) . '%' : 'None',
+            'percentage'  => $percentage_display,
             'date'        => date_i18n( get_option( 'date_format' ) . ' H:i', $activity->activity_completed ),
             'activity_id' => intval( $activity->activity_id ),
             'timestamp'   => $activity->activity_completed ? (int) $activity->activity_completed : null,
