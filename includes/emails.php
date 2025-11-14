@@ -394,7 +394,7 @@ if ( ! function_exists( 'villegas_get_latest_quiz_attempt' ) ) {
             . " WHERE ua.user_id = %d"
             . "   AND ua.activity_type = 'quiz'"
             . "   AND ua.activity_completed IS NOT NULL"
-            . "   AND ua.activity_post_id = %d"
+            . "   AND ua.post_id = %d"
             . " ORDER BY ua.activity_completed DESC"
             . " LIMIT 1",
             "SELECT ua.activity_id, ua.activity_completed"
@@ -668,31 +668,84 @@ if ( ! function_exists( 'villegas_get_quiz_debug_data' ) ) {
 }
 
 require_once plugin_dir_path( __FILE__ ) . '../emails/first-quiz-email.php';
-require_once plugin_dir_path( __FILE__ ) . '../emails/final-quiz-email.php';
+require_once plugin_dir_path( __FILE__ ) . '../emails/final-quiz-email-template.php';
 
 if ( ! function_exists( 'villegas_quiz_completed_handler' ) ) {
+    /**
+     * Handle LearnDash quiz completion and trigger the appropriate email flow.
+     *
+     * @param array      $quiz_data LearnDash quiz result payload.
+     * @param int|WP_User $user     User identifier or object supplied by LearnDash.
+     */
     function villegas_quiz_completed_handler( $quiz_data, $user ) {
-        if ( ! ( $user instanceof WP_User ) ) {
+        if ( empty( $quiz_data ) || empty( $user ) ) {
+            error_log( '[FinalQuizEmail] Missing quiz_data or user. Aborting.' );
             return;
         }
 
-        $debug = villegas_get_quiz_debug_data( $quiz_data, $user );
+        error_log( '[FinalQuizEmail] villegas_quiz_completed_handler START' );
+        error_log( '[FinalQuizEmail] quiz_data: ' . print_r( $quiz_data, true ) );
 
-        if ( $debug['is_first_quiz'] ) {
-            $email = villegas_get_first_quiz_email_content( $quiz_data, $user );
-        } elseif ( $debug['is_final_quiz'] ) {
-            $email = villegas_get_final_quiz_email_content( $quiz_data, $user );
+        $user_obj = $user instanceof WP_User ? $user : null;
+        $user_id  = $user_obj ? (int) $user_obj->ID : (int) $user;
+
+        if ( ! $user_obj && $user_id ) {
+            $user_obj = get_userdata( $user_id );
+        }
+
+        if ( ! $user_obj || ! $user_id ) {
+            error_log( '[FinalQuizEmail] Could not resolve WP_User instance. Aborting.' );
+            return;
+        }
+
+        $debug = villegas_get_quiz_debug_data( $quiz_data, $user_obj );
+
+        if ( ! empty( $debug['is_first_quiz'] ) ) {
+            $email = villegas_get_first_quiz_email_content( $quiz_data, $user_obj );
+        } elseif ( ! empty( $debug['is_final_quiz'] ) ) {
+            error_log( '[FinalQuizEmail] This quiz is detected as FINAL. Preparing email...' );
+            $email = villegas_get_final_quiz_email_content( $debug, $user_obj );
         } else {
+            error_log( '[FinalQuizEmail] Quiz is neither first nor final. Skipping email.' );
             return;
         }
 
         if ( empty( $email['subject'] ) || empty( $email['body'] ) ) {
+            error_log( '[FinalQuizEmail] Email payload missing subject or body. Aborting send.' );
+            return;
+        }
+
+        if ( ! empty( $debug['is_final_quiz'] ) ) {
+            error_log( sprintf( '[FinalQuizEmail] Email percentages: initial=%s final=%s', $email['initial_percentage'] ?? 'N/A', $email['final_percentage'] ?? 'N/A' ) );
+
+            $recipient = $user_obj->user_email;
+
+            if ( empty( $recipient ) ) {
+                error_log( '[FinalQuizEmail] User email missing. Aborting send.' );
+                return;
+            }
+
+            error_log( '[FinalQuizEmail] Sending email to ' . $recipient . ' with subject "' . $email['subject'] . '"' );
+
+            $mail_sent = wp_mail(
+                $recipient,
+                $email['subject'],
+                $email['body'],
+                [ 'Content-Type: text/html; charset=UTF-8' ]
+            );
+
+            if ( $mail_sent ) {
+                error_log( '[FinalQuizEmail] wp_mail result: SUCCESS' );
+            } else {
+                error_log( '[FinalQuizEmail] wp_mail result: FAILURE' );
+            }
+
             return;
         }
 
         $admin_email = get_option( 'admin_email' );
 
-        if ( $admin_email && ! empty( $user->user_email ) && 0 === strcasecmp( $admin_email, $user->user_email ) ) {
+        if ( $admin_email && ! empty( $user_obj->user_email ) && 0 === strcasecmp( $admin_email, $user_obj->user_email ) ) {
             $admin_email = '';
         }
 

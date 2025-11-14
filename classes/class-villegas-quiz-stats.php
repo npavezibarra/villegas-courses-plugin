@@ -133,7 +133,7 @@ class Villegas_Quiz_Stats {
             $wpdb->prepare(
                 "SELECT activity_meta
                  FROM {$table}
-                 WHERE user_id = %d AND activity_type = 'quiz' AND activity_post_id = %d
+                 WHERE user_id = %d AND activity_type = 'quiz' AND post_id = %d
                  ORDER BY activity_updated DESC LIMIT 1",
                 $user_id,
                 $quiz_id

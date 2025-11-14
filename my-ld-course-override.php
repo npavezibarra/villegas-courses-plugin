@@ -470,7 +470,7 @@ if ( is_singular( 'sfwd-quiz' ) ) {
     $type      = $analytics->isFirstQuiz() ? 'first' : 'final';
 
     $first_quiz_nonce = wp_create_nonce( 'villegas_send_first_quiz_email' );
-    $final_quiz_nonce = wp_create_nonce( 'enviar_correo_final_quiz' );
+    $final_quiz_nonce = wp_create_nonce( 'villegas_final_quiz_email' );
 
 
     $quiz_description_raw = get_post_field('post_content', $quiz_id);
@@ -480,6 +480,7 @@ if ( is_singular( 'sfwd-quiz' ) ) {
         'quizId'          => $quiz_id,
         'userId'          => get_current_user_id(),
         'courseName'      => $course_title,
+        'courseId'        => $course_id ? (int) $course_id : 0,
         'type'            => $type,
         'description'     => $quiz_description,
         'firstQuizNonce'  => $first_quiz_nonce,
@@ -594,54 +595,34 @@ function el_villegas_override_single_sfwd_quiz($template) {
 /* --------------------------------------------------------------------------
  *  FINAL QUIZ – ENVÍO DE CORREO CON PLANTILLA (una vez por intento)
  * --------------------------------------------------------------------------*/
-add_action( 'wp_ajax_enviar_correo_final_quiz', 'handle_enviar_correo_final_quiz' );
+add_action( 'wp_ajax_enviar_correo_final_quiz', 'enviar_correo_final_quiz_handler' );
+add_action( 'wp_ajax_nopriv_enviar_correo_final_quiz', 'enviar_correo_final_quiz_handler' );
 
-function handle_enviar_correo_final_quiz() {
-        check_ajax_referer( 'enviar_correo_final_quiz', 'nonce' );
+function enviar_correo_final_quiz_handler() {
+        error_log( '[FinalQuizEmail] AJAX handler START' );
+        check_ajax_referer( 'villegas_final_quiz_email', 'nonce' );
 
-        if ( ! is_user_logged_in() ) {
-                wp_send_json_error( 'No autorizado' );
-        }
+        $first_percentage = isset( $_POST['first_quiz_percentage'] ) ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) ) : 0;
+        $final_percentage = isset( $_POST['final_quiz_percentage'] ) ? intval( wp_unslash( $_POST['final_quiz_percentage'] ) ) : 0;
+        $quiz_id          = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
+        $course_id        = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
+        $user_id          = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
 
-        $req             = wp_unslash( $_POST );
-        $quiz_id         = isset( $req['quiz_id'] ) ? (int) $req['quiz_id'] : 0;
-        $requested_user  = isset( $req['user_id'] ) ? (int) $req['user_id'] : 0;
-        $current_user_id = get_current_user_id();
-
-        if ( $requested_user && $requested_user !== $current_user_id ) {
-                wp_send_json_error( 'Usuario no autorizado' );
-        }
-
-        $user_id      = $current_user_id;
-        $quiz_percent = isset( $req['quiz_percentage'] ) ? (float) $req['quiz_percentage'] : null;
-
-        if ( ! $quiz_id || ! $user_id ) {
-                wp_send_json_error( 'Datos incompletos' );
-        }
-
-        global $wpdb;
-
-        $attempt = $wpdb->get_row(
-                $wpdb->prepare(
-                        "SELECT activity_id, activity_completed
-                         FROM {$wpdb->prefix}learndash_user_activity
-                         WHERE user_id = %d AND post_id = %d AND activity_type = 'quiz'
-                         ORDER BY activity_completed DESC LIMIT 1",
-                        $user_id,
-                        $quiz_id
-                ),
-                ARRAY_A
+        error_log(
+                '[FinalQuizEmail] AJAX data: ' . print_r(
+                        array(
+                                'first_quiz_percentage' => $first_percentage,
+                                'final_quiz_percentage' => $final_percentage,
+                                'quiz_id'               => $quiz_id,
+                                'course_id'             => $course_id,
+                                'user_id'               => $user_id,
+                        ),
+                        true
+                )
         );
 
-        if ( ! $attempt || empty( $attempt['activity_id'] ) ) {
-                wp_send_json_error( 'Intento no encontrado' );
-        }
-
-        $activity_id = (int) $attempt['activity_id'];
-        $key         = "villegas_final_quiz_email_{$activity_id}";
-
-        if ( get_transient( $key ) ) {
-                wp_send_json_success( 'Correo ya enviado para este intento' );
+        if ( ! $user_id || ! $quiz_id ) {
+                wp_send_json_error( 'Datos faltantes' );
         }
 
         $user = get_userdata( $user_id );
@@ -650,31 +631,53 @@ function handle_enviar_correo_final_quiz() {
                 wp_send_json_error( 'Usuario no encontrado' );
         }
 
-        $email = villegas_get_final_quiz_email_content(
-                [
-                        'quiz'       => $quiz_id,
-                        'percentage' => $quiz_percent,
-                ],
-                $user
-        );
+        $user_email  = $user->user_email;
+        $user_name   = $user->display_name;
+        $course_name = '';
 
-        if ( empty( $email['subject'] ) || empty( $email['body'] ) ) {
-                wp_send_json_error( 'Plantilla de correo no disponible' );
+        if ( $course_id ) {
+                $course_name = get_the_title( $course_id );
         }
 
-        $sent = wp_mail(
-                $user->user_email,
-                $email['subject'],
-                $email['body'],
-                [ 'Content-Type: text/html; charset=UTF-8' ]
+        if ( ! $course_name ) {
+                $course_name = get_the_title( $quiz_id );
+        }
+
+        $email_file = plugin_dir_path( __FILE__ ) . 'emails/final-quiz-email.php';
+
+        if ( file_exists( $email_file ) ) {
+                $email_content = file_get_contents( $email_file );
+        } else {
+                $email_content = '<p>Has finalizado la Evaluación Final.</p>';
+        }
+
+        $replacements = array(
+                '{{user_name}}'             => esc_html( $user_name ),
+                '{{course_name}}'           => esc_html( $course_name ),
+                '{{first_quiz_percentage}}' => esc_html( $first_percentage ),
+                '{{final_quiz_percentage}}' => esc_html( $final_percentage ),
         );
+
+        $email_content = strtr( $email_content, $replacements );
+
+        $subject = __( 'Has finalizado la Evaluación Final', 'villegas-courses' );
+        $headers = array( 'Content-Type: text/html; charset=UTF-8' );
+
+        error_log( '[FinalQuizEmail] AJAX about to call wp_mail()' );
+        error_log( '[FinalQuizEmail] To: ' . $user_email . ' | Subject: ' . $subject );
+        $sent = wp_mail( $user_email, $subject, $email_content, $headers );
 
         if ( $sent ) {
-                set_transient( $key, 1, HOUR_IN_SECONDS );
-                wp_send_json_success( 'Correo enviado' );
+                error_log( '[FinalQuizEmail] AJAX wp_mail() TRUE' );
+        } else {
+                error_log( '[FinalQuizEmail] AJAX wp_mail() FALSE' );
         }
 
-        wp_send_json_error( 'Error al enviar el correo' );
+        if ( $sent ) {
+                wp_send_json_success( 'Correo de Evaluación Final enviado' );
+        }
+
+        wp_send_json_error( 'Error al enviar el correo de Evaluación Final' );
 }
 
 
