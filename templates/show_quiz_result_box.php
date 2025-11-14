@@ -468,235 +468,291 @@ if ( ! $quiz->isHideResultPoints() ) {
     <?php endif; ?>
     <script>
         (function() {
-            function clamp(value, min, max) {
-                return Math.min(Math.max(value, min), max);
-            }
-
-            function parsePercentage(messageEl) {
-                if (!messageEl) {
-                    return null;
+            try {
+                function clamp(value, min, max) {
+                    return Math.min(Math.max(value, min), max);
                 }
 
-                var spans = messageEl.querySelectorAll('span');
-                var percentText = '';
+                function toArray(nodeList) {
+                    if (!nodeList) {
+                        return [];
+                    }
 
-                if (spans.length >= 3) {
-                    percentText = spans[2].textContent || '';
-                } else {
-                    percentText = messageEl.textContent || '';
+                    return Array.prototype.slice.call(nodeList);
                 }
 
-                var match = percentText.match(/-?\d+(?:[\.,]\d+)?/);
+                function hasDataFlag(element) {
+                    if (!element) {
+                        return false;
+                    }
 
-                if (!match) {
-                    return null;
+                    if (element.dataset && typeof element.dataset.chartInitialized !== 'undefined') {
+                        return element.dataset.chartInitialized === 'true';
+                    }
+
+                    return element.getAttribute('data-chart-initialized') === 'true';
                 }
 
-                var normalized = match[0].replace(',', '.');
-                var value = parseFloat(normalized);
-
-                if (isNaN(value)) {
-                    return null;
-                }
-
-                return clamp(value, 0, 100);
-            }
-
-            function drawChart(svg, percent, labelEl) {
-                if (!svg) {
-                    return;
-                }
-
-                var progressCircle = svg.querySelector('.wpProQuiz_pointsChart__progress');
-
-                if (!progressCircle) {
-                    return;
-                }
-
-                percent = clamp(percent, 0, 100);
-
-                var radius = parseFloat(progressCircle.getAttribute('r'));
-                var circumference = 2 * Math.PI * radius;
-                var offset = circumference * (1 - percent / 100);
-
-                progressCircle.setAttribute('stroke-dasharray', circumference + ' ' + circumference);
-                progressCircle.setAttribute('stroke-dashoffset', offset);
-
-                if (labelEl) {
-                    labelEl.textContent = percent.toFixed(0) + '%';
-                }
-            }
-
-            function updateVariationMessage(initialPercent, finalPercent) {
-                var variationDiv = document.getElementById('variacion-evaluacion');
-
-                if (!variationDiv) {
-                    return;
-                }
-
-                if (
-                    typeof initialPercent !== 'number' || isNaN(initialPercent) ||
-                    typeof finalPercent !== 'number' || isNaN(finalPercent)
-                ) {
-                    variationDiv.innerHTML = '<p class="text-red-600">Error al cargar puntajes.</p>';
-                    return;
-                }
-
-                var variation = finalPercent - initialPercent;
-                var absVariation = Math.abs(variation).toFixed(0);
-
-                var message = '';
-                var buttonText = '';
-                var buttonClass = '';
-                var messageClass = 'text-gray-800';
-
-                if (variation > 0) {
-                    message =
-                        '¡Felicidades! Obtuviste una variación positiva de ' +
-                        '<span class="font-bold text-green-600">' + absVariation + '%</span>. ' +
-                        'Has progresado en el curso.';
-                    buttonText = 'VER CERTIFICADO';
-                    buttonClass = 'bg-green-600 hover:bg-green-700';
-                    messageClass = 'text-green-800';
-                } else {
-                    message =
-                        '¡Bien hecho por completar el curso! La variación fue de ' +
-                        '<span class="font-bold text-red-600">' + absVariation + '%</span>. ' +
-                        'Te aconsejamos retomar el curso para consolidar tus conocimientos.';
-                    buttonText = 'VER CURSO';
-                    buttonClass = 'bg-black hover:bg-gray-800';
-                    messageClass = 'text-gray-800';
-                }
-
-                var courseUrl = (typeof window.villegasQuizCourseUrl !== 'undefined')
-                    ? window.villegasQuizCourseUrl
-                    : '#';
-
-                variationDiv.innerHTML = ''
-                    + '<p class="' + messageClass + ' text-lg font-medium mb-4 text-center max-w-lg">'
-                    + message
-                    + '</p>'
-                    + '<a href="' + courseUrl + '"'
-                    +    ' class="' + buttonClass + ' text-white font-semibold py-3 px-8 rounded-lg shadow-lg'
-                    +           ' transition duration-300 transform hover:scale-[1.02] active:scale-[0.98]">'
-                    +    buttonText
-                    + '</a>';
-            }
-
-            function setupLiveCharts(messageEl) {
-                if (!messageEl) {
-                    return;
-                }
-
-                var liveCharts = document.querySelectorAll('.wpProQuiz_pointsChart[data-chart-role="live-user-score"]');
-
-                liveCharts.forEach(function(chartContainer) {
-                    if (!chartContainer || chartContainer.dataset.chartInitialized) {
+                function setDataFlag(element) {
+                    if (!element) {
                         return;
                     }
 
-                    var svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
-                    var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
+                    if (element.dataset) {
+                        element.dataset.chartInitialized = 'true';
+                    } else {
+                        element.setAttribute('data-chart-initialized', 'true');
+                    }
+                }
 
+                function getDatasetValue(element, key) {
+                    if (!element) {
+                        return '';
+                    }
+
+                    if (element.dataset && typeof element.dataset[key] !== 'undefined') {
+                        return element.dataset[key];
+                    }
+
+                    return element.getAttribute('data-' + key.replace(/[A-Z]/g, function(match) {
+                        return '-' + match.toLowerCase();
+                    })) || '';
+                }
+
+                function parsePercentage(messageEl) {
+                    if (!messageEl) {
+                        return null;
+                    }
+
+                    var spans = toArray(messageEl.querySelectorAll('span'));
+                    var percentText = '';
+
+                    if (spans.length >= 3) {
+                        percentText = spans[2].textContent || '';
+                    } else {
+                        percentText = messageEl.textContent || '';
+                    }
+
+                    var match = percentText.match(/-?\d+(?:[\.,]\d+)?/);
+
+                    if (!match) {
+                        return null;
+                    }
+
+                    var normalized = match[0].replace(',', '.');
+                    var value = parseFloat(normalized);
+
+                    if (isNaN(value)) {
+                        return null;
+                    }
+
+                    return clamp(value, 0, 100);
+                }
+
+                function drawChart(svg, percent, labelEl) {
                     if (!svg) {
                         return;
                     }
 
-                    chartContainer.dataset.chartInitialized = 'true';
+                    var progressCircle = svg.querySelector('.wpProQuiz_pointsChart__progress');
 
-                    var updateChart = function() {
-                        var percent = parsePercentage(messageEl);
+                    if (!progressCircle) {
+                        return;
+                    }
 
-                        if (percent === null) {
+                    percent = clamp(percent, 0, 100);
+
+                    var radius = parseFloat(progressCircle.getAttribute('r'));
+                    var circumference = 2 * Math.PI * radius;
+                    var offset = circumference * (1 - percent / 100);
+
+                    progressCircle.setAttribute('stroke-dasharray', circumference + ' ' + circumference);
+                    progressCircle.setAttribute('stroke-dashoffset', offset);
+
+                    if (labelEl) {
+                        labelEl.textContent = percent.toFixed(0) + '%';
+                    }
+                }
+
+                function updateVariationMessage(initialPercent, finalPercent) {
+                    var variationDiv = document.getElementById('variacion-evaluacion');
+
+                    if (!variationDiv) {
+                        return;
+                    }
+
+                    if (
+                        typeof initialPercent !== 'number' || isNaN(initialPercent) ||
+                        typeof finalPercent !== 'number' || isNaN(finalPercent)
+                    ) {
+                        variationDiv.innerHTML = '<p class="text-red-600">Error al cargar puntajes.</p>';
+                        return;
+                    }
+
+                    var variation = finalPercent - initialPercent;
+                    var absVariation = Math.abs(variation).toFixed(0);
+
+                    var message = '';
+                    var buttonText = '';
+                    var buttonClass = '';
+                    var messageClass = 'text-gray-800';
+
+                    if (variation > 0) {
+                        message =
+                            '¡Felicidades! Obtuviste una variación positiva de ' +
+                            '<span class="font-bold text-green-600">' + absVariation + '%</span>. ' +
+                            'Has progresado en el curso.';
+                        buttonText = 'VER CERTIFICADO';
+                        buttonClass = 'bg-green-600 hover:bg-green-700';
+                        messageClass = 'text-green-800';
+                    } else {
+                        message =
+                            '¡Bien hecho por completar el curso! La variación fue de ' +
+                            '<span class="font-bold text-red-600">' + absVariation + '%</span>. ' +
+                            'Te aconsejamos retomar el curso para consolidar tus conocimientos.';
+                        buttonText = 'VER CURSO';
+                        buttonClass = 'bg-black hover:bg-gray-800';
+                        messageClass = 'text-gray-800';
+                    }
+
+                    var courseUrl = (typeof window.villegasQuizCourseUrl !== 'undefined')
+                        ? window.villegasQuizCourseUrl
+                        : '#';
+
+                    variationDiv.innerHTML = ''
+                        + '<p class="' + messageClass + ' text-lg font-medium mb-4 text-center max-w-lg">'
+                        + message
+                        + '</p>'
+                        + '<a href="' + courseUrl + '"'
+                        +    ' class="' + buttonClass + ' text-white font-semibold py-3 px-8 rounded-lg shadow-lg'
+                        +           ' transition duration-300 transform hover:scale-[1.02] active:scale-[0.98]">'
+                        +    buttonText
+                        + '</a>';
+                }
+
+                function setupLiveCharts(messageEl) {
+                    if (!messageEl) {
+                        return;
+                    }
+
+                    var liveCharts = toArray(document.querySelectorAll('.wpProQuiz_pointsChart[data-chart-role="live-user-score"]'));
+
+                    liveCharts.forEach(function(chartContainer) {
+                        if (!chartContainer || hasDataFlag(chartContainer)) {
                             return;
                         }
 
-                        drawChart(svg, percent, labelEl);
+                        var svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
+                        var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
 
-                        var labelText = percent.toFixed(0) + '%';
-                        var chartTitle = chartContainer.dataset.chartTitle || '';
+                        if (!svg) {
+                            return;
+                        }
+
+                        setDataFlag(chartContainer);
+
+                        var updateChart = function() {
+                            var percent = parsePercentage(messageEl);
+
+                            if (percent === null) {
+                                return;
+                            }
+
+                            drawChart(svg, percent, labelEl);
+
+                            var labelText = percent.toFixed(0) + '%';
+                            var chartTitle = getDatasetValue(chartContainer, 'chartTitle');
+
+                            if (chartTitle) {
+                                svg.setAttribute('aria-label', chartTitle + ' ' + labelText);
+                            } else {
+                                svg.setAttribute('aria-label', labelText + ' quiz score');
+                            }
+
+                            var initialChart = document.querySelector('.wpProQuiz_pointsChart.villegas-donut--initial');
+
+                            if (initialChart) {
+                                var initialAttrRaw = getDatasetValue(initialChart, 'staticPercent');
+                                var initialAttr = parseFloat(initialAttrRaw);
+
+                                if (!isNaN(initialAttr)) {
+                                    updateVariationMessage(initialAttr, percent);
+                                }
+                            }
+                        };
+
+                        updateChart();
+
+                        if (typeof MutationObserver === 'function') {
+                            var observer = new MutationObserver(function() {
+                                updateChart();
+                            });
+
+                            observer.observe(messageEl, {
+                                childList: true,
+                                characterData: true,
+                                subtree: true
+                            });
+                        }
+                    });
+                }
+
+                function initializeStaticCharts() {
+                    var staticCharts = toArray(document.querySelectorAll('.wpProQuiz_pointsChart[data-static-percent]'));
+
+                    staticCharts.forEach(function(chartContainer) {
+                        if (hasDataFlag(chartContainer)) {
+                            return;
+                        }
+
+                        var svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
+                        var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
+
+                        if (!svg) {
+                            return;
+                        }
+
+                        var percentRaw = getDatasetValue(chartContainer, 'staticPercent');
+                        var percentAttr = parseFloat(percentRaw);
+
+                        if (isNaN(percentAttr)) {
+                            return;
+                        }
+
+                        setDataFlag(chartContainer);
+
+                        drawChart(svg, percentAttr, labelEl);
+
+                        var labelText = clamp(percentAttr, 0, 100).toFixed(0) + '%';
+                        var chartTitle = getDatasetValue(chartContainer, 'chartTitle');
 
                         if (chartTitle) {
                             svg.setAttribute('aria-label', chartTitle + ' ' + labelText);
                         } else {
                             svg.setAttribute('aria-label', labelText + ' quiz score');
                         }
+                    });
+                }
 
-                        var initialChart = document.querySelector('.wpProQuiz_pointsChart.villegas-donut--initial');
+                var initializeCharts = function() {
+                    var messageEls = toArray(document.querySelectorAll('.wpProQuiz_points.wpProQuiz_points--message'));
 
-                        if (initialChart) {
-                            var initialAttr = parseFloat(initialChart.dataset.staticPercent);
-
-                            if (!isNaN(initialAttr)) {
-                                updateVariationMessage(initialAttr, percent);
-                            }
-                        }
-                    };
-
-                    updateChart();
-
-                    var observer = new MutationObserver(function() {
-                        updateChart();
+                    messageEls.forEach(function(messageEl) {
+                        setupLiveCharts(messageEl);
                     });
 
-                    observer.observe(messageEl, {
-                        childList: true,
-                        characterData: true,
-                        subtree: true
-                    });
-                });
-            }
+                    initializeStaticCharts();
+                };
 
-            function initializeStaticCharts() {
-                var staticCharts = document.querySelectorAll('.wpProQuiz_pointsChart[data-static-percent]');
-
-                staticCharts.forEach(function(chartContainer) {
-                    if (chartContainer.dataset.chartInitialized) {
-                        return;
-                    }
-
-                    var svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
-                    var labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
-
-                    if (!svg) {
-                        return;
-                    }
-
-                    var percentAttr = parseFloat(chartContainer.dataset.staticPercent);
-
-                    if (isNaN(percentAttr)) {
-                        return;
-                    }
-
-                    chartContainer.dataset.chartInitialized = 'true';
-
-                    drawChart(svg, percentAttr, labelEl);
-
-                    var labelText = clamp(percentAttr, 0, 100).toFixed(0) + '%';
-                    var chartTitle = chartContainer.dataset.chartTitle || '';
-
-                    if (chartTitle) {
-                        svg.setAttribute('aria-label', chartTitle + ' ' + labelText);
-                    } else {
-                        svg.setAttribute('aria-label', labelText + ' quiz score');
-                    }
-                });
-            }
-
-            var initializeCharts = function() {
-                var messageEls = document.querySelectorAll('.wpProQuiz_points.wpProQuiz_points--message');
-
-                messageEls.forEach(function(messageEl) {
-                    setupLiveCharts(messageEl);
-                });
-
-                initializeStaticCharts();
-            };
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializeCharts);
-            } else {
-                initializeCharts();
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', initializeCharts);
+                } else {
+                    initializeCharts();
+                }
+            } catch (error) {
+                if (typeof console !== 'undefined' && console.error) {
+                    console.error('Villegas quiz charts error:', error);
+                }
             }
         })();
     </script>
