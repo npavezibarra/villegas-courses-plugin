@@ -705,7 +705,7 @@ if ( ! function_exists( 'villegas_quiz_completed_handler' ) ) {
         }
 
         if ( ! empty( $debug['is_final_quiz'] ) ) {
-            error_log( '[FinalQuizEmail] About to send email' );
+            error_log( '[FinalQuizEmail] About to call wp_mail() for Final Quiz email' );
             error_log( '[FinalQuizEmail] To: ' . $admin_email . ' | Subject: ' . ( $email['subject'] ?? '' ) );
         }
         $mail_sent = wp_mail(
@@ -717,9 +717,9 @@ if ( ! function_exists( 'villegas_quiz_completed_handler' ) ) {
 
         if ( ! empty( $debug['is_final_quiz'] ) ) {
             if ( $mail_sent ) {
-                error_log( '[FinalQuizEmail] wp_mail() returned TRUE (email sent)' );
+                error_log( '[FinalQuizEmail] wp_mail() returned TRUE (Final Quiz email sent)' );
             } else {
-                error_log( '[FinalQuizEmail] wp_mail() returned FALSE (email NOT sent)' );
+                error_log( '[FinalQuizEmail] wp_mail() returned FALSE (Final Quiz email NOT sent)' );
             }
         }
     }
