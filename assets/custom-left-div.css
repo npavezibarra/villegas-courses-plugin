@@ -358,3 +358,43 @@ input.wpProQuiz_button {
 .learndash-wrapper .ld-tabs {
     margin: 9px !important;
 }
+
+.villegas-results-charts {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.villegas-results-divider--desktop {
+    display: inline-block;
+}
+
+.villegas-results-divider--mobile {
+    display: none;
+}
+
+@media (min-width: 768px) {
+    .villegas-results-charts {
+        flex-direction: row !important;
+    }
+
+    .villegas-results-divider--desktop {
+        display: inline-block !important;
+    }
+
+    .villegas-results-divider--mobile {
+        display: none !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .villegas-results-divider--desktop {
+        display: none !important;
+    }
+
+    .villegas-results-divider--mobile {
+        display: block !important;
+    }
+}
