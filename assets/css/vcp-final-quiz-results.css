@@ -21,6 +21,12 @@
     margin-bottom: 0;
 }
 
+.villegas-final-quiz-result .wpProQuiz_results-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
 .villegas-final-quiz-result .quiz-subtitle {
     font-size: 0.75rem;
     font-weight: 600;

@@ -55,7 +55,6 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
 <body class="<?php echo esc_attr( $body_class ); ?>">
 
   <div class="custom-quiz-layout">
-    <div id="quiz-card">
       <?php
       /**
        * Codex Two-Line Quiz Header: muestra el tipo de evaluación, el curso y la fecha.
@@ -140,7 +139,7 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
       $course_name = $course_id ? get_the_title( $course_id ) : '';
       $quiz_date   = get_the_date( 'j \d\e F \d\e Y', $quiz_id );
       ?>
-      <div class="quiz-page-header" style="display:none;">
+      <div class="quiz-intro-header" style="display:none;">
         <?php if ( $label && $course_name ) : ?>
           <h3><?php echo esc_html( $label ); ?></h3>
           <h2><?php echo esc_html( $course_name ); ?></h2>
@@ -163,7 +162,6 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
         ?>
       </div>
 
-    </div>
   </div>
 
 

@@ -1,6 +1,6 @@
 (function ($) {
   $(function () {
-    const $header = $('.quiz-page-header');
+    const $header = $('.quiz-intro-header');
     if (!$header.length) return;
 
     const $container = $('.wpProQuiz_content');
