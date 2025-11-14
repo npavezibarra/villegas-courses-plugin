@@ -309,7 +309,7 @@ array(
         <div id="quiz-card" class="villegas-final-card">
 
             <div class="quiz-page-header">
-                <h3 class="quiz-subtitle"><?php esc_html_e( 'Resultados EvaluaciÃ³n Final', 'villegas-courses' ); ?></h3>
+                <h3 class="quiz-subtitle"><?php esc_html_e( 'Resultados Evaluación Final', 'villegas-courses' ); ?></h3>
                 <h2 class="quiz-title"><?php echo esc_html( $course_title ); ?></h2>
                 <p class="quiz-date"><?php echo esc_html( $result_date_display ); ?></p>
             </div>
@@ -336,24 +336,24 @@ array(
                             <div class="quiz-charts-wrapper">
 
                                 <div class="wpProQuiz_pointsChart villegas-donut villegas-donut--initial<?php echo null === $initial_percent ? ' wpProQuiz_pointsChart--empty' : ''; ?>" data-static-percent="<?php echo esc_attr( null === $initial_percent ? 0 : $initial_percent ); ?>">
-                                    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" aria-label="<?php esc_attr_e( 'EvaluaciÃ³n Inicial', 'villegas-courses' ); ?>">
+                                    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" aria-label="<?php esc_attr_e( 'Evaluación Inicial', 'villegas-courses' ); ?>">
                                         <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke-width="4"></circle>
                                         <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke-width="4" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
                                     </svg>
                                     <div class="wpProQuiz_pointsChart__label"><?php if ( null === $initial_percent ) { esc_html_e( 'Sin datos', 'villegas-courses' ); } ?></div>
-                                    <div class="wpProQuiz_pointsChart__caption"><?php esc_html_e( 'EvaluaciÃ³n Inicial', 'villegas-courses' ); ?></div>
+                                    <div class="wpProQuiz_pointsChart__caption"><?php esc_html_e( 'Evaluación Inicial', 'villegas-courses' ); ?></div>
                                 </div>
 
                                 <div class="quiz-score-divider quiz-score-divider--vertical"></div>
                                 <div class="quiz-score-divider quiz-score-divider--horizontal"></div>
 
                                 <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart villegas-donut villegas-donut--final" data-chart-role="live-user-score" data-static-percent="<?php echo esc_attr( null === $final_percent ? 0 : $final_percent ); ?>">
-                                    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" aria-label="<?php esc_attr_e( 'EvaluaciÃ³n Final', 'villegas-courses' ); ?>">
+                                    <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" aria-label="<?php esc_attr_e( 'Evaluación Final', 'villegas-courses' ); ?>">
                                         <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke-width="4"></circle>
                                         <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke-width="4" stroke-linecap="round" transform="rotate(-90 18 18)"></circle>
                                     </svg>
                                     <div class="wpProQuiz_pointsChart__label"></div>
-                                    <div class="wpProQuiz_pointsChart__caption"><?php esc_html_e( 'EvaluaciÃ³n Final', 'villegas-courses' ); ?></div>
+                                    <div class="wpProQuiz_pointsChart__caption"><?php esc_html_e( 'Evaluación Final', 'villegas-courses' ); ?></div>
                                 </div>
                             </div>
 

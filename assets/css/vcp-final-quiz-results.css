@@ -184,7 +184,8 @@
 .villegas-final-quiz-result .quiz-variation-button {
     display: inline-block;
     padding: 0.75rem 2rem;
-    border-radius: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
     box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
@@ -199,22 +200,15 @@
     transform: scale(0.98);
 }
 
-.villegas-final-quiz-result .quiz-variation-button--course {
+.villegas-final-quiz-result .quiz-variation-button--course,
+.villegas-final-quiz-result .quiz-variation-button--certificate {
     background-color: #000000;
     color: #ffffff;
 }
 
-.villegas-final-quiz-result .quiz-variation-button--course:hover {
-    background-color: #111827;
-}
-
-.villegas-final-quiz-result .quiz-variation-button--certificate {
-    background-color: #059669;
-    color: #ffffff;
-}
-
+.villegas-final-quiz-result .quiz-variation-button--course:hover,
 .villegas-final-quiz-result .quiz-variation-button--certificate:hover {
-    background-color: #047857;
+    background-color: #111827;
 }
 
 .villegas-final-quiz-result .quiz-variation-message--positive {

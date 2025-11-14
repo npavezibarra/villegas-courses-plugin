@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function drawChart(chartContainer, percent) {
         const svg = chartContainer.querySelector('.wpProQuiz_pointsChart__svg');
         const labelEl = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
+        const captionEl = chartContainer.querySelector('.wpProQuiz_pointsChart__caption');
         const progressCircle = svg ? svg.querySelector('.wpProQuiz_pointsChart__progress') : null;
 
         if (!progressCircle) {
@@ -20,9 +21,49 @@ document.addEventListener('DOMContentLoaded', function () {
         progressCircle.setAttribute('stroke-dasharray', circumference + ' ' + circumference);
         progressCircle.setAttribute('stroke-dashoffset', offset.toString());
 
-        if (labelEl) {
+        if (labelEl && !chartContainer.classList.contains('wpProQuiz_pointsChart--empty')) {
             labelEl.textContent = percentValue.toFixed(0) + '%';
         }
+
+        if (svg) {
+            const captionText = captionEl ? captionEl.textContent.trim() : '';
+            const labelText = percentValue.toFixed(0) + '%';
+            svg.setAttribute('aria-label', captionText ? captionText + ' ' + labelText : labelText + ' quiz score');
+        }
+    }
+
+    function cleanupLegacyResults() {
+        const wrappers = document.querySelectorAll('.villegas-final-quiz-result');
+
+        wrappers.forEach(function (wrapper) {
+            const resultsContainer = wrapper.closest('.wpProQuiz_results');
+
+            if (!resultsContainer) {
+                return;
+            }
+
+            const selectorsToHide = [
+                ':scope > hr',
+                ':scope > h4.wpProQuiz_header',
+                ':scope > p:not([class])',
+                ':scope > p.wpProQuiz_quiz_time',
+                ':scope > p.wpProQuiz_points',
+                ':scope > p.wpProQuiz_points--message',
+                ':scope > .wpProQuiz_points',
+                ':scope > .wpProQuiz_graded_points',
+                ':scope > .wpProQuiz_certificate'
+            ];
+
+            selectorsToHide.forEach(function (selector) {
+                resultsContainer.querySelectorAll(selector).forEach(function (element) {
+                    if (element === wrapper || wrapper.contains(element)) {
+                        return;
+                    }
+
+                    element.style.display = 'none';
+                });
+            });
+        });
     }
 
     function initializeCharts() {
@@ -90,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
         `;
     }
 
+    cleanupLegacyResults();
     initializeCharts();
     updateVariationMessage();
 });
