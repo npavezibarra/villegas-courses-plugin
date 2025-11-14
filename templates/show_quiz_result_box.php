@@ -47,59 +47,36 @@ array(
 </p>
 </div>
 
-<div style="display: none;" class="wpProQuiz_results">
-    <hr>
-    <h4 style="font-family: sans-serif; font-size: 34px;" class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
-<?php
-if ( ! $quiz->isHideResultCorrectQuestion() ) {
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_questions_answered_correctly_message',
-// translators: placeholder: correct answer, question count, questions.
-'message'      => '<p>' . sprintf( esc_html_x( '%1$s of %2$s %3$s answered correctly', 'placeholder: correct answer, question count, questions', 'learndash' ), '<span class="wpProQuiz_correct_answer">0</span>', '<span>' . $question_count . '</span>', learndash_get_custom_label( 'questions' ) ) . '</p>',
-'placeholders' => array( '0', $question_count ),
-)
-)
-);
-}
+<div style="display: none;" class="wpProQuiz_results text-center">
+    <hr class="border-gray-200 my-6">
 
-if ( ! $quiz->isHideResultQuizTime() ) {
-?>
-<p class="wpProQuiz_quiz_time">
-<?php
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_your_time_message',
-// translators: placeholder: quiz time.
-'message'      => sprintf( esc_html_x( 'Your time: %s', 'placeholder: quiz time.', 'learndash' ), '<span></span>' ),
-)
-)
-);
-?>
-</p>
-<?php
-}
-?>
-<p class="wpProQuiz_time_limit_expired" style="display: none;">
-<?php
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_time_has_elapsed_message',
-'message'      => esc_html__( 'Time has elapsed', 'learndash' ),
-)
-)
-);
-?>
-</p>
+    <?php if ( ! $quiz->isHideResultCorrectQuestion() ) : ?>
+        <p class="text-lg text-gray-700 mb-2">
+            <span class="wpProQuiz_correct_answer font-bold text-primary-yellow">0</span><?php echo esc_html__( ' de ', 'villegas-courses' ); ?><span class="font-bold"><?php echo esc_html( $question_count ); ?></span><?php echo esc_html__( ' Preguntas respondieron correctamente', 'villegas-courses' ); ?>
+        </p>
+    <?php endif; ?>
+
+    <?php if ( ! $quiz->isHideResultQuizTime() ) : ?>
+        <p class="wpProQuiz_quiz_time text-sm text-gray-500 mb-8">
+            <?php esc_html_e( 'Tu tiempo:', 'villegas-courses' ); ?>
+            <span class="font-semibold"></span>
+        </p>
+    <?php endif; ?>
+
+    <p class="wpProQuiz_time_limit_expired" style="display: none;">
+        <?php
+        echo wp_kses_post(
+            SFWD_LMS::get_template(
+                'learndash_quiz_messages',
+                array(
+                    'quiz_post_id' => $quiz->getID(),
+                    'context'      => 'quiz_time_has_elapsed_message',
+                    'message'      => esc_html__( 'Time has elapsed', 'learndash' ),
+                )
+            )
+        );
+        ?>
+    </p>
 
 <?php
 $raw_ld_points_message = '';
@@ -296,21 +273,6 @@ if ( ! $quiz->isHideResultPoints() ) {
     }
 }
 ?>
-<div style="display: none;" class="wpProQuiz_results text-center">
-    <hr class="border-gray-200 my-6">
-
-    <?php if ( ! $quiz->isHideResultCorrectQuestion() ) : ?>
-        <p class="text-lg text-gray-700 mb-2">
-            <span class="wpProQuiz_correct_answer font-bold text-primary-yellow">0</span><?php echo esc_html__( ' de ', 'villegas-courses' ); ?><span class="font-bold"><?php echo esc_html( $question_count ); ?></span><?php echo esc_html__( ' Preguntas respondieron correctamente', 'villegas-courses' ); ?>
-        </p>
-    <?php endif; ?>
-
-    <?php if ( ! $quiz->isHideResultQuizTime() ) : ?>
-        <p class="wpProQuiz_quiz_time text-sm text-gray-500 mb-8">
-            <?php esc_html_e( 'Tu tiempo:', 'villegas-courses' ); ?>
-            <span class="font-semibold"></span>
-        </p>
-    <?php endif; ?>
 
     <?php if ( ! $quiz->isHideResultPoints() ) : ?>
         <?php
