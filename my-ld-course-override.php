@@ -30,6 +30,295 @@ if ( is_admin() ) {
     require_once plugin_dir_path( __FILE__ ) . 'includes/admin/class-course-checklist-handler.php';
 }
 
+add_action( 'template_redirect', 'villegas_check_pending_course_payment' );
+
+/**
+ * Determine whether the current user should see the pending payment overlay on a course page.
+ *
+ * @return void
+ */
+function villegas_check_pending_course_payment() {
+    if ( ! function_exists( 'wc_get_orders' ) ) {
+        return;
+    }
+
+    if ( ! is_user_logged_in() || ! is_singular( 'sfwd-courses' ) ) {
+        return;
+    }
+
+    global $post;
+
+    if ( empty( $post ) || 'sfwd-courses' !== $post->post_type ) {
+        return;
+    }
+
+    $user_id       = get_current_user_id();
+    $course_id     = intval( $post->ID );
+    $customer_orders = wc_get_orders(
+        array(
+            'customer_id' => $user_id,
+            'status'      => array( 'pending', 'on-hold' ),
+            'limit'       => -1,
+        )
+    );
+
+    if ( empty( $customer_orders ) ) {
+        return;
+    }
+
+    $linked_product_id = absint( get_post_meta( $course_id, '_linked_woocommerce_product', true ) );
+    $should_display    = false;
+
+    foreach ( $customer_orders as $order ) {
+        if ( 'bacs' !== $order->get_payment_method() ) {
+            continue;
+        }
+
+        foreach ( $order->get_items() as $item ) {
+            $line_product_ids = array_unique(
+                array_filter(
+                    array(
+                        intval( $item->get_product_id() ),
+                        intval( $item->get_variation_id() ),
+                    )
+                )
+            );
+
+            if ( empty( $line_product_ids ) ) {
+                continue;
+            }
+
+            $belongs_to_courses = false;
+
+            foreach ( $line_product_ids as $product_id ) {
+                if ( villegas_product_in_courses_category( $product_id ) ) {
+                    $belongs_to_courses = true;
+                    break;
+                }
+            }
+
+            if ( ! $belongs_to_courses ) {
+                continue;
+            }
+
+            if ( villegas_product_matches_course( $course_id, $line_product_ids, $linked_product_id ) ) {
+                $should_display = true;
+                break 2;
+            }
+        }
+    }
+
+    if ( ! $should_display ) {
+        return;
+    }
+
+    add_action( 'wp_enqueue_scripts', 'villegas_enqueue_payment_overlay_assets' );
+    add_action( 'wp_footer', 'villegas_render_pending_payment_overlay' );
+}
+
+/**
+ * Retrieve all course IDs associated with a WooCommerce product.
+ *
+ * @param int $product_id Product ID.
+ *
+ * @return int[]
+ */
+function villegas_get_related_course_ids_from_product( $product_id ) {
+    $product_id = intval( $product_id );
+
+    if ( ! $product_id ) {
+        return array();
+    }
+
+    $product_ids_to_check = array_unique(
+        array_filter(
+            array(
+                $product_id,
+                intval( wp_get_post_parent_id( $product_id ) ),
+            )
+        )
+    );
+
+    $course_ids = array();
+
+    foreach ( $product_ids_to_check as $id ) {
+        $related_course_meta = get_post_meta( $id, '_related_course', true );
+
+        if ( empty( $related_course_meta ) ) {
+            continue;
+        }
+
+        $related_course_meta = maybe_unserialize( $related_course_meta );
+
+        if ( is_array( $related_course_meta ) ) {
+            foreach ( $related_course_meta as $value ) {
+                $course_ids[] = intval( $value );
+            }
+        } elseif ( is_numeric( $related_course_meta ) ) {
+            $course_ids[] = intval( $related_course_meta );
+        }
+    }
+
+    return array_unique( array_filter( $course_ids ) );
+}
+
+/**
+ * Determine whether a product belongs to the Courses category.
+ *
+ * @param int $product_id Product ID.
+ *
+ * @return bool
+ */
+function villegas_product_in_courses_category( $product_id ) {
+    $product_id = intval( $product_id );
+
+    if ( ! $product_id ) {
+        return false;
+    }
+
+    $ids_to_check = array_unique(
+        array_filter(
+            array(
+                $product_id,
+                intval( wp_get_post_parent_id( $product_id ) ),
+            )
+        )
+    );
+
+    foreach ( $ids_to_check as $id ) {
+        $terms = wp_get_post_terms( $id, 'product_cat' );
+
+        if ( is_wp_error( $terms ) || empty( $terms ) ) {
+            continue;
+        }
+
+        foreach ( $terms as $term ) {
+            $slug = strtolower( $term->slug );
+            $name = strtolower( $term->name );
+
+            if ( 'courses' === $slug || 'courses' === $name ) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Check if any of the order item products relate to the current course.
+ *
+ * @param int   $course_id         Course ID.
+ * @param array $product_ids       Product IDs from the order line item.
+ * @param int   $linked_product_id Product ID stored on the course meta.
+ *
+ * @return bool
+ */
+function villegas_product_matches_course( $course_id, array $product_ids, $linked_product_id ) {
+    $course_id         = intval( $course_id );
+    $linked_product_id = intval( $linked_product_id );
+
+    if ( ! $course_id ) {
+        return false;
+    }
+
+    $product_ids_to_check = array_unique(
+        array_filter(
+            array_merge(
+                $product_ids,
+                $linked_product_id ? array( $linked_product_id ) : array()
+            )
+        )
+    );
+
+    foreach ( $product_ids_to_check as $product_id ) {
+        $product_id = intval( $product_id );
+
+        if ( ! $product_id ) {
+            continue;
+        }
+
+        if ( $linked_product_id && ( $product_id === $linked_product_id || intval( wp_get_post_parent_id( $product_id ) ) === $linked_product_id ) ) {
+            return true;
+        }
+
+        $related_course_ids = villegas_get_related_course_ids_from_product( $product_id );
+
+        if ( in_array( $course_id, $related_course_ids, true ) ) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Enqueue assets required for the pending payment overlay.
+ *
+ * @return void
+ */
+function villegas_enqueue_payment_overlay_assets() {
+    wp_enqueue_style(
+        'villegas-payment-overlay',
+        plugin_dir_url( __FILE__ ) . 'assets/css/payment-overlay.css',
+        array(),
+        '1.0'
+    );
+}
+
+/**
+ * Output the pending payment overlay.
+ *
+ * @return void
+ */
+function villegas_render_pending_payment_overlay() {
+    $strings = villegas_get_pending_payment_overlay_strings();
+    ?>
+    <div id="villegas-payment-overlay" role="dialog" aria-live="polite" aria-modal="true">
+        <div class="villegas-payment-overlay__content">
+            <h2 class="villegas-payment-overlay__title"><?php echo esc_html( $strings['title'] ); ?></h2>
+            <?php foreach ( $strings['messages'] as $message ) : ?>
+                <p class="villegas-payment-overlay__text"><?php echo wp_kses_post( $message ); ?></p>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <script>
+        ( function () {
+            if ( document && document.body ) {
+                document.body.style.overflow = 'hidden';
+            }
+        }() );
+    </script>
+    <?php
+}
+
+/**
+ * Retrieve localized strings for the pending payment overlay.
+ *
+ * @return array
+ */
+function villegas_get_pending_payment_overlay_strings() {
+    if ( 'es_cl' === strtolower( get_locale() ) ) {
+        return array(
+            'title'    => __( 'Confirmación de pago pendiente', 'villegas-courses' ),
+            'messages' => array(
+                __( 'Aún no hemos confirmado tu pago.', 'villegas-courses' ),
+                __( 'Envía el comprobante de tu transferencia bancaria con tu número de orden y nombre completo a <strong>villeguistas@gmail.com</strong>.', 'villegas-courses' ),
+                __( 'Una vez confirmada la transferencia tendrás acceso completo al contenido del curso.', 'villegas-courses' ),
+            ),
+        );
+    }
+
+    return array(
+        'title'    => __( 'Pending Payment Confirmation', 'villegas-courses' ),
+        'messages' => array(
+            __( 'We haven’t confirmed your payment yet.', 'villegas-courses' ),
+            __( 'Please send your bank transfer receipt including your order number and full name to <strong>villeguistas@gmail.com</strong>.', 'villegas-courses' ),
+            __( 'Once we confirm your transfer, you’ll have full access to your course content.', 'villegas-courses' ),
+        ),
+    );
+}
+
 // Reemplazar la plantilla del curso de LearnDash
 function my_custom_ld_course_template( $template ) {
     if ( is_singular( 'sfwd-courses' ) ) {
