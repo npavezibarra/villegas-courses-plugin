@@ -47,45 +47,26 @@ array(
 </p>
 </div>
 
-<div style="display: none;" class="wpProQuiz_results">
-    <hr>
-    <h4 style="font-family: sans-serif; font-size: 34px;" class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
-<?php
-if ( ! $quiz->isHideResultCorrectQuestion() ) {
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_questions_answered_correctly_message',
-// translators: placeholder: correct answer, question count, questions.
-'message'      => '<p>' . sprintf( esc_html_x( '%1$s of %2$s %3$s answered correctly', 'placeholder: correct answer, question count, questions', 'learndash' ), '<span class="wpProQuiz_correct_answer">0</span>', '<span>' . $question_count . '</span>', learndash_get_custom_label( 'questions' ) ) . '</p>',
-'placeholders' => array( '0', $question_count ),
-)
-)
-);
-}
+<div style="display: none;" class="wpProQuiz_results text-center">
+    <div class="villegas-results-wrapper" style="max-width: 920px; margin: 0 auto;">
+<?php if ( ! $quiz->isHideResultCorrectQuestion() ) : ?>
+        <p class="wpProQuiz_results-summary text-lg text-gray-700 mb-2" style="font-size: 18px; color: #4a4a4a; margin-bottom: 0.5rem;">
+            <span class="wpProQuiz_correct_answer font-bold text-primary-yellow" style="color: #f9c600; font-weight: 700;">0</span>
+            <?php esc_html_e( 'de', 'villegas-courses' ); ?>
+            <span class="font-bold" style="font-weight: 700;">
+                <?php echo esc_html( $question_count ); ?>
+            </span>
+            <?php esc_html_e( 'preguntas respondidas correctamente', 'villegas-courses' ); ?>
+        </p>
+<?php endif; ?>
 
-if ( ! $quiz->isHideResultQuizTime() ) {
-?>
-<p class="wpProQuiz_quiz_time">
-<?php
-echo wp_kses_post(
-SFWD_LMS::get_template(
-'learndash_quiz_messages',
-array(
-'quiz_post_id' => $quiz->getID(),
-'context'      => 'quiz_your_time_message',
-// translators: placeholder: quiz time.
-'message'      => sprintf( esc_html_x( 'Your time: %s', 'placeholder: quiz time.', 'learndash' ), '<span></span>' ),
-)
-)
-);
-?>
-</p>
-<?php
-}
-?>
+<?php if ( ! $quiz->isHideResultQuizTime() ) : ?>
+        <p class="wpProQuiz_quiz_time text-sm text-gray-500 mb-8" style="font-size: 14px; color: #6b7280; margin-bottom: 2rem;">
+            <?php esc_html_e( 'Tu tiempo:', 'villegas-courses' ); ?>
+            <span class="font-semibold" style="font-weight: 600;">00:00:00</span>
+        </p>
+<?php endif; ?>
+    </div>
 <p class="wpProQuiz_time_limit_expired" style="display: none;">
 <?php
 echo wp_kses_post(
@@ -190,73 +171,81 @@ array(
 // translators: placeholder: points earned, points total.
 'message'      => sprintf( esc_html_x( 'You have reached %1$s of %2$s point(s), (%3$s)', 'placeholder: points earned, points total', 'learndash' ), '<span>0</span>', '<span>0</span>', '<span>0</span>' ),
 'placeholders' => array( '0', '0', '0' ),
-)
+),
 )
 );
 ?>
 </p>
 <?php if ( $is_final_quiz ) : ?>
-    <div class="wpProQuiz_pointsChart villegas-donut villegas-donut--initial<?php echo null === $first_quiz_percentage ? ' wpProQuiz_pointsChart--empty' : ''; ?>" aria-live="polite" data-chart-id="first-quiz-score" data-chart-title="<?php esc_attr_e( 'First Quiz', 'villegas-courses' ); ?>"<?php if ( null === $first_quiz_percentage ) : ?> aria-label="<?php echo esc_attr__( 'First Quiz sin datos', 'villegas-courses' ); ?>"<?php endif; ?><?php if ( null !== $first_quiz_percentage ) : ?> data-static-percent="<?php echo esc_attr( $first_quiz_percentage ); ?>"<?php endif; ?> style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 1em 1em 0;<?php echo null === $first_quiz_percentage ? ' opacity: 0.6;' : ''; ?>">
-        <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
-            <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
-            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
-        </svg>
-        <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
-            <span class="villegas-donut-percent-initial">
-            <?php
-            if ( null === $first_quiz_percentage ) {
-                esc_html_e( 'Sin datos', 'villegas-courses' );
-            } else {
-                echo esc_html( number_format_i18n( $first_quiz_percentage ) . '%' );
-            }
-            ?>
-            </span>
+        <div class="villegas-results-charts flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem;">
+            <div class="wpProQuiz_pointsChart villegas-donut villegas-donut--initial<?php echo null === $first_quiz_percentage ? ' wpProQuiz_pointsChart--empty' : ''; ?>" aria-live="polite" data-chart-id="first-quiz-score" data-chart-title="<?php esc_attr_e( 'First Quiz', 'villegas-courses' ); ?>"<?php if ( null === $first_quiz_percentage ) : ?> aria-label="<?php echo esc_attr__( 'First Quiz sin datos', 'villegas-courses' ); ?>"<?php endif; ?><?php if ( null !== $first_quiz_percentage ) : ?> data-static-percent="<?php echo esc_attr( $first_quiz_percentage ); ?>"<?php endif; ?> style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em;<?php echo null === $first_quiz_percentage ? ' opacity: 0.6;' : ''; ?>">
+                <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
+                    <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
+                    <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+                </svg>
+                <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
+                    <span class="villegas-donut-percent-initial">
+                    <?php
+                    if ( null === $first_quiz_percentage ) {
+                        esc_html_e( 'Sin datos', 'villegas-courses' );
+                    } else {
+                        echo esc_html( number_format_i18n( $first_quiz_percentage ) . '%' );
+                    }
+                    ?>
+                    </span>
+                </div>
+                <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px; color: #374151;">
+                    <?php esc_html_e( 'Evaluación Inicial', 'villegas-courses' ); ?>
+                </div>
+            </div>
+            <div class="villegas-results-divider villegas-results-divider--desktop" id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px;"></div>
+            <div class="villegas-results-divider villegas-results-divider--mobile" style="display: none; width: 66%; height: 1px; background-color: #E3E3E3; margin: 16px auto;"></div>
+            <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart villegas-donut villegas-donut--final" aria-live="polite" data-chart-id="final-quiz-score" data-chart-role="live-user-score" data-chart-title="<?php esc_attr_e( 'Final Quiz', 'villegas-courses' ); ?>"<?php if ( null !== $final_quiz_percentage ) : ?> data-static-percent="<?php echo esc_attr( $final_quiz_percentage ); ?>"<?php endif; ?>
+                style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em;">
+                <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
+                    <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
+                    <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+                </svg>
+                <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
+                    <span class="villegas-donut-percent-final">
+                    <?php
+                    if ( null !== $final_quiz_percentage ) {
+                        echo esc_html( number_format_i18n( $final_quiz_percentage ) . '%' );
+                    }
+                    ?>
+                    </span>
+                </div>
+                <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px; color: #374151;">
+                    <?php esc_html_e( 'Evaluación Final', 'villegas-courses' ); ?>
+                </div>
+            </div>
         </div>
-        <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
-            <?php esc_html_e( 'Evaluación Inicial', 'villegas-courses' ); ?>
+        <hr class="border-gray-200 my-8" style="border: 0; border-top: 1px solid #e5e7eb; margin: 2.5rem 0;">
+        <div class="text-center" style="margin-top: 12px;">
+            <div id="variacion-evaluacion" class="w-full h-24" style="width: 100%; height: 96px;"></div>
         </div>
-        <div class="wpProQuiz_pointsChart__subcaption" style="font-size: 12px; color: #666; text-align: center;">
-            <?php esc_html_e( 'Tu puntaje inicial', 'villegas-courses' ); ?>
-        </div>
-    </div>
-    <div id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px; vertical-align: middle;"></div>
-    <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart villegas-donut villegas-donut--final" aria-live="polite" data-chart-id="final-quiz-score" data-chart-role="live-user-score" data-chart-title="<?php esc_attr_e( 'Final Quiz', 'villegas-courses' ); ?>" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 0 1em 1em;">
-        <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
-            <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
-            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
-        </svg>
-        <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;">
-            <span class="villegas-donut-percent-final">
-            <?php
-            if ( null !== $final_quiz_percentage ) {
-                echo esc_html( number_format_i18n( $final_quiz_percentage ) . '%' );
-            }
-            ?>
-            </span>
-        </div>
-        <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
-            <?php esc_html_e( 'Evaluación Final', 'villegas-courses' ); ?>
-        </div>
-        <div class="wpProQuiz_pointsChart__subcaption" style="font-size: 12px; color: #666; text-align: center;">
-            <?php esc_html_e( 'Tu puntaje final', 'villegas-courses' ); ?>
-        </div>
-    </div>
 <?php else : ?>
-    <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart" aria-live="polite" data-chart-id="user-score" data-chart-role="live-user-score" data-chart-title="<?php esc_attr_e( 'Tu Puntaje', 'villegas-courses' ); ?>" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em 1em 1em 0;">
-        <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
-            <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
-            <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
-        </svg>
-        <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
-        <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px;">
-            <?php esc_html_e( 'Tu Puntaje', 'villegas-courses' ); ?>
+        <div class="villegas-results-charts flex flex-col md:flex-row items-center justify-center space-y-8 md:space-y-0" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2rem;">
+            <div id="wpProQuiz_pointsChartUser" class="wpProQuiz_pointsChart" aria-live="polite" data-chart-id="user-score" data-chart-role="live-user-score" data-chart-title="<?php esc_attr_e( 'Tu Puntaje', 'villegas-courses' ); ?>" style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; margin: 1em;">
+                <svg class="wpProQuiz_pointsChart__svg" viewBox="0 0 36 36" role="img" style="width: 120px; height: 120px;">
+                    <circle class="wpProQuiz_pointsChart__track" cx="18" cy="18" r="16" fill="none" stroke="#E3E3E3" stroke-width="4"></circle>
+                    <circle class="wpProQuiz_pointsChart__progress" cx="18" cy="18" r="16" fill="none" stroke="#f9c600" stroke-width="4" stroke-linecap="round" stroke-dasharray="0 100" stroke-dashoffset="25.12" transform="rotate(-90 18 18)"></circle>
+                </svg>
+                <div class="wpProQuiz_pointsChart__label" style="font-weight: 600;"></div>
+                <div class="wpProQuiz_pointsChart__caption" style="font-size: 14px; color: #374151;">
+                    <?php esc_html_e( 'Tu Puntaje', 'villegas-courses' ); ?>
+                </div>
+            </div>
+            <div class="villegas-results-divider villegas-results-divider--desktop" id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px;"></div>
+            <div class="villegas-results-divider villegas-results-divider--mobile" style="display: none; width: 66%; height: 1px; background-color: #E3E3E3; margin: 16px auto;"></div>
+            <?php if ( ! empty( $average_chart_markup ) ) : ?>
+                <div class="villegas-average-chart" style="display: flex; justify-content: center; margin: 1em;">
+                    <?php echo $average_chart_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+                </div>
+            <?php endif; ?>
         </div>
-    </div>
-    <div id="quiz-score-divider" style="display: inline-block; width: 1px; height: 240px; background-color: #E3E3E3; margin: 0 28px; vertical-align: middle;"></div>
-    <?php if ( ! empty( $average_chart_markup ) ) : ?>
-        <?php echo $average_chart_markup; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-    <?php endif; ?>
 <?php endif; ?>
+
 <?php
 
 $course_id          = 0;
@@ -457,6 +446,91 @@ endif;
             }
         }
 
+        function getChartPercent(chartContainer) {
+            if (!chartContainer) {
+                return null;
+            }
+
+            var staticPercent = chartContainer.dataset ? chartContainer.dataset.staticPercent : null;
+
+            if (staticPercent !== undefined && staticPercent !== null && staticPercent !== '') {
+                var parsedStatic = parseFloat(staticPercent);
+
+                if (!isNaN(parsedStatic)) {
+                    return clamp(parsedStatic, 0, 100);
+                }
+            }
+
+            var labelWrapper = chartContainer.querySelector('.wpProQuiz_pointsChart__label');
+
+            if (!labelWrapper) {
+                return null;
+            }
+
+            var rawText = labelWrapper.textContent || '';
+            var match = rawText.match(/-?\d+(?:[\.,]\d+)?/);
+
+            if (!match) {
+                return null;
+            }
+
+            var normalizedText = match[0].replace(',', '.');
+            var parsedValue = parseFloat(normalizedText);
+
+            if (isNaN(parsedValue)) {
+                return null;
+            }
+
+            return clamp(parsedValue, 0, 100);
+        }
+
+        function updateVariationMessage() {
+            var variationDiv = document.getElementById('variacion-evaluacion');
+
+            if (!variationDiv) {
+                return;
+            }
+
+            var initialChart = document.querySelector('.villegas-donut--initial');
+            var finalChart = document.querySelector('.villegas-donut--final');
+
+            if (!initialChart || !finalChart) {
+                return;
+            }
+
+            var initialPercent = getChartPercent(initialChart);
+            var finalPercent = getChartPercent(finalChart);
+
+            if (initialPercent === null || finalPercent === null) {
+                return;
+            }
+
+            var difference = finalPercent - initialPercent;
+            var absDifference = Math.abs(difference);
+            var baseClasses = 'w-full h-24 rounded-lg flex items-center justify-center p-2';
+
+            variationDiv.className = baseClasses;
+            variationDiv.classList.add('border', 'border-gray-500');
+
+            var messageHtml;
+
+            if (difference > 0) {
+                messageHtml = '' +
+                    '<div class="h-full w-full flex flex-col justify-center items-center bg-white p-4 rounded-lg" style="background-color:#ffffff; border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
+                    '<p class="text-xl font-bold text-gray-900" style="font-size:20px; font-weight:700; color:#111827; margin:0;">¡Gran Progreso!</p>' +
+                    '<p class="text-gray-700 mt-1" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">Has mejorado un <span class="text-2xl font-extrabold" style="font-size:24px; font-weight:800; color:#111827;">' + absDifference.toFixed(0) + '%</span> respecto a tu evaluación inicial.</p>' +
+                    '</div>';
+            } else {
+                messageHtml = '' +
+                    '<div class="h-full w-full flex flex-col justify-center items-center bg-white p-4 rounded-lg" style="background-color:#ffffff; border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
+                    '<p class="text-xl font-bold text-gray-900" style="font-size:20px; font-weight:700; color:#111827; margin:0;">¡Felicidades por Terminar!</p>' +
+                    '<p class="text-gray-700 text-sm md:text-base mt-1 text-center" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">Tu puntaje es similar o inferior (Diferencia: ' + difference.toFixed(0) + '%). Te recomendamos repasar los temas.</p>' +
+                    '</div>';
+            }
+
+            variationDiv.innerHTML = messageHtml;
+        }
+
         function setupLiveCharts(messageEl) {
             if (!messageEl) {
                 return;
@@ -486,6 +560,9 @@ endif;
                     }
 
                     drawChart(svg, percent, labelEl);
+
+                    chartContainer.dataset.staticPercent = String(percent);
+                    updateVariationMessage();
 
                     var labelText = percent.toFixed(0) + '%';
                     var chartTitle = chartContainer.dataset.chartTitle || '';
@@ -536,6 +613,9 @@ endif;
 
                 drawChart(svg, percentAttr, labelEl);
 
+                chartContainer.dataset.staticPercent = String(percentAttr);
+                updateVariationMessage();
+
                 var labelText = clamp(percentAttr, 0, 100).toFixed(0) + '%';
                 var chartTitle = chartContainer.dataset.chartTitle || '';
 
@@ -555,6 +635,7 @@ endif;
             });
 
             initializeStaticCharts();
+            updateVariationMessage();
         };
 
         if (document.readyState === 'loading') {
