@@ -21,9 +21,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 $quiz_post_id = function_exists( 'learndash_get_quiz_id_by_pro_quiz_id' ) ? intval( learndash_get_quiz_id_by_pro_quiz_id( $quiz->getID() ) ) : 0;
 ?>
 <div style="display: none;" class="wpProQuiz_sending">
-<h4 class="wpProQuiz_header"><?php esc_html_e( 'Results', 'learndash' ); ?></h4>
-<p>
-<div>
+    <p>
+        <div>
 <?php
 echo wp_kses_post(
 SFWD_LMS::get_template(
@@ -37,14 +36,14 @@ array(
 )
 );
 ?>
-</div>
-<div>
-<dd class="course_progress">
-<div class="course_progress_blue sending_progress_bar" style="width: 0%;">
-</div>
-</dd>
-</div>
-</p>
+        </div>
+        <div>
+            <dd class="course_progress">
+                <div class="course_progress_blue sending_progress_bar" style="width: 0%;">
+                </div>
+            </dd>
+        </div>
+    </p>
 </div>
 
 <hr class="border-gray-200 my-8" style="border: 0; border-top: 1px solid #e5e7eb; margin: 0.5rem 0;">
