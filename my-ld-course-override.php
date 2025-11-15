@@ -721,29 +721,26 @@ function enviar_correo_final_quiz_handler() {
 
         if ( $variation > 0 ) {
                 error_log( '[FinalQuizEmail] Variation is positive.' );
-                $variation_html = "
-        <div style='text-align:center; margin: 20px 0;'>
-            <h3 style='margin: 0 0 10px;'>¡Gran Progreso!</h3>
-            <p style='font-size:18px;'>Has mejorado un <strong>{$variation}%</strong> respecto a tu evaluación inicial.</p>
-        </div>";
+                $variation_html = "<div style='text-align:center; margin-top: 20px; margin-bottom: 10px;'>\n            <h3 style='margin: 0 0 10px;'>¡Gran Progreso!</h3>\n            <p style='font-size:18px;'>Has mejorado un <strong>{$variation}%</strong> respecto a tu evaluación inicial.</p>\n        </div>";
         } elseif ( $variation < 0 ) {
                 error_log( '[FinalQuizEmail] Variation is negative.' );
-                $variation_html = "
-        <div style='text-align:center; margin: 20px 0;'>
-            <h3 style='margin: 0 0 10px;'>Revisa tu desempeño</h3>
-            <p style='font-size:18px;'>Tu puntaje final fue <strong>{$variation}% menor</strong> que la evaluación inicial.</p>
-        </div>";
+                $variation_html = "<div style='text-align:center; margin-top: 20px; margin-bottom: 10px;'>\n            <h3 style='margin: 0 0 10px;'>Revisa tu desempeño</h3>\n            <p style='font-size:18px;'>Tu puntaje final fue <strong>{$variation}% menor</strong> que la evaluación inicial.</p>\n        </div>";
         } else {
                 error_log( '[FinalQuizEmail] No variation (0%).' );
-                $variation_html = "
-        <div style='text-align:center; margin: 20px 0;'>
-            <h3 style='margin: 0 0 10px;'>¡Felicidades por Terminar!</h3>
-            <p style='font-size:18px;'>Tu puntaje es igual en ambas evaluaciones (0% de diferencia).</p>
-        </div>";
+                $variation_html = "<div style='text-align:center; margin-top: 20px; margin-bottom: 10px;'>\n            <h3 style='margin: 0 0 10px;'>¡Felicidades por Terminar!</h3>\n            <p style='font-size:18px;'>Tu puntaje es igual en ambas evaluaciones (0% de diferencia).</p>\n        </div>";
         }
 
-        $email_content .= $variation_html;
-        error_log( '[FinalQuizEmail] Variation block added to email content.' );
+        $graphs_section_close = "</table>\n              </td>";
+        $graphs_close_pos     = strpos( $email_content, $graphs_section_close );
+
+        if ( false !== $graphs_close_pos ) {
+                $replacement    = "</table>\n                " . $variation_html . "\n              </td>";
+                $email_content = substr_replace( $email_content, $replacement, $graphs_close_pos, strlen( $graphs_section_close ) );
+        } else {
+                $email_content .= $variation_html;
+        }
+
+        error_log( '[FinalQuizEmail] Appending variation message: ' . strip_tags( $variation_html ) );
 
         error_log( '[FinalQuizEmail] Email content (preview): ' . substr( strip_tags( $email_content ), 0, 200 ) );
 
