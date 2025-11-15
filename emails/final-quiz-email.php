@@ -66,11 +66,6 @@
               </td>
             </tr>
             <tr>
-              <td style="padding:24px 48px 0;text-align:center;">
-                <!-- VARIACION_PLACEHOLDER -->
-              </td>
-            </tr>
-            <tr>
               <td id="villegas-email-cta" style="padding:32px 48px;text-align:center;">
                 <div style="font-size:18px;line-height:1.6;color:#333333;">
                   <p style="margin:0 0 18px;">{{cta_message}}</p>

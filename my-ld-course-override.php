@@ -602,27 +602,20 @@ function enviar_correo_final_quiz_handler() {
         error_log( '[FinalQuizEmail] AJAX handler START' );
         check_ajax_referer( 'villegas_final_quiz_email', 'nonce' );
 
-        $has_first_percentage = array_key_exists( 'first_quiz_percentage', $_POST );
-        $has_final_percentage = array_key_exists( 'quiz_percentage', $_POST );
-
-        if ( ! $has_first_percentage || ! $has_final_percentage ) {
-                wp_send_json_error( 'Porcentajes no disponibles' );
-        }
-
-        $first_percentage = intval( wp_unslash( $_POST['first_quiz_percentage'] ) );
-        $quiz_percentage  = intval( wp_unslash( $_POST['quiz_percentage'] ) );
-        $quiz_id          = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
-        $course_id        = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
-        $user_id          = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
+        $posted_first_percentage = isset( $_POST['first_quiz_percentage'] ) ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) ) : null;
+        $posted_quiz_percentage  = isset( $_POST['quiz_percentage'] ) ? intval( wp_unslash( $_POST['quiz_percentage'] ) ) : null;
+        $quiz_id                 = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
+        $course_id               = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
+        $user_id                 = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
 
         error_log(
                 '[FinalQuizEmail] AJAX data: ' . print_r(
                         array(
-                                'first_quiz_percentage' => $first_percentage,
-                                'quiz_percentage'       => $quiz_percentage,
-                                'quiz_id'               => $quiz_id,
-                                'course_id'             => $course_id,
-                                'user_id'               => $user_id,
+                                'first_quiz_percentage_posted' => $posted_first_percentage,
+                                'quiz_percentage_posted'       => $posted_quiz_percentage,
+                                'quiz_id'                      => $quiz_id,
+                                'course_id'                    => $course_id,
+                                'user_id'                      => $user_id,
                         ),
                         true
                 )
@@ -637,6 +630,61 @@ function enviar_correo_final_quiz_handler() {
         if ( ! $user ) {
                 wp_send_json_error( 'Usuario no encontrado' );
         }
+
+        if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+                require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
+        }
+
+        if ( ! class_exists( 'PoliteiaCourse' ) ) {
+                require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-course.php';
+        }
+
+        if ( ! $course_id && function_exists( 'learndash_get_course_id' ) ) {
+                $course_id = (int) learndash_get_course_id( $quiz_id );
+        }
+
+        if ( ! $course_id && class_exists( 'CourseQuizMetaHelper' ) ) {
+                $course_id = (int) CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+        }
+
+        $quiz_percentage = null;
+
+        if ( function_exists( 'villegas_get_last_quiz_percentage' ) ) {
+                $quiz_percentage = villegas_get_last_quiz_percentage( $user_id, $quiz_id );
+        }
+
+        if ( null === $quiz_percentage ) {
+                $quiz_percentage = is_int( $posted_quiz_percentage ) ? $posted_quiz_percentage : 0;
+        }
+
+        $first_quiz_id = 0;
+
+        if ( $course_id ) {
+                if ( class_exists( 'PoliteiaCourse' ) ) {
+                        $first_quiz_id = (int) PoliteiaCourse::getFirstQuizId( $course_id );
+                }
+
+                if ( ! $first_quiz_id ) {
+                        $first_quiz_id = (int) get_post_meta( $course_id, '_first_quiz_id', true );
+                }
+
+                if ( ! $first_quiz_id && class_exists( 'CourseQuizMetaHelper' ) ) {
+                        $first_quiz_id = (int) CourseQuizMetaHelper::getFirstQuizId( $course_id );
+                }
+        }
+
+        $first_percentage = null;
+
+        if ( $first_quiz_id && function_exists( 'villegas_get_last_quiz_percentage' ) ) {
+                $first_percentage = villegas_get_last_quiz_percentage( $user_id, $first_quiz_id );
+        }
+
+        if ( null === $first_percentage ) {
+                $first_percentage = is_int( $posted_first_percentage ) ? $posted_first_percentage : 0;
+        }
+
+        $quiz_percentage  = (int) $quiz_percentage;
+        $first_percentage = (int) $first_percentage;
 
         $user_email  = $user->user_email;
         $user_name   = $user->display_name;
@@ -668,29 +716,33 @@ function enviar_correo_final_quiz_handler() {
 
         $email_content = strtr( $email_content, $replacements );
 
-        $variacion = $quiz_percentage - $first_percentage;
+        $variacion     = $quiz_percentage - $first_percentage;
+        $variacion_abs = abs( $variacion );
 
         if ( $variacion > 0 ) {
-                $variacion_msg = sprintf(
-                        '¡Excelente! Tu desempeño mejoró en +%d%% respecto a la evaluación inicial.',
-                        $variacion
-                );
-        } elseif ( 0 === $variacion ) {
-                $variacion_msg = 'Tu desempeño se mantuvo igual que en la evaluación inicial (0% de variación).';
+                $variacion_html = "
+        <div style='text-align:center; margin: 20px 0;'>
+            <h3 style='margin: 0 0 10px;'>¡Gran Progreso!</h3>
+            <p style='font-size:18px;'>Has mejorado un <strong>{$variacion_abs}%</strong> respecto a tu evaluación inicial.</p>
+        </div>";
+        } elseif ( $variacion < 0 ) {
+                $variacion_html = "
+        <div style='text-align:center; margin: 20px 0;'>
+            <h3 style='margin: 0 0 10px;'>Revisa tu desempeño</h3>
+            <p style='font-size:18px;'>Tu puntuación final fue <strong>{$variacion_abs}% menor</strong> que la evaluación inicial.</p>
+        </div>";
         } else {
-                $variacion_msg = sprintf(
-                        'Tu desempeño disminuyó en %d%% en comparación con la evaluación inicial.',
-                        $variacion
-                );
+                $variacion_html = "
+        <div style='text-align:center; margin: 20px 0;'>
+            <h3 style='margin: 0 0 10px;'>Sin cambios</h3>
+            <p style='font-size:18px;'>Tu puntuación se mantuvo igual en ambas evaluaciones.</p>
+        </div>";
         }
 
-        $variation_placeholder = '<!-- VARIACION_PLACEHOLDER -->';
-        $variation_html        = "<p style='font-size:18px; text-align:center; margin: 20px 0;'>" . esc_html( $variacion_msg ) . '</p>';
-
-        if ( false !== strpos( $email_content, $variation_placeholder ) ) {
-                $email_content = str_replace( $variation_placeholder, $variation_html, $email_content );
+        if ( false !== stripos( $email_content, '</body>' ) ) {
+                $email_content = str_ireplace( '</body>', $variacion_html . '</body>', $email_content );
         } else {
-                $email_content .= $variation_html;
+                $email_content .= $variacion_html;
         }
 
         $subject = __( 'Has finalizado la Evaluación Final', 'villegas-courses' );
