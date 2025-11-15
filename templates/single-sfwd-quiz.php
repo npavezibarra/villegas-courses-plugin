@@ -55,6 +55,7 @@ $quiz_description_json = json_encode($quiz_description, JSON_HEX_TAG | JSON_HEX_
 <body class="<?php echo esc_attr( $body_class ); ?>">
 
   <div class="custom-quiz-layout">
+    <?php villegas_quiz_attempt_bar( get_the_ID(), get_current_user_id() ); ?>
     <div id="quiz-card">
       <?php
       /**
