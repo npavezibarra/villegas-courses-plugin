@@ -20,6 +20,61 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/emails.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/first-quiz-email-ajax.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/first-quiz-email-rendered.php';
 
+add_action( 'learndash-quiz-before', 'villegas_show_quiz_attempt_indicator', 10, 2 );
+
+function villegas_show_quiz_attempt_indicator( $quiz_content, $quiz ) {
+    if ( empty( $quiz ) || ! is_object( $quiz ) || ! method_exists( $quiz, 'getID' ) ) {
+        return $quiz_content;
+    }
+
+    ob_start();
+    villegas_render_attempt_indicator( $quiz->getID(), get_current_user_id() );
+    echo $quiz_content;
+
+    return ob_get_clean();
+}
+
+function villegas_render_attempt_indicator( $quiz_id, $user_id ) {
+    if ( empty( $quiz_id ) ) {
+        return;
+    }
+
+    global $wpdb;
+
+    $attempts = (int) $wpdb->get_var(
+        $wpdb->prepare(
+            "SELECT COUNT(*) FROM {$wpdb->prefix}learndash_user_activity
+            WHERE user_id = %d
+            AND post_id = %d
+            AND activity_type = 'quiz'",
+            $user_id,
+            $quiz_id
+        )
+    );
+
+    $message = ( 0 === $attempts ) ? 'Tu primer intento' : 'Intento ' . ( $attempts + 1 );
+
+    echo '<div id="quiz-attempt-bar" class="villegas-quiz-attempt-bar">' . esc_html( $message ) . '</div>';
+}
+
+add_action( 'wp_enqueue_scripts', 'villegas_enqueue_quiz_attempt_indicator_styles' );
+
+function villegas_enqueue_quiz_attempt_indicator_styles() {
+    if ( ! is_singular( 'sfwd-quiz' ) ) {
+        return;
+    }
+
+    $style_path = plugin_dir_path( __FILE__ ) . 'assets/css/quiz-attempt-bar.css';
+    $version    = file_exists( $style_path ) ? filemtime( $style_path ) : false;
+
+    wp_enqueue_style(
+        'villegas-quiz-attempt-bar',
+        plugin_dir_url( __FILE__ ) . 'assets/css/quiz-attempt-bar.css',
+        [],
+        $version
+    );
+}
+
 function allow_pending_role_users_access_quiz( $has_access, $post_id, $user_id ) {
     // Get the user's role(s)
     $user = get_userdata( $user_id );
