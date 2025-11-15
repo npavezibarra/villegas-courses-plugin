@@ -599,30 +599,21 @@ add_action( 'wp_ajax_enviar_correo_final_quiz', 'enviar_correo_final_quiz_handle
 add_action( 'wp_ajax_nopriv_enviar_correo_final_quiz', 'enviar_correo_final_quiz_handler' );
 
 function enviar_correo_final_quiz_handler() {
-        error_log( '[FinalQuizEmail] AJAX handler START' );
+        error_log( '[FinalQuizEmail] Handler triggered.' );
         check_ajax_referer( 'villegas_final_quiz_email', 'nonce' );
 
-        $first_percentage = isset( $_POST['first_quiz_percentage'] ) ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) ) : 0;
-        $final_percentage = isset( $_POST['final_quiz_percentage'] ) ? intval( wp_unslash( $_POST['final_quiz_percentage'] ) ) : 0;
-        $quiz_id          = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
-        $course_id        = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
-        $user_id          = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
+        $posted_quiz_percentage   = isset( $_POST['quiz_percentage'] ) ? intval( wp_unslash( $_POST['quiz_percentage'] ) ) : 0;
+        $posted_first_percentage  = isset( $_POST['first_quiz_percentage'] ) ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) ) : 0;
+        $quiz_id                  = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
+        $course_id                = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
+        $user_id                  = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
 
-        error_log(
-                '[FinalQuizEmail] AJAX data: ' . print_r(
-                        array(
-                                'first_quiz_percentage' => $first_percentage,
-                                'final_quiz_percentage' => $final_percentage,
-                                'quiz_id'               => $quiz_id,
-                                'course_id'             => $course_id,
-                                'user_id'               => $user_id,
-                        ),
-                        true
-                )
-        );
+        error_log( "[FinalQuizEmail] Received data: quiz_percentage={$posted_quiz_percentage}, first_percentage={$posted_first_percentage}, quiz_id={$quiz_id}, user_id={$user_id}" );
 
-        if ( ! $user_id || ! $quiz_id ) {
-                wp_send_json_error( 'Datos faltantes' );
+        if ( ! $quiz_id || ! $user_id ) {
+                error_log( '[FinalQuizEmail] Missing quiz_id or user_id. Aborting.' );
+                wp_send_json_error( 'Missing data' );
+                wp_die();
         }
 
         $user = get_userdata( $user_id );
@@ -630,6 +621,73 @@ function enviar_correo_final_quiz_handler() {
         if ( ! $user ) {
                 wp_send_json_error( 'Usuario no encontrado' );
         }
+
+        $quiz_title = get_the_title( $quiz_id );
+
+        error_log( '[FinalQuizEmail] User: ' . $user->display_name . ', Quiz Title: ' . $quiz_title );
+
+        if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
+                require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
+        }
+
+        if ( ! class_exists( 'PoliteiaCourse' ) ) {
+                require_once plugin_dir_path( __FILE__ ) . 'classes/class-politeia-course.php';
+        }
+
+        if ( ! $course_id && function_exists( 'learndash_get_course_id' ) ) {
+                $course_id = (int) learndash_get_course_id( $quiz_id );
+        }
+
+        if ( ! $course_id && class_exists( 'CourseQuizMetaHelper' ) ) {
+                $course_id = (int) CourseQuizMetaHelper::getCourseFromQuiz( $quiz_id );
+        }
+
+        $quiz_percentage = null;
+
+        if ( function_exists( 'villegas_get_last_quiz_percentage' ) ) {
+                $quiz_percentage = villegas_get_last_quiz_percentage( $user_id, $quiz_id );
+        }
+
+        if ( null === $quiz_percentage ) {
+                $quiz_percentage = is_int( $posted_quiz_percentage ) ? $posted_quiz_percentage : 0;
+        }
+
+        $first_quiz_id = 0;
+
+        if ( $course_id ) {
+                if ( class_exists( 'PoliteiaCourse' ) ) {
+                        $first_quiz_id = (int) PoliteiaCourse::getFirstQuizId( $course_id );
+                }
+
+                if ( ! $first_quiz_id ) {
+                        $first_quiz_id = (int) get_post_meta( $course_id, '_first_quiz_id', true );
+                }
+
+                if ( ! $first_quiz_id && class_exists( 'CourseQuizMetaHelper' ) ) {
+                        $first_quiz_id = (int) CourseQuizMetaHelper::getFirstQuizId( $course_id );
+                }
+        }
+
+        $first_percentage = null;
+
+        if ( $first_quiz_id && function_exists( 'villegas_get_last_quiz_percentage' ) ) {
+                $first_percentage = villegas_get_last_quiz_percentage( $user_id, $first_quiz_id );
+        }
+
+        if ( null === $first_percentage ) {
+                $first_percentage = is_int( $posted_first_percentage ) ? $posted_first_percentage : 0;
+        }
+
+        $final_percentage   = is_numeric( $quiz_percentage ) ? floatval( $quiz_percentage ) : 0.0;
+        $initial_percentage = is_numeric( $first_percentage ) ? floatval( $first_percentage ) : 0.0;
+
+        error_log( '[FinalQuizEmail] Email percentages: initial=' . $initial_percentage . ' final=' . $final_percentage . '.' );
+
+        $variation = round( $final_percentage - $initial_percentage );
+        error_log( '[FinalQuizEmail] Calculated variation: ' . $variation . '%' );
+
+        $final_percentage_display   = sprintf( '%g', $final_percentage );
+        $initial_percentage_display = sprintf( '%g', $initial_percentage );
 
         $user_email  = $user->user_email;
         $user_name   = $user->display_name;
@@ -654,30 +712,51 @@ function enviar_correo_final_quiz_handler() {
         $replacements = array(
                 '{{user_name}}'             => esc_html( $user_name ),
                 '{{course_name}}'           => esc_html( $course_name ),
-                '{{first_quiz_percentage}}' => esc_html( $first_percentage ),
-                '{{final_quiz_percentage}}' => esc_html( $final_percentage ),
+                '{{first_quiz_percentage}}' => esc_html( $initial_percentage_display ),
+                '{{final_quiz_percentage}}' => esc_html( $final_percentage_display ),
+                '{{quiz_percentage}}'       => esc_html( $final_percentage_display ),
         );
 
         $email_content = strtr( $email_content, $replacements );
 
+        if ( $variation > 0 ) {
+                error_log( '[FinalQuizEmail] Variation is positive.' );
+                $variation_html = "<div style='text-align:center; margin-top: 20px; margin-bottom: 10px;'>\n            <h3 style='margin: 0 0 10px;'>¡Gran Progreso!</h3>\n            <p style='font-size:18px;'>Has mejorado un <strong>{$variation}%</strong> respecto a tu evaluación inicial.</p>\n        </div>";
+        } elseif ( $variation < 0 ) {
+                error_log( '[FinalQuizEmail] Variation is negative.' );
+                $variation_html = "<div style='text-align:center; margin-top: 20px; margin-bottom: 10px;'>\n            <h3 style='margin: 0 0 10px;'>Revisa tu desempeño</h3>\n            <p style='font-size:18px;'>Tu puntaje final fue <strong>{$variation}% menor</strong> que la evaluación inicial.</p>\n        </div>";
+        } else {
+                error_log( '[FinalQuizEmail] No variation (0%).' );
+                $variation_html = "<div style='text-align:center; margin-top: 20px; margin-bottom: 10px;'>\n            <h3 style='margin: 0 0 10px;'>¡Felicidades por Terminar!</h3>\n            <p style='font-size:18px;'>Tu puntaje es igual en ambas evaluaciones (0% de diferencia).</p>\n        </div>";
+        }
+
+        $graphs_section_close = "</table>\n              </td>";
+        $graphs_close_pos     = strpos( $email_content, $graphs_section_close );
+
+        if ( false !== $graphs_close_pos ) {
+                $replacement    = "</table>\n                " . $variation_html . "\n              </td>";
+                $email_content = substr_replace( $email_content, $replacement, $graphs_close_pos, strlen( $graphs_section_close ) );
+        } else {
+                $email_content .= $variation_html;
+        }
+
+        error_log( '[FinalQuizEmail] Appending variation message: ' . strip_tags( $variation_html ) );
+
+        error_log( '[FinalQuizEmail] Email content (preview): ' . substr( strip_tags( $email_content ), 0, 200 ) );
+
         $subject = __( 'Has finalizado la Evaluación Final', 'villegas-courses' );
         $headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
-        error_log( '[FinalQuizEmail] AJAX about to call wp_mail()' );
-        error_log( '[FinalQuizEmail] To: ' . $user_email . ' | Subject: ' . $subject );
+        error_log( '[FinalQuizEmail] Sending email to ' . $user_email . '...' );
         $sent = wp_mail( $user_email, $subject, $email_content, $headers );
 
         if ( $sent ) {
-                error_log( '[FinalQuizEmail] AJAX wp_mail() TRUE' );
-        } else {
-                error_log( '[FinalQuizEmail] AJAX wp_mail() FALSE' );
+                error_log( '[FinalQuizEmail] Email sent successfully ✅' );
+                wp_send_json_success( 'Email sent' );
         }
 
-        if ( $sent ) {
-                wp_send_json_success( 'Correo de Evaluación Final enviado' );
-        }
-
-        wp_send_json_error( 'Error al enviar el correo de Evaluación Final' );
+        error_log( '[FinalQuizEmail] ❌ Email failed to send.' );
+        wp_send_json_error( 'Failed to send email' );
 }
 
 
