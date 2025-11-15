@@ -599,30 +599,21 @@ add_action( 'wp_ajax_enviar_correo_final_quiz', 'enviar_correo_final_quiz_handle
 add_action( 'wp_ajax_nopriv_enviar_correo_final_quiz', 'enviar_correo_final_quiz_handler' );
 
 function enviar_correo_final_quiz_handler() {
-        error_log( '[FinalQuizEmail] AJAX handler START' );
+        error_log( '[FinalQuizEmail] Handler triggered.' );
         check_ajax_referer( 'villegas_final_quiz_email', 'nonce' );
 
-        $posted_first_percentage = isset( $_POST['first_quiz_percentage'] ) ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) ) : null;
-        $posted_quiz_percentage  = isset( $_POST['quiz_percentage'] ) ? intval( wp_unslash( $_POST['quiz_percentage'] ) ) : null;
-        $quiz_id                 = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
-        $course_id               = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
-        $user_id                 = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
+        $posted_quiz_percentage   = isset( $_POST['quiz_percentage'] ) ? intval( wp_unslash( $_POST['quiz_percentage'] ) ) : 0;
+        $posted_first_percentage  = isset( $_POST['first_quiz_percentage'] ) ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) ) : 0;
+        $quiz_id                  = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
+        $course_id                = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
+        $user_id                  = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
 
-        error_log(
-                '[FinalQuizEmail] AJAX data: ' . print_r(
-                        array(
-                                'first_quiz_percentage_posted' => $posted_first_percentage,
-                                'quiz_percentage_posted'       => $posted_quiz_percentage,
-                                'quiz_id'                      => $quiz_id,
-                                'course_id'                    => $course_id,
-                                'user_id'                      => $user_id,
-                        ),
-                        true
-                )
-        );
+        error_log( "[FinalQuizEmail] Received data: quiz_percentage={$posted_quiz_percentage}, first_percentage={$posted_first_percentage}, quiz_id={$quiz_id}, user_id={$user_id}" );
 
-        if ( ! $user_id || ! $quiz_id ) {
-                wp_send_json_error( 'Datos faltantes' );
+        if ( ! $quiz_id || ! $user_id ) {
+                error_log( '[FinalQuizEmail] Missing quiz_id or user_id. Aborting.' );
+                wp_send_json_error( 'Missing data' );
+                wp_die();
         }
 
         $user = get_userdata( $user_id );
@@ -630,6 +621,10 @@ function enviar_correo_final_quiz_handler() {
         if ( ! $user ) {
                 wp_send_json_error( 'Usuario no encontrado' );
         }
+
+        $quiz_title = get_the_title( $quiz_id );
+
+        error_log( '[FinalQuizEmail] User: ' . $user->display_name . ', Quiz Title: ' . $quiz_title );
 
         if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
                 require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
@@ -686,6 +681,9 @@ function enviar_correo_final_quiz_handler() {
         $quiz_percentage  = (int) $quiz_percentage;
         $first_percentage = (int) $first_percentage;
 
+        $variation = $quiz_percentage - $first_percentage;
+        error_log( '[FinalQuizEmail] Calculated variation: ' . $variation . '%' );
+
         $user_email  = $user->user_email;
         $user_name   = $user->display_name;
         $course_name = '';
@@ -716,53 +714,49 @@ function enviar_correo_final_quiz_handler() {
 
         $email_content = strtr( $email_content, $replacements );
 
-        $variacion     = $quiz_percentage - $first_percentage;
-        $variacion_abs = abs( $variacion );
+        $variation_abs = abs( $variation );
 
-        if ( $variacion > 0 ) {
-                $variacion_html = "
+        if ( $variation > 0 ) {
+                error_log( '[FinalQuizEmail] Variation is positive.' );
+                $variation_html = "
         <div style='text-align:center; margin: 20px 0;'>
             <h3 style='margin: 0 0 10px;'>¡Gran Progreso!</h3>
-            <p style='font-size:18px;'>Has mejorado un <strong>{$variacion_abs}%</strong> respecto a tu evaluación inicial.</p>
+            <p style='font-size:18px;'>Has mejorado un <strong>{$variation_abs}%</strong> respecto a tu evaluación inicial.</p>
         </div>";
-        } elseif ( $variacion < 0 ) {
-                $variacion_html = "
+        } elseif ( $variation < 0 ) {
+                error_log( '[FinalQuizEmail] Variation is negative.' );
+                $variation_html = "
         <div style='text-align:center; margin: 20px 0;'>
             <h3 style='margin: 0 0 10px;'>Revisa tu desempeño</h3>
-            <p style='font-size:18px;'>Tu puntuación final fue <strong>{$variacion_abs}% menor</strong> que la evaluación inicial.</p>
+            <p style='font-size:18px;'>Tu puntuación final fue <strong>{$variation_abs}% menor</strong> que la evaluación inicial.</p>
         </div>";
         } else {
-                $variacion_html = "
+                error_log( '[FinalQuizEmail] No variation (0%).' );
+                $variation_html = "
         <div style='text-align:center; margin: 20px 0;'>
             <h3 style='margin: 0 0 10px;'>Sin cambios</h3>
             <p style='font-size:18px;'>Tu puntuación se mantuvo igual en ambas evaluaciones.</p>
         </div>";
         }
 
-        if ( false !== stripos( $email_content, '</body>' ) ) {
-                $email_content = str_ireplace( '</body>', $variacion_html . '</body>', $email_content );
-        } else {
-                $email_content .= $variacion_html;
-        }
+        $email_content .= $variation_html;
+        error_log( '[FinalQuizEmail] Variation block injected into email.' );
+
+        error_log( '[FinalQuizEmail] Email content preview: ' . substr( $email_content, 0, 300 ) );
 
         $subject = __( 'Has finalizado la Evaluación Final', 'villegas-courses' );
         $headers = array( 'Content-Type: text/html; charset=UTF-8' );
 
-        error_log( '[FinalQuizEmail] AJAX about to call wp_mail()' );
-        error_log( '[FinalQuizEmail] To: ' . $user_email . ' | Subject: ' . $subject );
+        error_log( '[FinalQuizEmail] Sending email to ' . $user_email . '...' );
         $sent = wp_mail( $user_email, $subject, $email_content, $headers );
 
         if ( $sent ) {
-                error_log( '[FinalQuizEmail] AJAX wp_mail() TRUE' );
-        } else {
-                error_log( '[FinalQuizEmail] AJAX wp_mail() FALSE' );
+                error_log( '[FinalQuizEmail] Email sent successfully ✅' );
+                wp_send_json_success( 'Email sent' );
         }
 
-        if ( $sent ) {
-                wp_send_json_success( 'Correo de Evaluación Final enviado' );
-        }
-
-        wp_send_json_error( 'Error al enviar el correo de Evaluación Final' );
+        error_log( '[FinalQuizEmail] ❌ Email failed to send.' );
+        wp_send_json_error( 'Failed to send email' );
 }
 
 
