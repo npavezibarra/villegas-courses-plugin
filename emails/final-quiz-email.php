@@ -67,7 +67,7 @@
             </tr>
             <tr>
               <td style="padding:24px 48px 0;text-align:center;">
-                {{variacion_evaluacion}}
+                <!-- VARIACION_PLACEHOLDER -->
               </td>
             </tr>
             <tr>

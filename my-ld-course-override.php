@@ -602,8 +602,12 @@ function enviar_correo_final_quiz_handler() {
         error_log( '[FinalQuizEmail] AJAX handler START' );
         check_ajax_referer( 'villegas_final_quiz_email', 'nonce' );
 
-        $first_percentage = isset( $_POST['first_quiz_percentage'] ) ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) ) : 0;
-        $final_percentage = isset( $_POST['final_quiz_percentage'] ) ? intval( wp_unslash( $_POST['final_quiz_percentage'] ) ) : 0;
+        $first_percentage = isset( $_POST['first_quiz_percentage'] )
+                ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) )
+                : 0;
+        $quiz_percentage  = isset( $_POST['quiz_percentage'] )
+                ? intval( wp_unslash( $_POST['quiz_percentage'] ) )
+                : 0;
         $quiz_id          = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
         $course_id        = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
         $user_id          = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
@@ -612,7 +616,7 @@ function enviar_correo_final_quiz_handler() {
                 '[FinalQuizEmail] AJAX data: ' . print_r(
                         array(
                                 'first_quiz_percentage' => $first_percentage,
-                                'final_quiz_percentage' => $final_percentage,
+                                'quiz_percentage'       => $quiz_percentage,
                                 'quiz_id'               => $quiz_id,
                                 'course_id'             => $course_id,
                                 'user_id'               => $user_id,
@@ -655,64 +659,36 @@ function enviar_correo_final_quiz_handler() {
                 '{{user_name}}'             => esc_html( $user_name ),
                 '{{course_name}}'           => esc_html( $course_name ),
                 '{{first_quiz_percentage}}' => esc_html( $first_percentage ),
-                '{{final_quiz_percentage}}' => esc_html( $final_percentage ),
+                '{{final_quiz_percentage}}' => esc_html( $quiz_percentage ),
+                '{{quiz_percentage}}'       => esc_html( $quiz_percentage ),
         );
 
         $email_content = strtr( $email_content, $replacements );
 
-        $quiz_percentage       = intval( $final_percentage );
-        $first_quiz_id         = get_post_meta( $course_id, '_first_quiz_id', true );
+        $variacion = $quiz_percentage - $first_percentage;
 
-        global $wpdb;
-
-        $first_quiz_percentage = 0;
-
-        if ( $first_quiz_id ) {
-                $first_quiz_percentage = $wpdb->get_var(
-                        $wpdb->prepare(
-                                "SELECT activity_meta_value
-                                 FROM {$wpdb->prefix}learndash_user_activity_meta
-                                 WHERE activity_meta_key = 'percentage'
-                                 AND activity_id = (
-                                         SELECT activity_id
-                                         FROM {$wpdb->prefix}learndash_user_activity
-                                         WHERE user_id = %d
-                                         AND post_id = %d
-                                         AND activity_type = 'quiz'
-                                         ORDER BY activity_completed DESC
-                                         LIMIT 1
-                                 )",
-                                $user_id,
-                                $first_quiz_id
-                        )
+        if ( $variacion > 0 ) {
+                $variacion_msg = sprintf(
+                        '📈 ¡Tu desempeño mejoró en +%d%% respecto a tu evaluación inicial!',
+                        $variacion
                 );
+        } elseif ( $variacion < 0 ) {
+                $variacion_msg = sprintf(
+                        '📉 Tu desempeño bajó en %d%% respecto a la evaluación inicial.',
+                        $variacion
+                );
+        } else {
+                $variacion_msg = '➖ Tu desempeño se mantuvo igual que en la evaluación inicial.';
         }
 
-        $first_quiz_percentage = intval( $first_quiz_percentage ?: 0 );
+        $variation_placeholder = '<!-- VARIACION_PLACEHOLDER -->';
+        $variation_html        = "<p style='font-size:18px; text-align:center; margin: 20px 0;'>" . esc_html( $variacion_msg ) . '</p>';
 
-        $variacion = $quiz_percentage - $first_quiz_percentage;
-
-        $variacion_html = '
-<div id="variacion_evaluacion" style="margin-top:25px; padding:20px; border-radius:12px; background:#f7f7f7; text-align:center;">
-  <h3 style="margin-bottom:10px;">Variación de tu evaluación</h3>
-
-  <div style="font-size:18px; margin-bottom:10px;">
-    <strong>Evaluación Inicial:</strong> ' . $first_quiz_percentage . '%
-  </div>
-
-  <div style="font-size:18px; margin-bottom:10px;">
-    <strong>Evaluación Final:</strong> ' . $quiz_percentage . '%
-  </div>
-
-  <div style="font-size:22px; font-weight:bold; margin-top:15px;">
-    Variación:
-    <span style="color:' . ( $variacion >= 0 ? '#28a745' : '#dc3545' ) . ';">
-      ' . ( $variacion >= 0 ? '+' : '' ) . $variacion . '%
-    </span>
-  </div>
-</div>';
-
-        $email_content = str_replace( '{{variacion_evaluacion}}', $variacion_html, $email_content );
+        if ( false !== strpos( $email_content, $variation_placeholder ) ) {
+                $email_content = str_replace( $variation_placeholder, $variation_html, $email_content );
+        } else {
+                $email_content .= $variation_html;
+        }
 
         $subject = __( 'Has finalizado la Evaluación Final', 'villegas-courses' );
         $headers = array( 'Content-Type: text/html; charset=UTF-8' );

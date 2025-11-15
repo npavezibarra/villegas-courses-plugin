@@ -110,7 +110,7 @@ jQuery(document).ready(function ($) {
             action: 'enviar_correo_final_quiz',
             nonce: config.nonce,
             first_quiz_percentage: initialScore,
-            final_quiz_percentage: finalScore,
+            quiz_percentage: finalScore,
             quiz_id: config.quizId,
             course_id: config.courseId,
             user_id: config.userId
