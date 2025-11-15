@@ -678,11 +678,16 @@ function enviar_correo_final_quiz_handler() {
                 $first_percentage = is_int( $posted_first_percentage ) ? $posted_first_percentage : 0;
         }
 
-        $quiz_percentage  = (int) $quiz_percentage;
-        $first_percentage = (int) $first_percentage;
+        $final_percentage   = is_numeric( $quiz_percentage ) ? floatval( $quiz_percentage ) : 0.0;
+        $initial_percentage = is_numeric( $first_percentage ) ? floatval( $first_percentage ) : 0.0;
 
-        $variation = $quiz_percentage - $first_percentage;
+        error_log( '[FinalQuizEmail] Email percentages: initial=' . $initial_percentage . ' final=' . $final_percentage . '.' );
+
+        $variation = round( $final_percentage - $initial_percentage );
         error_log( '[FinalQuizEmail] Calculated variation: ' . $variation . '%' );
+
+        $final_percentage_display   = sprintf( '%g', $final_percentage );
+        $initial_percentage_display = sprintf( '%g', $initial_percentage );
 
         $user_email  = $user->user_email;
         $user_name   = $user->display_name;
@@ -707,42 +712,40 @@ function enviar_correo_final_quiz_handler() {
         $replacements = array(
                 '{{user_name}}'             => esc_html( $user_name ),
                 '{{course_name}}'           => esc_html( $course_name ),
-                '{{first_quiz_percentage}}' => esc_html( $first_percentage ),
-                '{{final_quiz_percentage}}' => esc_html( $quiz_percentage ),
-                '{{quiz_percentage}}'       => esc_html( $quiz_percentage ),
+                '{{first_quiz_percentage}}' => esc_html( $initial_percentage_display ),
+                '{{final_quiz_percentage}}' => esc_html( $final_percentage_display ),
+                '{{quiz_percentage}}'       => esc_html( $final_percentage_display ),
         );
 
         $email_content = strtr( $email_content, $replacements );
-
-        $variation_abs = abs( $variation );
 
         if ( $variation > 0 ) {
                 error_log( '[FinalQuizEmail] Variation is positive.' );
                 $variation_html = "
         <div style='text-align:center; margin: 20px 0;'>
             <h3 style='margin: 0 0 10px;'>¡Gran Progreso!</h3>
-            <p style='font-size:18px;'>Has mejorado un <strong>{$variation_abs}%</strong> respecto a tu evaluación inicial.</p>
+            <p style='font-size:18px;'>Has mejorado un <strong>{$variation}%</strong> respecto a tu evaluación inicial.</p>
         </div>";
         } elseif ( $variation < 0 ) {
                 error_log( '[FinalQuizEmail] Variation is negative.' );
                 $variation_html = "
         <div style='text-align:center; margin: 20px 0;'>
             <h3 style='margin: 0 0 10px;'>Revisa tu desempeño</h3>
-            <p style='font-size:18px;'>Tu puntuación final fue <strong>{$variation_abs}% menor</strong> que la evaluación inicial.</p>
+            <p style='font-size:18px;'>Tu puntaje final fue <strong>{$variation}% menor</strong> que la evaluación inicial.</p>
         </div>";
         } else {
                 error_log( '[FinalQuizEmail] No variation (0%).' );
                 $variation_html = "
         <div style='text-align:center; margin: 20px 0;'>
-            <h3 style='margin: 0 0 10px;'>Sin cambios</h3>
-            <p style='font-size:18px;'>Tu puntuación se mantuvo igual en ambas evaluaciones.</p>
+            <h3 style='margin: 0 0 10px;'>¡Felicidades por Terminar!</h3>
+            <p style='font-size:18px;'>Tu puntaje es igual en ambas evaluaciones (0% de diferencia).</p>
         </div>";
         }
 
         $email_content .= $variation_html;
-        error_log( '[FinalQuizEmail] Variation block injected into email.' );
+        error_log( '[FinalQuizEmail] Variation block added to email content.' );
 
-        error_log( '[FinalQuizEmail] Email content preview: ' . substr( $email_content, 0, 300 ) );
+        error_log( '[FinalQuizEmail] Email content (preview): ' . substr( strip_tags( $email_content ), 0, 200 ) );
 
         $subject = __( 'Has finalizado la Evaluación Final', 'villegas-courses' );
         $headers = array( 'Content-Type: text/html; charset=UTF-8' );
