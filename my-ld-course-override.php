@@ -602,12 +602,15 @@ function enviar_correo_final_quiz_handler() {
         error_log( '[FinalQuizEmail] AJAX handler START' );
         check_ajax_referer( 'villegas_final_quiz_email', 'nonce' );
 
-        $first_percentage = isset( $_POST['first_quiz_percentage'] )
-                ? intval( wp_unslash( $_POST['first_quiz_percentage'] ) )
-                : 0;
-        $quiz_percentage  = isset( $_POST['quiz_percentage'] )
-                ? intval( wp_unslash( $_POST['quiz_percentage'] ) )
-                : 0;
+        $has_first_percentage = array_key_exists( 'first_quiz_percentage', $_POST );
+        $has_final_percentage = array_key_exists( 'quiz_percentage', $_POST );
+
+        if ( ! $has_first_percentage || ! $has_final_percentage ) {
+                wp_send_json_error( 'Porcentajes no disponibles' );
+        }
+
+        $first_percentage = intval( wp_unslash( $_POST['first_quiz_percentage'] ) );
+        $quiz_percentage  = intval( wp_unslash( $_POST['quiz_percentage'] ) );
         $quiz_id          = isset( $_POST['quiz_id'] ) ? intval( wp_unslash( $_POST['quiz_id'] ) ) : 0;
         $course_id        = isset( $_POST['course_id'] ) ? intval( wp_unslash( $_POST['course_id'] ) ) : 0;
         $user_id          = isset( $_POST['user_id'] ) ? intval( wp_unslash( $_POST['user_id'] ) ) : 0;
@@ -669,16 +672,16 @@ function enviar_correo_final_quiz_handler() {
 
         if ( $variacion > 0 ) {
                 $variacion_msg = sprintf(
-                        '📈 ¡Tu desempeño mejoró en +%d%% respecto a tu evaluación inicial!',
+                        '¡Excelente! Tu desempeño mejoró en +%d%% respecto a la evaluación inicial.',
                         $variacion
                 );
-        } elseif ( $variacion < 0 ) {
-                $variacion_msg = sprintf(
-                        '📉 Tu desempeño bajó en %d%% respecto a la evaluación inicial.',
-                        $variacion
-                );
+        } elseif ( 0 === $variacion ) {
+                $variacion_msg = 'Tu desempeño se mantuvo igual que en la evaluación inicial (0% de variación).';
         } else {
-                $variacion_msg = '➖ Tu desempeño se mantuvo igual que en la evaluación inicial.';
+                $variacion_msg = sprintf(
+                        'Tu desempeño disminuyó en %d%% en comparación con la evaluación inicial.',
+                        $variacion
+                );
         }
 
         $variation_placeholder = '<!-- VARIACION_PLACEHOLDER -->';
