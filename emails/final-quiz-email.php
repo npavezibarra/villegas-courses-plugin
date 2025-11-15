@@ -67,6 +67,7 @@
             </tr>
             <tr>
               <td id="villegas-email-cta" style="padding:32px 48px;text-align:center;">
+                {{variacion_evaluacion}}
                 <p style="margin:0 0 18px;font-size:15px;color:#333333;">{{cta_message}}</p>
                 <a href="{{button_url}}" style="display:inline-block;background:#000000;color:#ffffff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;">{{button_label}}</a>
                 <p style="margin-top:16px;font-size:13px;color:#666666;">{{button_note}}</p>
