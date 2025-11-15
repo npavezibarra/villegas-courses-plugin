@@ -661,19 +661,21 @@ function enviar_correo_final_quiz_handler() {
         $email_content = strtr( $email_content, $replacements );
 
         $quiz_percentage       = intval( $final_percentage );
-        $first_quiz_id         = $course_id ? intval( get_post_meta( $course_id, '_first_quiz_id', true ) ) : 0;
+        $first_quiz_id         = get_post_meta( $course_id, '_first_quiz_id', true );
+
+        global $wpdb;
+
         $first_quiz_percentage = 0;
 
         if ( $first_quiz_id ) {
-                global $wpdb;
-
                 $first_quiz_percentage = $wpdb->get_var(
                         $wpdb->prepare(
                                 "SELECT activity_meta_value
                                  FROM {$wpdb->prefix}learndash_user_activity_meta
                                  WHERE activity_meta_key = 'percentage'
                                  AND activity_id = (
-                                         SELECT activity_id FROM {$wpdb->prefix}learndash_user_activity
+                                         SELECT activity_id
+                                         FROM {$wpdb->prefix}learndash_user_activity
                                          WHERE user_id = %d
                                          AND post_id = %d
                                          AND activity_type = 'quiz'
@@ -684,30 +686,30 @@ function enviar_correo_final_quiz_handler() {
                                 $first_quiz_id
                         )
                 );
-
-                $first_quiz_percentage = intval( $first_quiz_percentage ?: 0 );
         }
+
+        $first_quiz_percentage = intval( $first_quiz_percentage ?: 0 );
 
         $variacion = $quiz_percentage - $first_quiz_percentage;
 
         $variacion_html = '
-<div id="variacion-evaluacion" style="margin-top:25px; padding:20px; border-radius:12px; background:#f7f7f7; text-align:center;">
-    <h3 style="margin-bottom:10px;">Variación de tu evaluación</h3>
+<div id="variacion_evaluacion" style="margin-top:25px; padding:20px; border-radius:12px; background:#f7f7f7; text-align:center;">
+  <h3 style="margin-bottom:10px;">Variación de tu evaluación</h3>
 
-    <div style="font-size:18px; margin-bottom:10px;">
-        <strong>Prueba Inicial:</strong> ' . $first_quiz_percentage . '% 
-    </div>
+  <div style="font-size:18px; margin-bottom:10px;">
+    <strong>Evaluación Inicial:</strong> ' . $first_quiz_percentage . '%
+  </div>
 
-    <div style="font-size:18px; margin-bottom:10px;">
-        <strong>Prueba Final:</strong> ' . $quiz_percentage . '% 
-    </div>
+  <div style="font-size:18px; margin-bottom:10px;">
+    <strong>Evaluación Final:</strong> ' . $quiz_percentage . '%
+  </div>
 
-    <div style="font-size:22px; font-weight:bold; margin-top:15px;">
-        Variación: 
-        <span style="color:' . ( $variacion >= 0 ? '#28a745' : '#dc3545' ) . ';">
-            ' . ( $variacion >= 0 ? '+' : '' ) . $variacion . '% 
-        </span>
-    </div>
+  <div style="font-size:22px; font-weight:bold; margin-top:15px;">
+    Variación:
+    <span style="color:' . ( $variacion >= 0 ? '#28a745' : '#dc3545' ) . ';">
+      ' . ( $variacion >= 0 ? '+' : '' ) . $variacion . '%
+    </span>
+  </div>
 </div>';
 
         $email_content = str_replace( '{{variacion_evaluacion}}', $variacion_html, $email_content );
