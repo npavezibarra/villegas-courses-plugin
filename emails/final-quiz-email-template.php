@@ -206,6 +206,43 @@ function villegas_get_final_quiz_email_content( array $debug, WP_User $user ): a
 
     $body = strtr( $email_body, $replacements );
 
+    if ( null !== $first_score && null !== $final_score ) {
+        $variation      = round( $final_score - $first_score );
+        error_log( '[FinalQuizEmail] Variation difference: ' . $variation );
+        $variation_html = '';
+
+        if ( $variation > 0 ) {
+            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>¡Gran Progreso!</h3>\n        <p style='font-size:18px;'>Has mejorado un <strong>{$variation}%</strong> respecto a tu evaluación inicial.</p>\n    </div>";
+        } elseif ( $variation < 0 ) {
+            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>Revisa tu desempeño</h3>\n        <p style='font-size:18px;'>Tu puntaje final fue <strong>" . abs( $variation ) . "% menor</strong> que la evaluación inicial.</p>\n    </div>";
+        } else {
+            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>¡Felicidades por Terminar!</h3>\n        <p style='font-size:18px;'>Tu puntaje fue el mismo en ambas evaluaciones.</p>\n    </div>";
+        }
+
+        error_log( '[FinalQuizEmail] Appending variation message: ' . strip_tags( $variation_html ) );
+
+        $graphs_marker = 'id="villegas-email-graficas"';
+        $inserted      = false;
+
+        $marker_position = strpos( $body, $graphs_marker );
+
+        if ( false !== $marker_position ) {
+            $first_closing  = strpos( $body, '</table>', $marker_position );
+            $second_closing = false !== $first_closing ? strpos( $body, '</table>', $first_closing + strlen( '</table>' ) ) : false;
+
+            if ( false !== $second_closing ) {
+                $body     = substr_replace( $body, $variation_html, $second_closing + strlen( '</table>' ), 0 );
+                $inserted = true;
+            }
+        }
+
+        if ( ! $inserted ) {
+            $body .= $variation_html;
+        }
+
+        error_log( '[FinalQuizEmail] FINAL HTML content: ' . substr( strip_tags( $body ), 0, 200 ) );
+    }
+
     $subject = sprintf(
         /* translators: %s: quiz or course title */
         __( 'Has finalizado la Evaluación Final: %s', 'villegas-courses' ),
