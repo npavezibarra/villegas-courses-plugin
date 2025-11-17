@@ -30,6 +30,8 @@ if ( is_admin() ) {
     require_once plugin_dir_path( __FILE__ ) . 'includes/admin/class-course-checklist-handler.php';
 }
 
+require_once plugin_dir_path( __FILE__ ) . 'villegas-course-plugin.php';
+
 // Reemplazar la plantilla del curso de LearnDash
 function my_custom_ld_course_template( $template ) {
     if ( is_singular( 'sfwd-courses' ) ) {
