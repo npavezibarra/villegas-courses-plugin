@@ -212,11 +212,11 @@ function villegas_get_final_quiz_email_content( array $debug, WP_User $user ): a
         $variation_html = '';
 
         if ( $variation > 0 ) {
-            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>¡Gran Progreso!</h3>\n        <p style='font-size:18px;'>Has mejorado un <strong>{$variation}%</strong> respecto a tu evaluación inicial.</p>\n    </div>";
+            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>¡Gran progreso!</h3>\n        <p style='font-size:18px;'>Has mejorado tu desempeño en un <strong>{$variation}%</strong> respecto a tu evaluación inicial.</p>\n        <p style='font-size:18px;'>¡Excelente trabajo! Continúa avanzando con el mismo entusiasmo.</p>\n    </div>";
         } elseif ( $variation < 0 ) {
-            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>Revisa tu desempeño</h3>\n        <p style='font-size:18px;'>Tu puntaje final fue <strong>" . abs( $variation ) . "% menor</strong> que la evaluación inicial.</p>\n    </div>";
+            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>¡Gracias por completar la evaluación!</h3>\n        <p style='font-size:18px;'>Tu puntaje final fue un <strong>" . abs( $variation ) . "% menor</strong> que en tu evaluación inicial.</p>\n        <p style='font-size:18px;'>No te preocupes: repasar los contenidos y volver a intentarlo puede ayudarte a mejorar.</p>\n    </div>";
         } else {
-            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>¡Felicidades por Terminar!</h3>\n        <p style='font-size:18px;'>Tu puntaje fue el mismo en ambas evaluaciones.</p>\n    </div>";
+            $variation_html = "\n    <div style='text-align:center; margin-top: 30px;'>\n        <h3 style='margin-bottom: 10px;'>¡Buen esfuerzo!</h3>\n        <p style='font-size:18px;'>Tu resultado es similar al de tu evaluación inicial.</p>\n        <p style='font-size:18px;'>Te animamos a seguir practicando para profundizar tus conocimientos.</p>\n    </div>";
         }
 
         error_log( '[FinalQuizEmail] Appending variation message: ' . strip_tags( $variation_html ) );
