@@ -505,7 +505,8 @@ endif;
             }
 
             var difference = finalPercent - initialPercent;
-            var absDifference = Math.abs(difference);
+            var roundedDifference = Math.round(difference);
+            var absDifference = Math.abs(roundedDifference);
             var baseClasses = 'w-full h-24 rounded-lg flex items-center justify-center p-2';
 
             variationDiv.className = baseClasses;
@@ -513,14 +514,14 @@ endif;
 
             var messageHtml;
 
-            if (difference > 0) {
+            if (roundedDifference > 0) {
                 messageHtml = '' +
                     '<div class="h-full w-full flex flex-col justify-center items-center p-4 rounded-lg" style="border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
                     '<p class="text-xl font-bold text-gray-900" style="font-size:20px; font-weight:700; color:#111827; margin:0;">¡Gran progreso!</p>' +
-                    '<p class="text-gray-700 mt-1" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">Has mejorado tu desempeño en un ' + difference.toFixed(0) + '% respecto a tu evaluación inicial.</p>' +
+                    '<p class="text-gray-700 mt-1" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">Has mejorado tu desempeño en un ' + roundedDifference + '% respecto a tu evaluación inicial.</p>' +
                     '<p class="text-gray-700 mt-1" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">¡Excelente trabajo! Continúa avanzando con el mismo entusiasmo.</p>' +
                     '</div>';
-            } else if (difference === 0) {
+            } else if (roundedDifference === 0) {
                 messageHtml = '' +
                     '<div class="h-full w-full flex flex-col justify-center items-center p-4 rounded-lg" style="border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
                     '<p class="text-xl font-bold text-gray-900" style="font-size:20px; font-weight:700; color:#111827; margin:0;">¡Buen esfuerzo!</p>' +
@@ -531,7 +532,7 @@ endif;
                 messageHtml = '' +
                     '<div class="h-full w-full flex flex-col justify-center items-center p-4 rounded-lg" style="border-radius:8px; padding:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%;">' +
                     '<p class="text-xl font-bold text-gray-900" style="font-size:20px; font-weight:700; color:#111827; margin:0;">¡Gracias por completar la evaluación!</p>' +
-                    '<p class="text-gray-700 text-sm md:text-base mt-1 text-center" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">Tu puntaje final fue un ' + absDifference.toFixed(0) + '% menor que en tu evaluación inicial.</p>' +
+                    '<p class="text-gray-700 text-sm md:text-base mt-1 text-center" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">Tu puntaje final fue un ' + absDifference + '% menor que en tu evaluación inicial.</p>' +
                     '<p class="text-gray-700 text-sm md:text-base mt-1 text-center" style="color:#4b5563; margin-top:4px; margin-bottom:0; text-align:center;">No te preocupes: repasar los contenidos y volver a intentarlo puede ayudarte a mejorar.</p>' +
                     '</div>';
             }
