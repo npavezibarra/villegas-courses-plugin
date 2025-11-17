@@ -1,9 +1,8 @@
 <?php
 /**
- * Plugin Name: Villegas Course Plugin
- * Description: Custom functionality for Villegas courses.
- * Version: 1.0.0
- * Author: Villegas
+ * Module: Villegas Course Plugin bootstrap
+ * Description: Authentication UI, Google OAuth, and admin helpers for Villegas courses.
+ * Note: Loaded by the main plugin entry point (my-ld-course-override.php).
  */
 
 if (!defined('ABSPATH')) {
