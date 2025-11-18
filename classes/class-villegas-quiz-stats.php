@@ -10,7 +10,7 @@ class Villegas_Quiz_Stats {
      * @return int Rounded integer representation of the percentage.
      */
     public static function format_percentage( float $value ): int {
-        return (int) round( $value );
+        return villegas_round_half_up( $value );
     }
 
     /**

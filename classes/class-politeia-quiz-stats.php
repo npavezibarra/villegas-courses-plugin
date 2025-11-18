@@ -124,7 +124,7 @@ class Politeia_Quiz_Stats {
             'quiz_id'            => $quiz_id,
             'score'              => intval( $performance['score'] ?? 0 ),
             'percentage'         => $percentage,
-            'percentage_rounded' => is_null( $percentage ) ? null : round( $percentage ),
+            'percentage_rounded' => is_null( $percentage ) ? null : villegas_round_half_up( $percentage ),
             'timestamp'          => $timestamp,
             'date'               => $performance['date'] ?? null,
             'has_attempt'        => $has_attempt,
