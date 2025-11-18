@@ -126,7 +126,7 @@ function villegas_get_final_quiz_email_content( array $debug, WP_User $user ): a
     $logo_image_html = '';
 
     if ( $logo_url ) {
-        $logo_image_html = '<img src="' . esc_url( $logo_url ) . '" alt="Academia Villegas" style="width:76%;max-width:720px;height:162px;object-fit:cover;object-position:center;display:block;margin:0 auto;border-top-left-radius:8px;border-top-right-radius:8px;">';
+        $logo_image_html = '<img id="villegas-email-logo" alt="Academia Villegas" src="' . esc_url( $logo_url ) . '" style="width:76%;max-width:720px;height:162px;object-fit:cover;object-position:center;display:block;margin:0 auto;border-top-left-radius:8px;border-top-right-radius:8px;">';
     }
 
     $completion_timestamp = ! empty( $debug['final_attempt']['timestamp'] ) ? (int) $debug['final_attempt']['timestamp'] : current_time( 'timestamp' );

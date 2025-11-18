@@ -21,15 +21,17 @@
       overflow: hidden;
     }
 
+    /* Desktop and large screens (1024px and above) */
     @media only screen and (min-width: 1024px) {
-      img[alt="Academia Villegas"] {
+      #villegas-email-logo {
         width: 76% !important;
         height: 170px !important;
       }
     }
 
+    /* Mobile and tablet (below 1024px) */
     @media only screen and (max-width: 1023px) {
-      img[alt="Academia Villegas"] {
+      #villegas-email-logo {
         width: 100% !important;
         height: 140px !important;
       }
