@@ -156,8 +156,26 @@ echo wp_kses_post(
         <!-- CTA -->
         <tr>
           <td id="villegas-email-cta" style="padding:32px 48px;text-align:center;">
-            <p style="margin-top:16px;font-size:13px;color:#666666;">
-              <?php esc_html_e( '¡Gracias por participar en el curso!', 'villegas-courses' ); ?>
+            <p style="font-size:16px;color:#333333;margin-bottom:24px;">
+              <?php echo esc_html__( 'Cada lección completada no solo representa un paso adelante en tu formación, sino también una oportunidad para poner a prueba tus conocimientos.', 'elvillegas' ); ?>
+            </p>
+
+            <a href="<?php echo $button_url; ?>"
+               style="
+                    display: inline-block;
+                    background-color: #000000;
+                    color: #ffffff;
+                    padding: 14px 28px;
+                    font-size: 16px;
+                    border-radius: 6px;
+                    text-decoration: none;
+                    margin-bottom: 12px;
+               ">
+               <?php echo $button_label; ?>
+            </a>
+
+            <p style="font-size:14px;color:#666666;margin-top:8px;">
+              <?php echo $button_note; ?>
             </p>
           </td>
         </tr>
