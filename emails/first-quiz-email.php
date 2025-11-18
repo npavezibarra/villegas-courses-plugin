@@ -201,28 +201,19 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     }
   }
 
+  /* Smartphone spacing fix */
   @media only screen and (max-width: 600px) {
-    .villegas-circle-container,
-    .villegas-circle-wrapper {
+    .villegas-circle-cell,
+    .villegas-circle-wrapper,
+    td.villegas-circle-cell {
       margin-left: auto !important;
       margin-right: auto !important;
       text-align: center !important;
-    }
-
-    .villegas-first-circle {
-      margin-bottom: 40px !important;
-    }
-
-    #villegas-final-title-row td,
-    #villegas-final-title-row {
-      padding-top: 40px !important;
-    }
-
-    #villegas-firstquiz-title-2,
-    #villegas-firstquiz-title-2 td {
-      padding-top: 40px !important;
       display: block !important;
-      text-align: center !important;
+    }
+
+    #villegas-title-row-2 td {
+      padding-top: 40px !important;
     }
   }
 </style>';
@@ -271,7 +262,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '<tr>';
     $body .= '<td id="villegas-email-presentacion" style="padding:20px 48px 32px;text-align:center;">';
     $body .= '<p style="margin:0;font-size:14px;color:#6d6d6d;">' . sprintf( esc_html__( 'Completado el %s', 'villegas-courses' ), esc_html( $completion_date ) ) . '</p>';
-    $body .= '<h1 style="margin:12px 0 8px;font-size:26px;color:#111111;line-height:1;">' . sprintf( esc_html__( '¡Gran trabajo,<br>%s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ) . '</h1>';
+    $body .= '<h1 id="villegas-main-title" style="line-height:1;margin:0;padding:0;font-size:28px;">¡Gran trabajo,<span style="display:block;line-height:1;">' . esc_html( $debug['user_display_name'] ) . '!</span></h1>';
     $body .= '<div style="font-size:18px;line-height:1.6;">';
     $body .= '<p style="margin:0;color:#1c1c1c;">' . sprintf( esc_html__( 'Completaste el Primer Quiz de %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ) . '</p>';
     $body .= '</div>';
@@ -285,12 +276,29 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '<td align="center">';
     $body .= '<table class="villegas-circle-wrapper" border="0" cellspacing="0" cellpadding="0" role="presentation">';
     $body .= '<tr>';
-    $body .= '<td class="villegas-circle-container villegas-first-circle" style="padding:0 14px;text-align:center;">';
+    $body .= '<td class="villegas-circle-cell villegas-circle-container villegas-first-circle" style="padding:0 14px;text-align:center;">';
+    $body .= '<table border="0" cellspacing="0" cellpadding="0" role="presentation" style="width:100%;">';
+    $body .= '<tr id="villegas-title-row-1">';
+    $body .= '<td style="text-align:center;">';
     $body .= '<h2 id="villegas-firstquiz-title-1" style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Tu puntaje', 'villegas-courses' ) . '</h2>';
+    $body .= '</td>';
+    $body .= '</tr>';
+    $body .= '<tr>';
+    $body .= '<td style="text-align:center;">';
     $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Tu puntaje', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
     $body .= '</td>';
-    $body .= '<td id="villegas-final-title-row" class="villegas-circle-container" style="padding:0 14px;text-align:center;">';
+    $body .= '</tr>';
+    $body .= '</table>';
+    $body .= '</td>';
+    $body .= '<td class="villegas-circle-cell villegas-circle-container" style="padding:0 14px;text-align:center;">';
+    $body .= '<table border="0" cellspacing="0" cellpadding="0" role="presentation" style="width:100%;">';
+    $body .= '<tr id="villegas-title-row-2">';
+    $body .= '<td style="text-align:center;">';
     $body .= '<h2 id="villegas-firstquiz-title-2" style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Promedio Villegas', 'villegas-courses' ) . '</h2>';
+    $body .= '</td>';
+    $body .= '</tr>';
+    $body .= '<tr>';
+    $body .= '<td style="text-align:center;">';
     $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Promedio Villegas', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
     $body .= '</td>';
     $body .= '</tr>';
