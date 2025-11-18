@@ -94,19 +94,19 @@
         <tr>
           <td id="villegas-email-presentacion" style="padding:20px 48px 32px;text-align:center;">
             <p style="margin:0;font-size:12px;color:#6d6d6d;">
-              <?php printf( esc_html__( 'Completed on %s', 'villegas-courses' ), esc_html( $completion_date ) ); ?>
+              <?php printf( esc_html__( 'Completado el %s', 'villegas-courses' ), esc_html( $completion_date ) ); ?>
             </p>
 
             <h1 style="margin:12px 0 8px;font-size:26px;color:#111111;">
-              <?php 
-echo wp_kses_post( 
-    sprintf( __( '¡Gran trabajo,<br>%s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ) 
+              <?php
+echo wp_kses_post(
+    sprintf( __( '¡Gran trabajo,<br style="display:block;"> %s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) )
 );
 ?>
             </h1>
 
             <p style="margin:0;font-size:16px;line-height:1.5;">
-              <?php printf( esc_html__( 'You completed the First Quiz of %s.', 'villegas-courses' ), esc_html( $debug['quiz_title'] ) ); ?>
+              <?php printf( esc_html__( 'Completaste el Primer Quiz de %s.', 'villegas-courses' ), esc_html( $debug['quiz_title'] ) ); ?>
             </p>
           </td>
         </tr>
@@ -157,7 +157,7 @@ echo wp_kses_post(
         <tr>
           <td id="villegas-email-cta" style="padding:32px 48px;text-align:center;">
             <p style="margin-top:16px;font-size:13px;color:#666666;">
-              <?php esc_html_e( 'Thanks for participating in the course!', 'villegas-courses' ); ?>
+              <?php esc_html_e( '¡Gracias por participar en el curso!', 'villegas-courses' ); ?>
             </p>
           </td>
         </tr>
