@@ -98,7 +98,11 @@
             </p>
 
             <h1 style="margin:12px 0 8px;font-size:26px;color:#111111;">
-              <?php printf( esc_html__( 'Great job,<br> %s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ); ?>
+              <?php 
+echo wp_kses_post( 
+    sprintf( __( '¡Gran trabajo,<br>%s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ) 
+);
+?>
             </h1>
 
             <p style="margin:0;font-size:16px;line-height:1.5;">
@@ -122,20 +126,20 @@
                       <!-- USER SCORE -->
                       <td class="villegas-circle-container villegas-first-circle" style="padding:0 14px;text-align:center;">
                         <h2 style="font-size:16px;margin-bottom:12px;color:#111111;">
-                          <?php esc_html_e( 'Your Score', 'villegas-courses' ); ?>
+                          <?php esc_html_e( 'Tu puntaje', 'villegas-courses' ); ?>
                         </h2>
                         <img src="<?php echo esc_url( $user_chart_url ); ?>"
-                             alt="Your Score <?php echo esc_attr( $user_display_percent ); ?>"
+                             alt="Tu puntaje <?php echo esc_attr( $user_display_percent ); ?>"
                              style="max-width:240px;height:auto;">
                       </td>
 
                       <!-- VILLEGAS AVERAGE -->
                       <td id="villegas-final-title-row" class="villegas-circle-container" style="padding:0 14px;text-align:center;">
                         <h2 style="font-size:16px;margin-bottom:12px;color:#111111;">
-                          <?php esc_html_e( 'Villegas Average', 'villegas-courses' ); ?>
+                          <?php esc_html_e( 'Promedio Alumnos', 'villegas-courses' ); ?>
                         </h2>
                         <img src="<?php echo esc_url( $average_chart_url ); ?>"
-                             alt="Villegas Average <?php echo esc_attr( $average_display_percent ); ?>"
+                             alt="Promedio Alumnos <?php echo esc_attr( $average_display_percent ); ?>"
                              style="max-width:240px;height:auto;">
                       </td>
 
