@@ -168,23 +168,57 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $average_chart_url = villegas_generate_quickchart_url( $average_value, $average_display_percent );
 
     $inline_styles  = '<style type="text/css">
-  @media only screen and (max-width: 500px) {
-    #villegas-email-graficas td {
-      display: block !important;
-      width: 90% !important;
-      margin: 0 auto !important;
-      text-align: center !important;
+    @media only screen and (max-width: 500px) {
+      #villegas-email-graficas td {
+        display: block !important;
+        width: 90% !important;
+        margin: 0 auto !important;
+        text-align: center !important;
+      }
+      #villegas-email-graficas h2 {
+        margin-top: 24px !important;
+      }
     }
-    #villegas-email-graficas h2 {
-      margin-top: 24px !important;
-    }
-  }
 
-  table[id$="villegas-email-card"] {
-    border-radius: 8px;
-    overflow: hidden;
-  }
-</style>';
+    table[id$="villegas-email-card"] {
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* Desktop and large screens (1024px and above) */
+    @media only screen and (min-width: 1024px) {
+      #villegas-email-logo {
+        width: 76% !important;
+        height: 170px !important;
+      }
+    }
+
+    /* Mobile and tablet (below 1024px) */
+    @media only screen and (max-width: 1023px) {
+      #villegas-email-logo {
+        width: 100% !important;
+        height: 140px !important;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .villegas-circle-container,
+      .villegas-circle-wrapper {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center !important;
+      }
+
+      .villegas-first-circle {
+        margin-bottom: 40px !important;
+      }
+
+      #villegas-final-title-row td,
+      #villegas-final-title-row {
+        padding-top: 40px !important;
+      }
+    }
+  </style>';
 
     $background_color          = '#f6f6f6';
     $background_image_attr_url = $background_image_url ? esc_url( $background_image_url ) : '';
@@ -203,71 +237,81 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $wrapper_background_style = implode( '', $background_style_rules );
     $wrapper_div_style        = $wrapper_background_style . 'padding:32px 0;';
 
+    $mso_background_block = '';
+
+    if ( $background_image_attr_url ) {
+        $mso_background_block  = '<!--[if gte mso 9]>';
+        $mso_background_block .= '<v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">';
+        $mso_background_block .= '<v:fill type="frame" src="' . $background_image_attr_url . '" color="' . esc_attr( $background_color ) . '" />';
+        $mso_background_block .= '</v:background>';
+        $mso_background_block .= '<![endif]-->';
+    }
+
+    $logo_image = '';
+
+    if ( $logo_url ) {
+        $logo_image = '<img id="villegas-email-logo" alt="Academia Villegas" src="' . esc_url( $logo_url ) . '" style="width:76%;max-width:720px;height:162px;object-fit:cover;object-position:center;display:block;margin:0 auto;border-top-left-radius:8px;border-top-right-radius:8px;">';
+    }
+
+    $user_chart_url          = villegas_generate_quickchart_url( 54.0, 54.0 );
+    $average_chart_url       = villegas_generate_quickchart_url( 87.0, 87.0 );
+    $user_percentage_text    = '54%';
+    $average_percentage_text = '87%';
+
+    $quiz_title = $debug['quiz_title'] ?? '';
+
     $body  = $inline_styles;
     $body .= '<table id="villegas-email-wrapper" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"' . $wrapper_background_attr . $wrapper_bgcolor_attr . ' style="' . $wrapper_background_style . '">';
     $body .= '<tr>';
     $body .= '<td align="center" valign="top"' . $wrapper_background_attr . $wrapper_bgcolor_attr . ' style="' . $wrapper_background_style . '">';
-
-    if ( $background_image_attr_url ) {
-        $body .= '<!--[if gte mso 9]>';
-        $body .= '<v:background xmlns:v="urn:schemas-microsoft-com:vml" fill="t">';
-        $body .= '<v:fill type="frame" src="' . $background_image_attr_url . '" color="' . esc_attr( $background_color ) . '" />';
-        $body .= '</v:background>';
-        $body .= '<![endif]-->';
-    }
-
+    $body .= $mso_background_block;
     $body .= '<div style="' . $wrapper_div_style . '">';
     $body .= '<table id="villegas-email-card" role="presentation" width="720" border="0" cellspacing="0" cellpadding="0" style="width:100%;max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
-
     $body .= '<tr>';
-    $body .= '<td id="villegas-email-encabezado" style="text-align:center;padding:0;">';
-    if ( $logo_url ) {
-        $body .= '<img src="' . esc_url( $logo_url ) . '" alt="Academia Villegas" style="width:100%;max-width:720px;height:200px;object-fit:cover;object-position:center;display:block;margin:0 auto;border-top-left-radius:8px;border-top-right-radius:8px;">';
-    }
+    $body .= '<td id="villegas-email-encabezado" style="text-align:center;padding:0;background:black;border-radius:8px 8px 0px 0px;">';
+    $body .= $logo_image;
     $body .= '</td>';
     $body .= '</tr>';
-
     $body .= '<tr>';
     $body .= '<td id="villegas-email-presentacion" style="padding:20px 48px 32px;text-align:center;">';
-    $body .= '<p style="margin:0;font-size:12px;color:#6d6d6d;">' . sprintf( esc_html__( 'Completado el %s', 'villegas-courses' ), esc_html( $completion_date ) ) . '</p>';
-    $body .= '<h1 style="margin:12px 0 8px;font-size:26px;color:#111111;">' . sprintf( esc_html__( '¡Gran trabajo, %s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ) . '</h1>';
-    $body .= '<p style="margin:0;font-size:16px;line-height:1.5;">' . sprintf( esc_html__( 'Completaste el Primer Quiz de %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ) . '</p>';
+    $body .= '<p style="margin:0;font-size:14px;color:#6d6d6d;">' . sprintf( esc_html__( 'Completado el %s', 'villegas-courses' ), esc_html( $completion_date ) ) . '</p>';
+    $body .= '<h1 style="margin:12px 0 8px;font-size:26px;color:#111111;line-height:1">' . sprintf( esc_html__( '¡Gran trabajo,<br> %s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ) . '</h1>';
+    $body .= '<div style="font-size:18px;line-height:1.6;">';
+    $body .= '<p style="margin:0;color:#1c1c1c;">' . sprintf( esc_html__( 'Completaste la Evaluación Final de %s.', 'villegas-courses' ), esc_html( $quiz_title ) ) . '</p>';
+    $body .= '</div>';
     $body .= '</td>';
     $body .= '</tr>';
-
     $body .= '<tr>';
     $body .= '<td style="padding:0 32px;">';
     $body .= '<table id="villegas-email-graficas" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;padding:32px 0;text-align:center;">';
     $body .= '<tr>';
     $body .= '<td align="center">';
-    $body .= '<table border="0" cellspacing="0" cellpadding="0" role="presentation">';
+    $body .= '<table class="villegas-circle-wrapper" border="0" cellspacing="0" cellpadding="0" role="presentation">';
     $body .= '<tr>';
-    $body .= '<td style="padding:0 14px;text-align:center;">';
-    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Tu puntaje', 'villegas-courses' ) . '</h2>';
-    $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Tu puntaje', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
+    $body .= '<td class="villegas-circle-container villegas-first-circle" style="padding:0 14px;text-align:center;">';
+    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Evaluación Inicial', 'villegas-courses' ) . '</h2>';
+    $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Evaluación Inicial', 'villegas-courses' ) . ' ' . esc_attr( $user_percentage_text ) . '" style="max-width:240px;height:auto;">';
     $body .= '</td>';
-    $body .= '<td style="padding:0 14px;text-align:center;">';
-    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Promedio Villegas', 'villegas-courses' ) . '</h2>';
-    $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Promedio Villegas', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
-    $body .= '</td>';
-    $body .= '</tr>';
-    $body .= '</table>';
+    $body .= '<td id="villegas-final-title-row" class="villegas-circle-container" style="padding:0 14px;text-align:center;">';
+    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</h2>';
+    $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Evaluación Final', 'villegas-courses' ) . ' ' . esc_attr( $average_percentage_text ) . '" style="max-width:240px;height:auto;">';
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '</table>';
     $body .= '</td>';
     $body .= '</tr>';
-
+    $body .= '</table>';
+    $body .= '</td>';
+    $body .= '</tr>';
     $body .= '<tr>';
     $body .= '<td id="villegas-email-cta" style="padding:32px 48px;text-align:center;">';
-    $body .= '<p style="margin:0 0 18px;font-size:15px;color:#333333;">' . esc_html__( 'Cada lección completada te acerca a comparar tu progreso en el Quiz Final.', 'villegas-courses' ) . '</p>';
-    $body .= '<a href="' . esc_url( $button_url ) . '" style="display:inline-block;background:#000000;color:#ffffff;padding:14px 28px;border-radius:6px;text-decoration:none;font-weight:600;">' . esc_html( $button_label ) . '</a>';
-    $body .= '<p style="margin-top:16px;font-size:13px;color:#666666;">' . esc_html( $button_note ) . '</p>';
+    $body .= '<div style="font-size:18px;line-height:1.6;color:#333333;">';
+    $body .= '<p style="margin-top:28px;color:#666666;">' . esc_html__( '¡Gracias por participar en el curso!', 'villegas-courses' ) . '</p>';
+    $body .= '</div>';
     $body .= '</td>';
     $body .= '</tr>';
-
     $body .= '</table>';
-    $body .= '</div><!-- /villegas-background -->';
+    $body .= '</div>';
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '</table>';
