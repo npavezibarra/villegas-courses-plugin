@@ -218,6 +218,35 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
   }
 </style>';
 
+    /*
+     * === Diagnostic Log: Final vs First Quiz Email CSS Alignment ===
+     * Critical CSS mismatches
+     * - Final Quiz mobile rule `.villegas-first-circle { margin-bottom: 40px !important; }` is absent; First Quiz relies only on #villegas-title-row-2 padding, so the first donut has no dedicated bottom spacing on smartphones.
+     * - Final targets `#villegas-final-title-row td` for mobile top padding; First uses `<tr id="villegas-title-row-2">` with nested `<h2>` instead, so the Final selector cannot map to the current structure.
+     * - Final H1 inline style (`margin:12px 0 8px;font-size:26px;line-height:1;color:#111111;`) differs from First (`margin:0;padding:0;font-size:28px;line-height:1;`), keeping a larger, tighter heading than the reference typography.
+     *
+     * Likely Gmail-related behavior mismatches
+     * - Gmail ignores `<br>` inside `<h1>` (the Final template still includes it), while First uses a block-level `<span>`; this diverges from the reference behavior the shared CSS assumes.
+     * - Gmail drops margins on table descendants, so First’s reliance on inline margins for some text (e.g., h1 margin:0) means vertical spacing depends on padding rules that differ from the Final template’s margin-based rhythm.
+     *
+     * Structural mismatches
+     * - Final places both donuts in a single `<tr>` with two `<td>` siblings; First nests each donut inside its own table within `<td class="villegas-circle-cell">`, so any rule expecting direct child selectors (like `#villegas-final-title-row` on a `<td>`) does not directly apply.
+     * - The second donut title lives inside `<tr id="villegas-title-row-2">` rather than a `<td id>` as in Final, preventing reuse of selectors that target a `<td>` for spacing.
+     *
+     * Rules from Final that fail in First
+     * - `.villegas-first-circle { margin-bottom:40px !important; }` has no counterpart, leaving the first donut without the Final template’s mobile gap.
+     * - `#villegas-final-title-row td { padding-top:40px !important; }` cannot match because the analogous element is a `<tr>` with a nested `<td>`/`<h2>` hierarchy.
+     * - The Final H1 styling is overridden by First’s inline `font-size:28px;margin:0;`, so shared CSS cannot reduce the heading size or add top/bottom spacing.
+     *
+     * Inline style overrides
+     * - Inline typography on the H1 and donut titles (`font-size:28px` and `font-size:16px` respectively) out-prioritize any external font-size adjustments, preventing Final-style scaling unless new `!important` rules are added.
+     * - Inline padding (`padding:0 14px;`) on circle cells persists at mobile widths because no overriding rule exists, unlike the Final layout where margin-bottom provides spacing instead of padding changes.
+     *
+     * Gmail Mobile behaviors
+     * - Gmail respects padding on `<td>` but not on `<tr>`, so the mobile spacing selector aimed at `#villegas-title-row-2 td` works, whereas any padding applied directly to `<tr>` (as in the Final selector) would be ignored.
+     * - Gmail strips or rewrites margins inside table layouts; because First keeps h1 margin at zero and uses minimal padding for headings, perceived spacing may compress relative to the Final template that assumes margin-based spacing.
+     */
+
     $background_color          = '#f6f6f6';
     $background_image_attr_url = $background_image_url ? esc_url( $background_image_url ) : '';
     $wrapper_background_attr   = $background_image_attr_url ? ' background="' . $background_image_attr_url . '"' : '';
