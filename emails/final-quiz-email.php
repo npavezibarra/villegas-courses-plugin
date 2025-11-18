@@ -48,6 +48,12 @@
       .villegas-first-circle {
         margin-bottom: 40px !important;
       }
+
+      #villegas-evaluacion-final-title {
+        margin-top: 40px !important;
+        display: block !important;
+        text-align: center !important;
+      }
     }
   </style>
 </head>
@@ -85,7 +91,7 @@
                             <img src="{{initial_chart_url}}" alt="Evaluación Inicial {{initial_percentage}}" style="max-width:240px;height:auto;">
                           </td>
                           <td class="villegas-circle-container" style="padding:0 14px;text-align:center;">
-                            <h2 style="font-size:16px;margin-bottom:12px;color:#111111;">Evaluación Final</h2>
+                            <h2 id="villegas-evaluacion-final-title" style="font-size:16px;margin-bottom:12px;color:#111111;">Evaluación Final</h2>
                             <img src="{{final_chart_url}}" alt="Evaluación Final {{final_percentage}}" style="max-width:240px;height:auto;">
                           </td>
                         </tr>
