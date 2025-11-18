@@ -201,24 +201,24 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     }
   }
 
-  /* Smartphone spacing fix */
+  .villegas-first-circle {
+    margin-bottom: 40px !important;
+  }
+
   @media only screen and (max-width: 600px) {
-    .villegas-circle-cell,
-    .villegas-circle-wrapper,
-    td.villegas-circle-cell {
+    .villegas-circle-container,
+    .villegas-circle-wrapper {
       margin-left: auto !important;
       margin-right: auto !important;
       text-align: center !important;
-      display: block !important;
     }
 
-    /* First donut gets spacing below */
     .villegas-first-circle {
       margin-bottom: 40px !important;
     }
 
-    /* Title for second donut gets spacing above */
-    #villegas-firstquiz-title-row-2 td {
+    #villegas-title-row-2 td,
+    #villegas-title-row-2 {
       padding-top: 40px !important;
     }
   }
@@ -227,9 +227,9 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     /*
      * === Diagnostic Log: Final vs First Quiz Email CSS Alignment ===
      * Updated alignment notes (post-fix)
-     * - Mobile gap: `.villegas-first-circle { margin-bottom:40px !important; }` and `#villegas-firstquiz-title-row-2 td { padding-top:40px !important; }` now mirror the Final quiz spacing model for Gmail Mobile.
-     * - Title placement: donut titles now live in `<tr id="villegas-firstquiz-title-row-1|2">` with `<td>` children to ensure padding applies in Gmail.
-     * - H1 spacing: heading now matches Final sizing (`font-size:26px;color:#111111;line-height:1;margin-bottom:12px;`) with a block-level span for the name to avoid `<br>` issues in Gmail.
+     * - Mobile gap: `.villegas-first-circle { margin-bottom:40px !important; }` and `#villegas-title-row-2 td { padding-top:40px !important; }` mirror the Final quiz spacing model for Gmail Mobile.
+     * - Title placement: donut titles now live in `<tr id="villegas-title-row-1|2">` with `<td>` children to ensure padding applies in Gmail.
+     * - H1 spacing: heading aligns to Final sizing (`font-size:26px;color:#111111;line-height:1;margin:12px 0 8px;`) with a block-level span for the name to avoid `<br>` issues in Gmail.
      *
      * Gmail-related behaviors to monitor
      * - Gmail ignores margins on table descendants; spacing remains padding-driven on `<td>` elements for smartphone layouts.
@@ -283,9 +283,9 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '<tr>';
     $body .= '<td id="villegas-email-presentacion" style="padding:20px 48px 32px;text-align:center;">';
     $body .= '<p style="margin:0;font-size:14px;color:#6d6d6d;">' . sprintf( esc_html__( 'Completado el %s', 'villegas-courses' ), esc_html( $completion_date ) ) . '</p>';
-    $body .= '<h1 id="villegas-main-title" style="line-height:1;margin:0 0 12px;padding:0;font-size:26px;color:#111111;text-align:center;">¡Gran trabajo,<span style="display:block;line-height:1;">' . esc_html( $debug['user_display_name'] ) . '!</span></h1>';
+    $body .= '<h1 id="villegas-main-title" style="margin:12px 0 8px;font-size:26px;color:#111111;line-height:1;">¡Gran trabajo,<span style="display:block;line-height:1;">' . esc_html( $debug['user_display_name'] ) . '!</span></h1>';
     $body .= '<div style="font-size:18px;line-height:1.6;">';
-    $body .= '<p style="margin:0;color:#1c1c1c;">' . sprintf( esc_html__( 'Completaste el Primer Quiz de %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ) . '</p>';
+    $body .= '<p style="margin:0;font-size:18px;line-height:1.6;color:#1c1c1c;">' . sprintf( esc_html__( 'Completaste el Primer Quiz de %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ) . '</p>';
     $body .= '</div>';
     $body .= '</td>';
     $body .= '</tr>';
@@ -294,33 +294,30 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '<td style="padding:0 32px;">';
     $body .= '<table id="villegas-email-graficas" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;padding:32px 0;text-align:center;">';
     $body .= '<tr>';
-    $body .= '<td align="center">';
-    $body .= '<table class="villegas-circle-wrapper" border="0" cellspacing="0" cellpadding="0" role="presentation">';
-    $body .= '<tr>';
-    $body .= '<td class="villegas-circle-cell villegas-circle-wrapper villegas-first-circle" style="padding:0 14px;text-align:center;">';
+    $body .= '<td class="villegas-circle-cell villegas-circle-container villegas-circle-wrapper villegas-first-circle" style="padding:0 14px;text-align:center;">';
     $body .= '<table border="0" cellspacing="0" cellpadding="0" role="presentation" style="width:100%;">';
-    $body .= '<tr id="villegas-firstquiz-title-row-1">';
+    $body .= '<tr id="villegas-title-row-1">';
     $body .= '<td style="text-align:center;">';
-    $body .= '<h2 id="villegas-firstquiz-title-1" style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Tu puntaje', 'villegas-courses' ) . '</h2>';
+    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;text-align:center;display:block;">' . esc_html__( 'Tu puntaje', 'villegas-courses' ) . '</h2>';
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '<tr>';
     $body .= '<td style="text-align:center;">';
-    $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Tu puntaje', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
+    $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Tu puntaje', 'villegas-courses' ) . '" style="max-width:240px;height:auto;display:block;margin:0 auto;">';
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '</table>';
     $body .= '</td>';
-    $body .= '<td class="villegas-circle-cell villegas-circle-wrapper" style="padding:0 14px;text-align:center;">';
+    $body .= '<td class="villegas-circle-cell villegas-circle-container villegas-circle-wrapper" style="padding:0 14px;text-align:center;">';
     $body .= '<table border="0" cellspacing="0" cellpadding="0" role="presentation" style="width:100%;">';
-    $body .= '<tr id="villegas-firstquiz-title-row-2">';
+    $body .= '<tr id="villegas-title-row-2">';
     $body .= '<td style="text-align:center;">';
-    $body .= '<h2 id="villegas-firstquiz-title-2" style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Promedio Villegas', 'villegas-courses' ) . '</h2>';
+    $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;text-align:center;display:block;">' . esc_html__( 'Promedio Villegas', 'villegas-courses' ) . '</h2>';
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '<tr>';
     $body .= '<td style="text-align:center;">';
-    $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Promedio Villegas', 'villegas-courses' ) . '" style="max-width:240px;height:auto;">';
+    $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Promedio Villegas', 'villegas-courses' ) . '" style="max-width:240px;height:auto;display:block;margin:0 auto;">';
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '</table>';
