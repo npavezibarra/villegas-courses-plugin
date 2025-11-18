@@ -30,7 +30,7 @@
         <div style="{{wrapper_div_style}}">
           <table id="villegas-email-card" role="presentation" width="720" border="0" cellspacing="0" cellpadding="0" style="width:100%;max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">
             <tr>
-              <td id="villegas-email-encabezado" style="text-align:center;padding:0;">
+              <td id="villegas-email-encabezado" style="text-align:center;padding:0;background:black;border-radius:8px 8px 0px 0px;">
                 {{logo_image}}
               </td>
             </tr>
