@@ -30,8 +30,8 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $average_display_percent = $average_score_int . '%';
 
     // CHART URLS
-    $user_chart_url    = villegas_generate_quickchart_url( $user_score_int, $user_display_percent );
-    $average_chart_url = villegas_generate_quickchart_url( $average_score_int, $average_display_percent );
+    $user_chart_url    = villegas_generate_quickchart_url( $user_score_int, $user_score_int );
+    $average_chart_url = villegas_generate_quickchart_url( $average_score_int, $average_score_int );
 
     // BACKGROUND
     $background_image_url = 'https://elvillegas.cl/wp-content/uploads/2025/04/default-bg.jpg';
