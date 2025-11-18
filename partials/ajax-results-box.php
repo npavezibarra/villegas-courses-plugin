@@ -115,7 +115,7 @@ $days_elapsed     = isset( $metrics['days_elapsed'] ) ? $metrics['days_elapsed']
             <strong>
                 <?php
                 if ( is_numeric( $first_percentage ) ) {
-                    echo esc_html( $first_percentage ) . '%';
+                    echo esc_html( villegas_round_half_up( $first_percentage ) ) . '%';
                 } else {
                     echo '--';
                 }
@@ -143,7 +143,7 @@ $days_elapsed     = isset( $metrics['days_elapsed'] ) ? $metrics['days_elapsed']
             <strong>
                 <?php
                 if ( is_numeric( $final_percentage ) ) {
-                    echo esc_html( $final_percentage ) . '%';
+                    echo esc_html( villegas_round_half_up( $final_percentage ) ) . '%';
                 } else {
                     echo '--';
                 }

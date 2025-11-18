@@ -20,15 +20,18 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $completion_date      = date_i18n( get_option('date_format'), $completion_timestamp );
 
     // SCORES
-    $user_score  = villegas_normalize_percentage_value( $quiz_data['percentage'] ?? 0 );
-    $average_val = Villegas_Quiz_Stats::get_average_percentage( $debug['quiz_post_id'] ?? $debug['quiz_id'] );
+    $user_score     = villegas_normalize_percentage_value( $quiz_data['percentage'] ?? 0 );
+    $average_value  = Villegas_Quiz_Stats::get_average_percentage( $debug['quiz_post_id'] ?? $debug['quiz_id'] ) ?? 0;
 
-    $user_display_percent    = Villegas_Quiz_Stats::format_percentage( $user_score );
-    $average_display_percent = Villegas_Quiz_Stats::format_percentage( $average_val );
+    $user_score_int    = villegas_round_half_up( $user_score );
+    $average_score_int = villegas_round_half_up( $average_value );
+
+    $user_display_percent    = $user_score_int . '%';
+    $average_display_percent = $average_score_int . '%';
 
     // CHART URLS
-    $user_chart_url    = villegas_generate_quickchart_url( $user_score, $user_display_percent );
-    $average_chart_url = villegas_generate_quickchart_url( $average_val, $average_display_percent );
+    $user_chart_url    = villegas_generate_quickchart_url( $user_score_int, $user_display_percent );
+    $average_chart_url = villegas_generate_quickchart_url( $average_score_int, $average_display_percent );
 
     // BACKGROUND
     $background_image_url = 'https://elvillegas.cl/wp-content/uploads/2025/04/default-bg.jpg';

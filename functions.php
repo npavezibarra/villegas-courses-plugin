@@ -4,6 +4,8 @@ if ( ! defined( 'VILLEGAS_COURSES_PLUGIN_FILE' ) ) {
     define( 'VILLEGAS_COURSES_PLUGIN_FILE', __FILE__ );
 }
 
+require_once plugin_dir_path( __FILE__ ) . 'includes/helpers.php';
+
 if ( ! class_exists( 'CourseQuizMetaHelper' ) ) {
     require_once plugin_dir_path( __FILE__ ) . 'classes/class-course-quiz-helper.php';
 }
@@ -273,7 +275,7 @@ function villegas_get_last_quiz_percentage( $user_id, $quiz_id ) {
     $percentage = (float) $percentage;
     $percentage = max( 0, min( 100, $percentage ) );
 
-    return (int) round( $percentage );
+    return villegas_round_half_up( $percentage );
 }
 
 // Hook de mensaje de advertencia
@@ -299,7 +301,7 @@ function villegas_mensaje_personalizado_intentos($quiz_id, $ignored, $user_id) {
 
     // Variables base
     $fecha_rendida = date_i18n('j \d\e F \d\e Y', $ultimo_attempt['time']);
-    $porcentaje = isset($ultimo_attempt['percentage']) ? round($ultimo_attempt['percentage']) : 0;
+    $porcentaje = isset($ultimo_attempt['percentage']) ? villegas_round_half_up($ultimo_attempt['percentage']) : 0;
     $dias_pasados = floor((time() - $ultimo_attempt['time']) / (60 * 60 * 24));
     $dias_faltantes = max(0, 15 - $dias_pasados);
     $puede_reiniciar = $dias_pasados >= 15;
