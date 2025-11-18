@@ -8,25 +8,64 @@
 
 get_header();
 
-$author      = get_queried_object();
-$author_id   = $author instanceof WP_User ? $author->ID : (int) get_query_var( 'author' );
-$author_id   = $author_id ?: get_the_author_meta( 'ID' );
-$display_name = get_the_author_meta( 'display_name', $author_id );
-$tagline      = get_user_meta( $author_id, 'titulo_personal', true );
-$acf_bio      = function_exists( 'get_field' ) ? get_field( 'author_bio', 'user_' . $author_id ) : '';
-$bio          = $acf_bio ?: get_the_author_meta( 'description', $author_id );
-$location     = get_user_meta( $author_id, 'author_location', true );
-$email        = get_the_author_meta( 'user_email', $author_id );
-$website      = get_the_author_meta( 'user_url', $author_id );
-$facebook     = get_user_meta( $author_id, 'facebook_profile', true );
-$instagram    = get_user_meta( $author_id, 'instagram_profile', true );
-$linkedin     = get_user_meta( $author_id, 'linkedin_profile', true );
+$author        = get_queried_object();
+$author_id     = $author instanceof WP_User ? $author->ID : (int) get_query_var( 'author' );
+$author_id     = $author_id ?: get_the_author_meta( 'ID' );
+$display_name  = get_the_author_meta( 'display_name', $author_id );
+$tagline       = get_user_meta( $author_id, 'titulo_personal', true );
+$acf_bio       = function_exists( 'get_field' ) ? get_field( 'author_bio', 'user_' . $author_id ) : '';
+$bio           = $acf_bio ?: get_the_author_meta( 'description', $author_id );
+$location      = get_user_meta( $author_id, 'author_location', true );
+$email         = get_the_author_meta( 'user_email', $author_id );
+$website       = get_the_author_meta( 'user_url', $author_id );
+$facebook      = get_user_meta( $author_id, 'facebook_profile', true );
+$instagram     = get_user_meta( $author_id, 'instagram_profile', true );
+$linkedin      = get_user_meta( $author_id, 'linkedin_profile', true );
+$profile_photo = get_user_meta( $author_id, 'profile_picture', true );
+$acf_photo     = function_exists( 'get_field' ) ? get_field( 'author_photo', 'user_' . $author_id ) : '';
+
+$author_photo_html = '';
+if ( is_array( $acf_photo ) && isset( $acf_photo['ID'] ) ) {
+    $author_photo_html = wp_get_attachment_image( $acf_photo['ID'], 'medium', false, array( 'class' => 'author-avatar__img' ) );
+} elseif ( is_numeric( $acf_photo ) ) {
+    $author_photo_html = wp_get_attachment_image( (int) $acf_photo, 'medium', false, array( 'class' => 'author-avatar__img' ) );
+} elseif ( is_string( $acf_photo ) && $acf_photo ) {
+    $author_photo_html = sprintf( '<img class="author-avatar__img" src="%s" alt="%s" />', esc_url( $acf_photo ), esc_attr( $display_name ) );
+}
+
+if ( ! $author_photo_html && $profile_photo ) {
+    $author_photo_html = sprintf( '<img class="author-avatar__img" src="%s" alt="%s" />', esc_url( $profile_photo ), esc_attr( $display_name ) );
+}
+
+if ( ! $author_photo_html ) {
+    $author_photo_html = get_avatar( $author_id, 200, '', $display_name, array( 'class' => 'author-avatar__img' ) );
+}
+
+$can_edit_photo = is_user_logged_in() && (int) get_current_user_id() === (int) $author_id;
+$upload_photo_url = '';
+
+if ( $can_edit_photo ) {
+    if ( function_exists( 'wc_get_endpoint_url' ) ) {
+        $upload_photo_url = wc_get_endpoint_url( 'edit-account', '', wc_get_page_permalink( 'myaccount' ) );
+    }
+
+    if ( ! $upload_photo_url ) {
+        $upload_photo_url = get_edit_profile_url( $author_id );
+    }
+}
 ?>
 
 <main id="primary" class="site-main author-template">
     <section class="author-hero">
         <div class="author-hero__media">
-            <?php echo get_avatar( $author_id, 200, '', $display_name ); ?>
+            <div class="author-avatar">
+                <?php echo $author_photo_html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+            </div>
+            <?php if ( $can_edit_photo && $upload_photo_url ) : ?>
+                <a class="author-upload-photo" href="<?php echo esc_url( $upload_photo_url ); ?>">
+                    <?php esc_html_e( 'Subir o actualizar foto', 'villegas-courses' ); ?>
+                </a>
+            <?php endif; ?>
         </div>
         <div class="author-hero__content">
             <p class="author-eyebrow"><?php esc_html_e( 'Autor destacado', 'villegas-courses' ); ?></p>
