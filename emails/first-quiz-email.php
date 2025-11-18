@@ -39,6 +39,30 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     // LOGO
     $logo_url = 'https://elvillegas.cl/wp-content/plugins/villegas-courses-plugin/assets/jpg/academia-email-logo.jpeg';
 
+    // COURSE CTA DATA
+    $course_id = $debug['course_id'] ?? 0;
+    $user_id   = $debug['user_id'] ?? $user->ID;
+
+    $course_url = $course_id ? get_permalink( $course_id ) : '';
+    $product_id = $course_id ? Villegas_Course::get_related_product_id( $course_id ) : 0;
+    $is_free    = $course_id ? ( learndash_get_setting( $course_id, 'course_price_type' ) === 'free' ) : false;
+    $has_access = $course_id ? Villegas_Course::user_has_access( $user_id, $course_id ) : false;
+
+    if ( $has_access || $is_free ) {
+        $button_label = esc_html__( 'Ir al curso', 'elvillegas' );
+        $button_url   = esc_url( $course_url );
+        $button_note  = esc_html__( 'Continúa con tus lecciones para seguir avanzando.', 'elvillegas' );
+    } else {
+        $checkout_url = add_query_arg(
+            [ 'add-to-cart' => $product_id ],
+            wc_get_checkout_url()
+        );
+
+        $button_label = esc_html__( 'Comprar curso', 'elvillegas' );
+        $button_url   = esc_url( $checkout_url );
+        $button_note  = esc_html__( 'Obtén acceso completo al curso para continuar tu aprendizaje.', 'elvillegas' );
+    }
+
     // MAKE VARIABLES AVAILABLE TO TEMPLATE
     extract([
         'debug'                  => $debug,
@@ -50,6 +74,9 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
         'average_chart_url'      => $average_chart_url,
         'background_image_url'   => $background_image_url,
         'logo_url'               => $logo_url,
+        'button_label'           => $button_label,
+        'button_url'             => $button_url,
+        'button_note'            => $button_note,
     ]);
 
     // BUILD EMAIL USING TEMPLATE
