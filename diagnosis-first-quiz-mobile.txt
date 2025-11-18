@@ -1,0 +1,17 @@
+First Quiz Email mobile stacking issue - diagnosis and remediation plan
+
+Summary of observations
+- The mobile media queries are injected at runtime via the $inline_styles string (lines 170-205), but the First Quiz Email HTML structure is not the same as the Final Quiz Email. The current layout nests each chart inside its own table that sits in separate sibling <td> elements wrapped by another table (lines 260-284).【F:emails/first-quiz-email.php†L170-L205】【F:emails/first-quiz-email.php†L260-L284】
+- The Final Quiz Email stacks correctly because both charts live in a single villegas-circle-wrapper table row where each chart is a <td> inside the same wrapper (lines 43-71). This matches the responsive CSS selectors that expect .villegas-circle-wrapper to contain two .villegas-circle-container cells side by side on desktop and stack when the media queries fire.【F:emails/final-quiz-email.php†L43-L71】
+- In the First Quiz Email, the extra table and td layer around each wrapper prevents the max-width:500px rule from acting directly on the chart cells. The media query sets #villegas-email-graficas td to display:block, but the inner layout still keeps both wrapper tables in one row because the block-level rule applies to the outer <td> (line 260) rather than the two chart <td> siblings. As a result, the wrappers remain inline tables and do not stack vertically.【F:emails/first-quiz-email.php†L170-L205】【F:emails/first-quiz-email.php†L260-L284】
+- The CSS block copied from the Final Quiz Email is present, but because the HTML hierarchy differs, the selectors cannot produce the same stacking behavior. Desktop layout remains unchanged, but mobile clients keep the charts side by side.【F:emails/first-quiz-email.php†L170-L205】
+
+Remediation plan
+1) Align the HTML structure with the Final Quiz Email
+- Replace the nested chart table section so that #villegas-email-graficas directly contains a single <table class="villegas-circle-wrapper"> with one row and two <td class="villegas-circle-container"> cells (first cell also has villegas-first-circle). This mirrors lines 43-71 of final-quiz-email.php and removes the extra wrapper table/td that blocks stacking.【F:emails/final-quiz-email.php†L43-L71】
+
+2) Keep the responsive CSS identical to the Final Quiz Email
+- Retain the existing @media (max-width:500px) block and the (max-width:600px) rules with !important. No additional CSS is needed if the HTML matches the Final Quiz Email structure exactly.【F:emails/first-quiz-email.php†L170-L205】【F:emails/final-quiz-email.php†L1-L45】
+
+3) Verify mobile rendering
+- After restructuring, send a test email or use a responsive preview to confirm both charts stack vertically with the 40px spacing on the first circle and centered alignment on devices under 600px width.
