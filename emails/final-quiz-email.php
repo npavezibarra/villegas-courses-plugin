@@ -20,6 +20,40 @@
       border-radius: 8px;
       overflow: hidden;
     }
+
+    /* Desktop and large screens (1024px and above) */
+    @media only screen and (min-width: 1024px) {
+      #villegas-email-logo {
+        width: 76% !important;
+        height: 170px !important;
+      }
+    }
+
+    /* Mobile and tablet (below 1024px) */
+    @media only screen and (max-width: 1023px) {
+      #villegas-email-logo {
+        width: 100% !important;
+        height: 140px !important;
+      }
+    }
+
+    @media only screen and (max-width: 600px) {
+      .villegas-circle-container,
+      .villegas-circle-wrapper {
+        margin-left: auto !important;
+        margin-right: auto !important;
+        text-align: center !important;
+      }
+
+      .villegas-first-circle {
+        margin-bottom: 40px !important;
+      }
+
+      #villegas-final-title-row td,
+      #villegas-final-title-row {
+        padding-top: 40px !important;
+      }
+    }
   </style>
 </head>
 <body style="margin:0;padding:0;background-color:#f6f6f6;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">
@@ -30,14 +64,15 @@
         <div style="{{wrapper_div_style}}">
           <table id="villegas-email-card" role="presentation" width="720" border="0" cellspacing="0" cellpadding="0" style="width:100%;max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">
             <tr>
-              <td id="villegas-email-encabezado" style="text-align:center;padding:0;">
+              <td id="villegas-email-encabezado" style="text-align:center;padding:0;background:black;border-radius:8px 8px 0px 0px;">
                 {{logo_image}}
               </td>
             </tr>
             <tr>
               <td id="villegas-email-presentacion" style="padding:20px 48px 32px;text-align:center;">
                 <p style="margin:0;font-size:14px;color:#6d6d6d;">Completado el {{completion_date}}</p>
-                <h1 style="margin:12px 0 8px;font-size:26px;color:#111111;">¡Gran trabajo, {{user_name}}!</h1>
+                <h1 style="margin:12px 0 8px;font-size:26px;color:#111111;line-height:1">¡Gran trabajo,<br>
+                  {{user_name}}!</h1>
                 <div style="font-size:18px;line-height:1.6;">
                   <p style="margin:0;color:#1c1c1c;">Completaste la Evaluación Final de {{quiz_name}}.</p>
                 </div>
@@ -48,13 +83,13 @@
                 <table id="villegas-email-graficas" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;padding:32px 0;text-align:center;">
                   <tr>
                     <td align="center">
-                      <table border="0" cellspacing="0" cellpadding="0" role="presentation">
+                      <table class="villegas-circle-wrapper" border="0" cellspacing="0" cellpadding="0" role="presentation">
                         <tr>
-                          <td style="padding:0 14px;text-align:center;">
+                          <td class="villegas-circle-container villegas-first-circle" style="padding:0 14px;text-align:center;">
                             <h2 style="font-size:16px;margin-bottom:12px;color:#111111;">Evaluación Inicial</h2>
                             <img src="{{initial_chart_url}}" alt="Evaluación Inicial {{initial_percentage}}" style="max-width:240px;height:auto;">
                           </td>
-                          <td style="padding:0 14px;text-align:center;">
+                          <td id="villegas-final-title-row" class="villegas-circle-container" style="padding:0 14px;text-align:center;">
                             <h2 style="font-size:16px;margin-bottom:12px;color:#111111;">Evaluación Final</h2>
                             <img src="{{final_chart_url}}" alt="Evaluación Final {{final_percentage}}" style="max-width:240px;height:auto;">
                           </td>
