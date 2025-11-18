@@ -112,37 +112,84 @@ if ( $can_edit_photo ) {
         </div>
     </section>
 
+    <?php
+    $courses_query_args = array(
+        'post_type'      => 'course',
+        'posts_per_page' => 5,
+        'author'         => $author_id,
+        'post_status'    => 'publish',
+    );
+
+    $courses_query = new WP_Query( $courses_query_args );
+
+    $course_taxonomy = 'category';
+    if ( taxonomy_exists( 'course_category' ) ) {
+        $course_taxonomy = 'course_category';
+    } elseif ( taxonomy_exists( 'ld_course_category' ) ) {
+        $course_taxonomy = 'ld_course_category';
+    }
+
+    $courses_archive_url = get_post_type_archive_link( 'course' );
+    if ( ! $courses_archive_url ) {
+        $courses_archive_url = home_url( '/' );
+    }
+    $courses_archive_url = add_query_arg(
+        array(
+            'post_type' => 'course',
+            'author'    => $author_id,
+        ),
+        $courses_archive_url
+    );
+    ?>
+
     <section class="author-grid">
         <header class="author-grid__header">
-            <h2><?php esc_html_e( 'Cursos del autor', 'villegas-courses' ); ?></h2>
-            <p><?php esc_html_e( 'Explora los programas publicados por este especialista.', 'villegas-courses' ); ?></p>
+            <div>
+                <h2><?php esc_html_e( 'Cursos del autor', 'villegas-courses' ); ?></h2>
+                <p><?php esc_html_e( 'Explora los programas publicados por este especialista.', 'villegas-courses' ); ?></p>
+            </div>
+            <a class="author-grid__cta" href="<?php echo esc_url( $courses_archive_url ); ?>">
+                <?php esc_html_e( 'Ver todos', 'villegas-courses' ); ?>
+            </a>
         </header>
         <div class="author-grid__items">
-            <?php if ( have_posts() ) : ?>
-                <?php while ( have_posts() ) : the_post(); ?>
+            <?php if ( $courses_query->have_posts() ) : ?>
+                <?php
+                while ( $courses_query->have_posts() ) :
+                    $courses_query->the_post();
+                    $course_terms = get_the_terms( get_the_ID(), $course_taxonomy );
+                    $course_term  = is_array( $course_terms ) && ! is_wp_error( $course_terms ) ? array_shift( $course_terms ) : null;
+                    ?>
                     <article <?php post_class( 'author-grid__item' ); ?>>
                         <a class="author-grid__link" href="<?php the_permalink(); ?>">
                             <?php if ( has_post_thumbnail() ) : ?>
                                 <figure class="author-grid__thumbnail">
                                     <?php the_post_thumbnail( 'medium_large' ); ?>
                                 </figure>
+                            <?php else : ?>
+                                <div class="author-grid__thumbnail author-grid__thumbnail--empty">
+                                    <?php esc_html_e( 'Sin imagen', 'villegas-courses' ); ?>
+                                </div>
                             <?php endif; ?>
                             <div class="author-grid__content">
+                                <p class="author-grid__category">
+                                    <?php
+                                    echo $course_term
+                                        ? esc_html( $course_term->name )
+                                        : esc_html__( 'Sin categoría', 'villegas-courses' );
+                                    ?>
+                                </p>
                                 <h3 class="author-grid__title"><?php the_title(); ?></h3>
-                                <p class="author-grid__excerpt"><?php echo wp_kses_post( wp_trim_words( get_the_excerpt(), 22 ) ); ?></p>
                             </div>
                         </a>
                     </article>
                 <?php endwhile; ?>
             <?php else : ?>
-                <p class="author-grid__empty"><?php esc_html_e( 'Todavía no hay publicaciones para este autor.', 'villegas-courses' ); ?></p>
+                <p class="author-grid__empty"><?php esc_html_e( 'Todavía no hay cursos publicados por este autor.', 'villegas-courses' ); ?></p>
             <?php endif; ?>
         </div>
-
-        <div class="author-pagination">
-            <?php the_posts_pagination(); ?>
-        </div>
     </section>
+    <?php wp_reset_postdata(); ?>
 </main>
 
 <?php get_footer(); ?>
