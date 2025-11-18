@@ -212,7 +212,13 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
       display: block !important;
     }
 
-    #villegas-title-row-2 td {
+    /* First donut gets spacing below */
+    .villegas-first-circle {
+      margin-bottom: 40px !important;
+    }
+
+    /* Title for second donut gets spacing above */
+    #villegas-firstquiz-title-row-2 td {
       padding-top: 40px !important;
     }
   }
@@ -220,31 +226,17 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     /*
      * === Diagnostic Log: Final vs First Quiz Email CSS Alignment ===
-     * Critical CSS mismatches
-     * - Final Quiz mobile rule `.villegas-first-circle { margin-bottom: 40px !important; }` is absent; First Quiz relies only on #villegas-title-row-2 padding, so the first donut has no dedicated bottom spacing on smartphones.
-     * - Final targets `#villegas-final-title-row td` for mobile top padding; First uses `<tr id="villegas-title-row-2">` with nested `<h2>` instead, so the Final selector cannot map to the current structure.
-     * - Final H1 inline style (`margin:12px 0 8px;font-size:26px;line-height:1;color:#111111;`) differs from First (`margin:0;padding:0;font-size:28px;line-height:1;`), keeping a larger, tighter heading than the reference typography.
+     * Updated alignment notes (post-fix)
+     * - Mobile gap: `.villegas-first-circle { margin-bottom:40px !important; }` and `#villegas-firstquiz-title-row-2 td { padding-top:40px !important; }` now mirror the Final quiz spacing model for Gmail Mobile.
+     * - Title placement: donut titles now live in `<tr id="villegas-firstquiz-title-row-1|2">` with `<td>` children to ensure padding applies in Gmail.
+     * - H1 spacing: heading now matches Final sizing (`font-size:26px;color:#111111;line-height:1;margin-bottom:12px;`) with a block-level span for the name to avoid `<br>` issues in Gmail.
      *
-     * Likely Gmail-related behavior mismatches
-     * - Gmail ignores `<br>` inside `<h1>` (the Final template still includes it), while First uses a block-level `<span>`; this diverges from the reference behavior the shared CSS assumes.
-     * - Gmail drops margins on table descendants, so First’s reliance on inline margins for some text (e.g., h1 margin:0) means vertical spacing depends on padding rules that differ from the Final template’s margin-based rhythm.
+     * Gmail-related behaviors to monitor
+     * - Gmail ignores margins on table descendants; spacing remains padding-driven on `<td>` elements for smartphone layouts.
+     * - Media queries must stay in the `<head>`; selectors rely on IDs/classes now present in the DOM (e.g., `#villegas-email-logo`, `.villegas-first-circle`).
      *
-     * Structural mismatches
-     * - Final places both donuts in a single `<tr>` with two `<td>` siblings; First nests each donut inside its own table within `<td class="villegas-circle-cell">`, so any rule expecting direct child selectors (like `#villegas-final-title-row` on a `<td>`) does not directly apply.
-     * - The second donut title lives inside `<tr id="villegas-title-row-2">` rather than a `<td id>` as in Final, preventing reuse of selectors that target a `<td>` for spacing.
-     *
-     * Rules from Final that fail in First
-     * - `.villegas-first-circle { margin-bottom:40px !important; }` has no counterpart, leaving the first donut without the Final template’s mobile gap.
-     * - `#villegas-final-title-row td { padding-top:40px !important; }` cannot match because the analogous element is a `<tr>` with a nested `<td>`/`<h2>` hierarchy.
-     * - The Final H1 styling is overridden by First’s inline `font-size:28px;margin:0;`, so shared CSS cannot reduce the heading size or add top/bottom spacing.
-     *
-     * Inline style overrides
-     * - Inline typography on the H1 and donut titles (`font-size:28px` and `font-size:16px` respectively) out-prioritize any external font-size adjustments, preventing Final-style scaling unless new `!important` rules are added.
-     * - Inline padding (`padding:0 14px;`) on circle cells persists at mobile widths because no overriding rule exists, unlike the Final layout where margin-bottom provides spacing instead of padding changes.
-     *
-     * Gmail Mobile behaviors
-     * - Gmail respects padding on `<td>` but not on `<tr>`, so the mobile spacing selector aimed at `#villegas-title-row-2 td` works, whereas any padding applied directly to `<tr>` (as in the Final selector) would be ignored.
-     * - Gmail strips or rewrites margins inside table layouts; because First keeps h1 margin at zero and uses minimal padding for headings, perceived spacing may compress relative to the Final template that assumes margin-based spacing.
+     * Structural notes
+     * - Donut cells keep table wrappers for chart images; classes `.villegas-circle-cell` and `.villegas-circle-wrapper` are applied directly to the `<td>` nodes to match Final selectors.
      */
 
     $background_color          = '#f6f6f6';
@@ -281,7 +273,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '<table id="villegas-email-card" role="presentation" width="720" border="0" cellspacing="0" cellpadding="0" style="width:100%;max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
 
     $body .= '<tr>';
-    $body .= '<td id="villegas-email-encabezado" style="text-align:center;padding:0;background:black;border-radius:8px 8px 0px 0px;">';
+    $body .= '<td id="villegas-email-encabezado" style="text-align:center;padding:0;background:black;border-radius:8px 8px 0 0;">';
     if ( $logo_url ) {
         $body .= '<img id="villegas-email-logo" src="' . esc_url( $logo_url ) . '" alt="Academia Villegas" style="width:100%;max-width:720px;height:170px;object-fit:cover;object-position:center;display:block;margin:0 auto;border-top-left-radius:8px;border-top-right-radius:8px;">';
     }
@@ -291,7 +283,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '<tr>';
     $body .= '<td id="villegas-email-presentacion" style="padding:20px 48px 32px;text-align:center;">';
     $body .= '<p style="margin:0;font-size:14px;color:#6d6d6d;">' . sprintf( esc_html__( 'Completado el %s', 'villegas-courses' ), esc_html( $completion_date ) ) . '</p>';
-    $body .= '<h1 id="villegas-main-title" style="line-height:1;margin:0;padding:0;font-size:28px;">¡Gran trabajo,<span style="display:block;line-height:1;">' . esc_html( $debug['user_display_name'] ) . '!</span></h1>';
+    $body .= '<h1 id="villegas-main-title" style="line-height:1;margin:0 0 12px;padding:0;font-size:26px;color:#111111;text-align:center;">¡Gran trabajo,<span style="display:block;line-height:1;">' . esc_html( $debug['user_display_name'] ) . '!</span></h1>';
     $body .= '<div style="font-size:18px;line-height:1.6;">';
     $body .= '<p style="margin:0;color:#1c1c1c;">' . sprintf( esc_html__( 'Completaste el Primer Quiz de %s.', 'villegas-courses' ), esc_html( $debug['course_title'] ) ) . '</p>';
     $body .= '</div>';
@@ -305,9 +297,9 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '<td align="center">';
     $body .= '<table class="villegas-circle-wrapper" border="0" cellspacing="0" cellpadding="0" role="presentation">';
     $body .= '<tr>';
-    $body .= '<td class="villegas-circle-cell villegas-circle-container villegas-first-circle" style="padding:0 14px;text-align:center;">';
+    $body .= '<td class="villegas-circle-cell villegas-circle-wrapper villegas-first-circle" style="padding:0 14px;text-align:center;">';
     $body .= '<table border="0" cellspacing="0" cellpadding="0" role="presentation" style="width:100%;">';
-    $body .= '<tr id="villegas-title-row-1">';
+    $body .= '<tr id="villegas-firstquiz-title-row-1">';
     $body .= '<td style="text-align:center;">';
     $body .= '<h2 id="villegas-firstquiz-title-1" style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Tu puntaje', 'villegas-courses' ) . '</h2>';
     $body .= '</td>';
@@ -319,9 +311,9 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '</tr>';
     $body .= '</table>';
     $body .= '</td>';
-    $body .= '<td class="villegas-circle-cell villegas-circle-container" style="padding:0 14px;text-align:center;">';
+    $body .= '<td class="villegas-circle-cell villegas-circle-wrapper" style="padding:0 14px;text-align:center;">';
     $body .= '<table border="0" cellspacing="0" cellpadding="0" role="presentation" style="width:100%;">';
-    $body .= '<tr id="villegas-title-row-2">';
+    $body .= '<tr id="villegas-firstquiz-title-row-2">';
     $body .= '<td style="text-align:center;">';
     $body .= '<h2 id="villegas-firstquiz-title-2" style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Promedio Villegas', 'villegas-courses' ) . '</h2>';
     $body .= '</td>';
