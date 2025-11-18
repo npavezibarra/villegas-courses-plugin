@@ -193,7 +193,7 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
       }
     }
 
-    /* Mobile and tablet (below 1024px) */
+    /* Mobile and tablet (below 1023px) */
     @media only screen and (max-width: 1023px) {
       #villegas-email-logo {
         width: 100% !important;
@@ -260,20 +260,28 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
 
     $quiz_title = $debug['quiz_title'] ?? '';
 
+    $gmail_safe_style = 'font-size:16px !important;line-height:1.4 !important;mso-line-height-rule:exactly;margin:0 !important;padding:0 !important;border-collapse:collapse !important;border-spacing:0 !important;';
+
     $body  = $inline_styles;
-    $body .= '<table id="villegas-email-wrapper" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"' . $wrapper_background_attr . $wrapper_bgcolor_attr . ' style="' . $wrapper_background_style . '">';
+    $body .= '<table id="villegas-email-wrapper" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0"' . $wrapper_background_attr . $wrapper_bgcolor_attr . ' style="' . $gmail_safe_style . $wrapper_background_style . '">';
     $body .= '<tr>';
-    $body .= '<td align="center" valign="top"' . $wrapper_background_attr . $wrapper_bgcolor_attr . ' style="' . $wrapper_background_style . '">';
+    $body .= '<td align="center" valign="top"' . $wrapper_background_attr . $wrapper_bgcolor_attr . ' style="' . $gmail_safe_style . $wrapper_background_style . '">';
     $body .= $mso_background_block;
     $body .= '<div style="' . $wrapper_div_style . '">';
-    $body .= '<table id="villegas-email-card" role="presentation" width="720" border="0" cellspacing="0" cellpadding="0" style="width:100%;max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
+    $body .= '<table id="villegas-email-card" role="presentation" width="720" border="0" cellspacing="0" cellpadding="0" style="' . $gmail_safe_style . 'width:100%;max-width:720px;margin:0 auto;background:#ffffff;border:1px solid #e5e5e5;border-radius:8px;font-family:Helvetica,Arial,sans-serif;color:#1c1c1c;">';
     $body .= '<tr>';
-    $body .= '<td id="villegas-email-encabezado" style="text-align:center;padding:0;background:black;border-radius:8px 8px 0px 0px;">';
+    $body .= '<td height="32" style="' . $gmail_safe_style . 'font-size:0 !important; line-height:0 !important;">&nbsp;</td>';
+    $body .= '</tr>';
+    $body .= '<tr>';
+    $body .= '<td id="villegas-email-encabezado" style="' . $gmail_safe_style . 'text-align:center;background:black;border-radius:8px 8px 0px 0px;">';
     $body .= $logo_image;
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '<tr>';
-    $body .= '<td id="villegas-email-presentacion" style="padding:20px 48px 32px;text-align:center;">';
+    $body .= '<td height="32" style="' . $gmail_safe_style . 'font-size:0 !important; line-height:0 !important;">&nbsp;</td>';
+    $body .= '</tr>';
+    $body .= '<tr>';
+    $body .= '<td id="villegas-email-presentacion" style="' . $gmail_safe_style . 'padding:20px 48px 32px !important;text-align:center;">';
     $body .= '<p style="margin:0;font-size:14px;color:#6d6d6d;">' . sprintf( esc_html__( 'Completado el %s', 'villegas-courses' ), esc_html( $completion_date ) ) . '</p>';
     $body .= '<h1 style="margin:12px 0 8px;font-size:26px;color:#111111;line-height:1">' . sprintf( esc_html__( '¡Gran trabajo,<br> %s!', 'villegas-courses' ), esc_html( $debug['user_display_name'] ) ) . '</h1>';
     $body .= '<div style="font-size:18px;line-height:1.6;">';
@@ -282,17 +290,23 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '</td>';
     $body .= '</tr>';
     $body .= '<tr>';
-    $body .= '<td style="padding:0 32px;">';
-    $body .= '<table id="villegas-email-graficas" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;padding:32px 0;text-align:center;">';
+    $body .= '<td height="32" style="' . $gmail_safe_style . 'font-size:0 !important; line-height:0 !important;">&nbsp;</td>';
+    $body .= '</tr>';
     $body .= '<tr>';
-    $body .= '<td align="center">';
-    $body .= '<table class="villegas-circle-wrapper" border="0" cellspacing="0" cellpadding="0" role="presentation">';
+    $body .= '<td style="' . $gmail_safe_style . 'padding:0 32px !important;">';
+    $body .= '<table id="villegas-email-graficas" role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="' . $gmail_safe_style . 'border-top:1px solid #f1f1f1;border-bottom:1px solid #f1f1f1;padding:32px 0 !important;text-align:center;">';
     $body .= '<tr>';
-    $body .= '<td class="villegas-circle-container villegas-first-circle" style="padding:0 14px;text-align:center;">';
+    $body .= '<td align="center" style="' . $gmail_safe_style . '">';
+    $body .= '<table width="100%" style="min-width:100% !important; table-layout:fixed !important;' . $gmail_safe_style . '">';
+    $body .= '<tr>';
+    $body .= '<td style="' . $gmail_safe_style . '">';
+    $body .= '<table class="villegas-circle-wrapper" border="0" cellspacing="0" cellpadding="0" role="presentation" style="' . $gmail_safe_style . '">';
+    $body .= '<tr>';
+    $body .= '<td class="villegas-circle-container villegas-first-circle" style="' . $gmail_safe_style . 'padding:0 14px !important;text-align:center;">';
     $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Evaluación Inicial', 'villegas-courses' ) . '</h2>';
     $body .= '<img src="' . esc_url( $user_chart_url ) . '" alt="' . esc_attr__( 'Evaluación Inicial', 'villegas-courses' ) . ' ' . esc_attr( $user_percentage_text ) . '" style="max-width:240px;height:auto;">';
     $body .= '</td>';
-    $body .= '<td id="villegas-final-title-row" class="villegas-circle-container" style="padding:0 14px;text-align:center;">';
+    $body .= '<td id="villegas-final-title-row" class="villegas-circle-container" style="' . $gmail_safe_style . 'padding:0 14px !important;text-align:center;">';
     $body .= '<h2 style="font-size:16px;margin-bottom:12px;color:#111111;">' . esc_html__( 'Evaluación Final', 'villegas-courses' ) . '</h2>';
     $body .= '<img src="' . esc_url( $average_chart_url ) . '" alt="' . esc_attr__( 'Evaluación Final', 'villegas-courses' ) . ' ' . esc_attr( $average_percentage_text ) . '" style="max-width:240px;height:auto;">';
     $body .= '</td>';
@@ -303,12 +317,21 @@ function villegas_get_first_quiz_email_content( array $quiz_data, WP_User $user 
     $body .= '</table>';
     $body .= '</td>';
     $body .= '</tr>';
+    $body .= '</table>';
+    $body .= '</td>';
+    $body .= '</tr>';
     $body .= '<tr>';
-    $body .= '<td id="villegas-email-cta" style="padding:32px 48px;text-align:center;">';
+    $body .= '<td height="32" style="' . $gmail_safe_style . 'font-size:0 !important; line-height:0 !important;">&nbsp;</td>';
+    $body .= '</tr>';
+    $body .= '<tr>';
+    $body .= '<td id="villegas-email-cta" style="' . $gmail_safe_style . 'padding:32px 48px !important;text-align:center;">';
     $body .= '<div style="font-size:18px;line-height:1.6;color:#333333;">';
     $body .= '<p style="margin-top:28px;color:#666666;">' . esc_html__( '¡Gracias por participar en el curso!', 'villegas-courses' ) . '</p>';
     $body .= '</div>';
     $body .= '</td>';
+    $body .= '</tr>';
+    $body .= '<tr>';
+    $body .= '<td height="32" style="' . $gmail_safe_style . 'font-size:0 !important; line-height:0 !important;">&nbsp;</td>';
     $body .= '</tr>';
     $body .= '</table>';
     $body .= '</div>';
