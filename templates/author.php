@@ -129,153 +129,77 @@ $is_author = (get_current_user_id() == $author_id);
     </section>
 
     <!-- ============================
-         COURSES SECTION (Dynamic)
+         DUMMY COURSES SECTION
     ============================= -->
-    <section class="bg-white p-6 rounded-xl shadow-lg mb-10">
-
+    <section id="vcp-author-courses" class="bg-white p-6 rounded-xl shadow-lg mb-10">
         <h2 class="section-title">Cursos</h2>
 
-        <?php
-            $courses = new WP_Query([
-                'post_type'      => 'course',
-                'posts_per_page' => 5,
-                'author'         => $author_id,
-            ]);
-        ?>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
 
-        <?php if ($courses->have_posts()): ?>
-
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-
-                <?php while ($courses->have_posts()): $courses->the_post(); ?>
-
-                    <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg transition duration-200 hover:shadow-md">
-
-                        <!-- Thumbnail -->
-                        <a href="<?php the_permalink(); ?>">
-                            <?php if (has_post_thumbnail()): ?>
-                                <?php the_post_thumbnail('thumbnail', [
-                                    'class' => 'w-16 h-16 rounded-lg object-cover'
-                                ]); ?>
-                            <?php else: ?>
-                                <div class="w-16 h-16 rounded-lg bg-gray-200"></div>
-                            <?php endif; ?>
-                        </a>
-
-                        <!-- Title -->
-                        <div class="flex-1">
-                            <a href="<?php the_permalink(); ?>">
-                                <h3 class="text-lg font-semibold text-gray-800">
-                                    <?php the_title(); ?>
-                                </h3>
-                            </a>
-
-                            <!-- Optional Category -->
-                            <?php
-                                $terms = get_the_terms(get_the_ID(), 'course_category');
-                                if ($terms && !is_wp_error($terms)):
-                                    $first = $terms[0];
-                            ?>
-                                <p class="text-sm text-gray-500">
-                                    <?php echo esc_html($first->name); ?>
-                                </p>
-                            <?php endif; ?>
-                        </div>
-
-                    </div>
-
-                <?php endwhile; ?>
-                <?php wp_reset_postdata(); ?>
-
+            <!-- Dummy Course 1 -->
+            <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg transition duration-200 hover:shadow-md">
+                <div class="w-16 h-16 rounded-lg bg-gray-200"></div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Dummy Course 01</h3>
+                    <p class="text-sm text-gray-500">Category Placeholder</p>
+                </div>
             </div>
 
-            <!-- View All Button -->
-            <div class="mt-6 text-center">
-                <a href="/cursos?autor=<?php echo (int) $author_id; ?>"
-                   class="inline-block px-6 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition duration-150 shadow-md">
-
-                   VER TODOS (<?php echo (int) $courses->found_posts; ?>)
-                </a>
+            <!-- Dummy Course 2 -->
+            <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg transition duration-200 hover:shadow-md">
+                <div class="w-16 h-16 rounded-lg bg-gray-200"></div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Dummy Course 02</h3>
+                    <p class="text-sm text-gray-500">Category Placeholder</p>
+                </div>
             </div>
 
-        <?php else: ?>
+        </div>
 
-            <p class="text-gray-600">Este autor aún no tiene cursos publicados.</p>
-
-        <?php endif; ?>
-
+        <div class="mt-6 text-center">
+            <a href="#" class="inline-block px-6 py-2 bg-blue-600 text-white font-medium rounded-full">
+               VER TODOS
+            </a>
+        </div>
     </section>
 
     <!-- ============================
-         COLUMNAS SECTION (Dynamic)
+         DUMMY COLUMNS SECTION
     ============================= -->
-    <section class="bg-white p-6 rounded-xl shadow-lg mb-10">
-
+    <section id="vcp-author-columns" class="bg-white p-6 rounded-xl shadow-lg mb-10">
         <h2 class="section-title">Columnas</h2>
 
-        <?php
-            // Query Columns (Blog Posts)
-            $columns = new WP_Query([
-                'post_type'      => 'post',
-                'posts_per_page' => 5,
-                'author'         => $author_id,
-                // Uncomment the next line if “Columnas” is a category
-                // 'category_name'  => 'columnas',
-            ]);
-        ?>
+        <div class="space-y-4">
 
-        <?php if ($columns->have_posts()): ?>
-
-            <div class="space-y-4">
-
-                <?php while ($columns->have_posts()): $columns->the_post(); ?>
-
-                    <div class="flex items-center space-x-4 p-2 border-b border-gray-100">
-
-                        <!-- Thumbnail -->
-                        <a href="<?php the_permalink(); ?>">
-                            <?php if (has_post_thumbnail()): ?>
-                                <?php the_post_thumbnail('thumbnail', [
-                                    'class' => 'w-12 h-12 rounded-md object-cover'
-                                ]); ?>
-                            <?php else: ?>
-                                <div class="w-12 h-12 bg-gray-200 rounded-md"></div>
-                            <?php endif; ?>
-                        </a>
-
-                        <!-- Title -->
-                        <a href="<?php the_permalink(); ?>"
-                           class="text-base text-gray-800 font-medium hover:text-blue-600 transition duration-150">
-                           <?php the_title(); ?>
-                        </a>
-
-                    </div>
-
-                <?php endwhile; ?>
-                <?php wp_reset_postdata(); ?>
-
+            <!-- Dummy Column 1 -->
+            <div class="flex items-center space-x-4 p-2 border-b border-gray-100">
+                <div class="w-12 h-12 bg-gray-200 rounded-md"></div>
+                <span class="text-base text-gray-800 font-medium">
+                    Dummy Column Article 01
+                </span>
             </div>
 
-            <!-- View All Link -->
-            <div class="mt-6 text-center">
-                <a href="/blog?autor=<?php echo (int) $author_id; ?>"
-                   class="inline-block text-blue-600 font-medium hover:text-blue-700 transition duration-150 text-sm">
-                   VER TODOS (<?php echo (int) $columns->found_posts; ?>)
-                </a>
+            <!-- Dummy Column 2 -->
+            <div class="flex items-center space-x-4 p-2 border-b border-gray-100">
+                <div class="w-12 h-12 bg-gray-200 rounded-md"></div>
+                <span class="text-base text-gray-800 font-medium">
+                    Dummy Column Article 02
+                </span>
             </div>
 
-        <?php else: ?>
+        </div>
 
-            <p class="text-gray-600">Este autor aún no ha publicado columnas.</p>
-
-        <?php endif; ?>
-
+        <div class="mt-6 text-center">
+            <a href="#" class="inline-block text-blue-600 font-medium hover:text-blue-700 transition duration-150 text-sm">
+                VER TODOS
+            </a>
+        </div>
     </section>
 
     <!-- ============================
          BOOKS SECTION
     ============================= -->
-    <section class="bg-white p-6 rounded-xl shadow-lg">
+    <section id="vcp-author-books" class="bg-white p-6 rounded-xl shadow-lg">
         <h2 class="section-title">Libros del Autor</h2>
 
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
