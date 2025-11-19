@@ -221,13 +221,14 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         }
 
         .course-card h3 {
-            font-size: 1.25rem;
-            margin: 8px 0;
+            font-size: 26px;
+            margin: 0px;
         }
 
         .course-card p {
             color: var(--text-secondary);
             flex: 1;
+            margin-top: 0px;
         }
 
         .section-footer {
@@ -250,14 +251,14 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
             display: flex;
             flex-direction: column;
             gap: 18px;
-            margin-top: 20px;
+            margin-top: 0px;
         }
 
         .column-item {
             display: flex;
             gap: 16px;
             align-items: start;
-            padding: 16px 0px;
+            padding: 0px;
             border: none;
         }
 
@@ -409,22 +410,74 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             <div class="section-header">
                 <h2>Cursos</h2>
             </div>
+            <?php
+            $author_id = get_the_author_meta( 'ID' );
+
+            $args = [
+                'post_type'      => 'sfwd-courses',
+                'posts_per_page' => 2,
+                'author'         => $author_id,
+                'post_status'    => 'publish',
+            ];
+
+            $author_courses = new WP_Query( $args );
+            ?>
+
             <div class="courses-grid">
-                <article class="course-card">
-                    <img src="https://placehold.co/640x360/f2f2f0/111111?text=Curso+01" alt="Curso destacado 1">
-                    <div class="course-meta">Historia contemporánea</div>
-                    <h3>Maestría en Historia Política</h3>
-                    <p>Programa intensivo que repasa los principales hitos republicanos desde una mirada crítica.</p>
+
+            <?php if ( $author_courses->have_posts() ) : ?>
+
+                <?php while ( $author_courses->have_posts() ) : $author_courses->the_post(); ?>
+
+                    <article class="course-card">
+
+                        <!-- Thumbnail -->
+                        <img
+                            src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'large' ) ?: 'https://placehold.co/640x360/f2f2f0/111111?text=Sin+Imagen'; ?>"
+                            alt="<?php echo esc_attr( get_the_title() ); ?>"
+                        >
+
+                        <!-- Course Title -->
+                        <h3><?php the_title(); ?></h3>
+
+                        <!-- Course Excerpt or Dummy Fallback -->
+                        <p>
+                            <?php
+                            $excerpt = get_the_excerpt();
+                            echo $excerpt ? esc_html( $excerpt ) : 'Curso disponible en esta plataforma.';
+                            ?>
+                        </p>
+
+                    </article>
+
+                <?php endwhile; ?>
+
+                <?php wp_reset_postdata(); ?>
+
+            <?php else : ?>
+
+                <!-- Placeholder when no courses exist -->
+                <article class="course-card" style="display:flex; align-items:center; justify-content:center; text-align:center; height:260px; background:#f7f7f7;">
+                    <p style="font-size:1.1rem; color:#666; margin:0;">No has publicado cursos</p>
                 </article>
-                <article class="course-card">
-                    <img src="https://placehold.co/640x360/f2f2f0/111111?text=Curso+02" alt="Curso destacado 2">
-                    <div class="course-meta">Pensamiento crítico</div>
-                    <h3>Taller de Análisis Cultural</h3>
-                    <p>Sesiones prácticas centradas en el desarrollo de habilidades interpretativas para medios contemporáneos.</p>
-                </article>
+
+            <?php endif; ?>
+
             </div>
             <div class="section-footer">
-                <a href="#" aria-label="Ver todos los cursos">Ver todos (+5)</a>
+                <?php
+                $author_courses_url = add_query_arg(
+                    [
+                        'post_type' => 'sfwd-courses',
+                        'author'    => $author_id,
+                    ],
+                    home_url( '/' )
+                );
+                ?>
+
+                <a href="<?php echo esc_url( $author_courses_url ); ?>" aria-label="Ver todos los cursos">
+                    Ver todos
+                </a>
             </div>
         </div>
 
