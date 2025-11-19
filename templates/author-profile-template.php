@@ -15,6 +15,7 @@ $author_name_raw = trim( $author_first . ' ' . $author_last );
 $author_name     = $author_name_raw ? $author_name_raw : get_the_author_meta( 'display_name', $author_id );
 $author_bio_raw  = get_the_author_meta( 'description', $author_id );
 $author_bio      = trim( wp_strip_all_tags( $author_bio_raw ) ) ? $author_bio_raw : __( 'Esta biografía es una representación ficticia utilizada únicamente como borrador visual. El objetivo es mostrar el flujo completo del perfil del autor manteniendo una estética monocromática.', 'villegas-course-plugin' );
+$author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true ) );
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -135,8 +136,7 @@ $author_bio      = trim( wp_strip_all_tags( $author_bio_raw ) ) ? $author_bio_ra
             text-transform: lowercase;
         }
 
-        .profile-details .subtitle {
-            margin-top: 6px;
+        .author-title {
             color: var(--text-secondary);
             font-size: 1rem;
         }
@@ -382,7 +382,11 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
         </div>
         <div class="profile-details">
             <h3><?php echo esc_html( $author_name ); ?></h3>
-            <p class="subtitle">Director Académico Villegas</p>
+            <?php if ( ! empty( $author_title ) ) : ?>
+                <p class="author-title" style="margin-top: 0.25rem;">
+                    <?php echo esc_html( $author_title ); ?>
+                </p>
+            <?php endif; ?>
             <div class="author-bio">
                 <?php echo wpautop( wp_kses_post( $author_bio ) ); ?>
             </div>
