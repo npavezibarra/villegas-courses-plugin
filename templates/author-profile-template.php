@@ -190,6 +190,8 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .section-header h2 {
             font-size: 1.8rem;
             margin: 8px 0 12px;
+            text-align: left;
+            font-family: 'Cardo';
         }
 
         .section-description {
@@ -204,7 +206,7 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         }
 
         .course-card {
-            padding: 20px;
+            padding: 0px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -254,8 +256,8 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .column-item {
             display: flex;
             gap: 16px;
-            align-items: center;
-            padding: 16px;
+            align-items: start;
+            padding: 16px 0px;
             border: none;
         }
 
@@ -287,6 +289,8 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .books-section h2 {
             font-size: 1.9rem;
             margin-bottom: 8px;
+            text-align: left;
+            font-family: 'Cardo';
         }
 
         .books-description {
@@ -301,7 +305,7 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         }
 
         .book-item {
-            padding: 20px;
+            padding: 0px;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -312,13 +316,15 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         }
 
         .book-item h3 {
-            font-size: 1rem;
+            font-family: 'Cardo';
+            font-size: 1.4rem;
             margin: 0;
         }
 
         .book-price {
             font-size: 0.95rem;
             color: var(--text-secondary);
+            margin: 0px;
         }
 
         @media (max-width: 1024px) {
