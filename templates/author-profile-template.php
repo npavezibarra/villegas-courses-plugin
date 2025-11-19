@@ -235,6 +235,7 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .course-title-link {
             text-decoration: none;
             color: inherit;
+            font-family: 'Cardo', serif;
         }
 
         .course-title-link:hover {
