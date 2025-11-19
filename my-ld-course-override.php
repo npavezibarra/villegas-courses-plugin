@@ -30,6 +30,7 @@ if ( ! class_exists( 'Villegas_Quiz_Stats' ) ) {
 
 if ( is_admin() ) {
     require_once plugin_dir_path( __FILE__ ) . 'includes/admin/class-course-checklist-handler.php';
+    require_once plugin_dir_path( __FILE__ ) . 'includes/admin/product-authors-metabox.php';
 }
 
 require_once plugin_dir_path( __FILE__ ) . 'villegas-course-plugin.php';
