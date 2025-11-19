@@ -23,6 +23,8 @@ $instagram     = get_user_meta( $author_id, 'instagram_profile', true );
 $linkedin      = get_user_meta( $author_id, 'linkedin_profile', true );
 $profile_photo = get_user_meta( $author_id, 'profile_picture', true );
 $acf_photo     = function_exists( 'get_field' ) ? get_field( 'author_photo', 'user_' . $author_id ) : '';
+$has_contact   = $email || $website || $facebook || $instagram || $linkedin;
+$course_post_type = post_type_exists( 'course' ) ? 'course' : ( post_type_exists( 'sfwd-courses' ) ? 'sfwd-courses' : 'course' );
 
 $author_photo_html = '';
 if ( is_array( $acf_photo ) && isset( $acf_photo['ID'] ) ) {
@@ -92,32 +94,39 @@ if ( $can_edit_photo ) {
         </div>
         <div class="author-bio__column author-contact">
             <h3><?php esc_html_e( 'Contacto', 'villegas-courses' ); ?></h3>
-            <ul class="author-contact__list">
-                <?php if ( $email ) : ?>
-                    <li><a href="mailto:<?php echo esc_attr( $email ); ?>"><?php echo esc_html( $email ); ?></a></li>
-                <?php endif; ?>
-                <?php if ( $website ) : ?>
-                    <li><a href="<?php echo esc_url( $website ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $website ); ?></a></li>
-                <?php endif; ?>
-                <?php if ( $facebook ) : ?>
-                    <li><a href="<?php echo esc_url( $facebook ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Facebook', 'villegas-courses' ); ?></a></li>
-                <?php endif; ?>
-                <?php if ( $instagram ) : ?>
-                    <li><a href="<?php echo esc_url( $instagram ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Instagram', 'villegas-courses' ); ?></a></li>
-                <?php endif; ?>
-                <?php if ( $linkedin ) : ?>
-                    <li><a href="<?php echo esc_url( $linkedin ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'LinkedIn', 'villegas-courses' ); ?></a></li>
-                <?php endif; ?>
-            </ul>
+            <?php if ( $has_contact ) : ?>
+                <ul class="author-contact__list">
+                    <?php if ( $email ) : ?>
+                        <li><a href="mailto:<?php echo esc_attr( $email ); ?>"><?php echo esc_html( $email ); ?></a></li>
+                    <?php endif; ?>
+                    <?php if ( $website ) : ?>
+                        <li><a href="<?php echo esc_url( $website ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $website ); ?></a></li>
+                    <?php endif; ?>
+                    <?php if ( $facebook ) : ?>
+                        <li><a href="<?php echo esc_url( $facebook ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Facebook', 'villegas-courses' ); ?></a></li>
+                    <?php endif; ?>
+                    <?php if ( $instagram ) : ?>
+                        <li><a href="<?php echo esc_url( $instagram ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'Instagram', 'villegas-courses' ); ?></a></li>
+                    <?php endif; ?>
+                    <?php if ( $linkedin ) : ?>
+                        <li><a href="<?php echo esc_url( $linkedin ); ?>" target="_blank" rel="noopener noreferrer"><?php esc_html_e( 'LinkedIn', 'villegas-courses' ); ?></a></li>
+                    <?php endif; ?>
+                </ul>
+            <?php else : ?>
+                <p class="author-contact__empty"><?php esc_html_e( 'El autor aún no ha añadido datos de contacto.', 'villegas-courses' ); ?></p>
+            <?php endif; ?>
         </div>
     </section>
 
     <?php
+    $courses_per_page  = 5;
     $courses_query_args = array(
-        'post_type'      => 'course',
-        'posts_per_page' => 5,
-        'author'         => $author_id,
-        'post_status'    => 'publish',
+        'post_type'           => $course_post_type,
+        'posts_per_page'      => $courses_per_page,
+        'author'              => $author_id,
+        'post_status'         => 'publish',
+        'no_found_rows'       => true,
+        'ignore_sticky_posts' => true,
     );
 
     $courses_query = new WP_Query( $courses_query_args );
@@ -129,17 +138,26 @@ if ( $can_edit_photo ) {
         $course_taxonomy = 'ld_course_category';
     }
 
-    $courses_archive_url = get_post_type_archive_link( 'course' );
+    $courses_archive_url = get_post_type_archive_link( $course_post_type );
     if ( ! $courses_archive_url ) {
         $courses_archive_url = home_url( '/' );
     }
     $courses_archive_url = add_query_arg(
         array(
-            'post_type' => 'course',
+            'post_type' => $course_post_type,
             'author'    => $author_id,
         ),
         $courses_archive_url
     );
+
+    $total_courses      = count_user_posts( $author_id, $course_post_type, true );
+    $remaining_courses  = max( 0, (int) $total_courses - $courses_per_page );
+    $courses_cta_label  = __( 'Ver todos', 'villegas-courses' );
+
+    if ( $remaining_courses > 0 ) {
+        /* translators: %d: Remaining courses beyond the first five. */
+        $courses_cta_label = sprintf( __( 'Ver todos (+%d)', 'villegas-courses' ), $remaining_courses );
+    }
     ?>
 
     <section class="author-grid">
@@ -149,7 +167,7 @@ if ( $can_edit_photo ) {
                 <p><?php esc_html_e( 'Explora los programas publicados por este especialista.', 'villegas-courses' ); ?></p>
             </div>
             <a class="author-grid__cta" href="<?php echo esc_url( $courses_archive_url ); ?>">
-                <?php esc_html_e( 'Ver todos', 'villegas-courses' ); ?>
+                <?php echo esc_html( $courses_cta_label ); ?>
             </a>
         </header>
         <div class="author-grid__items">
@@ -195,10 +213,12 @@ if ( $can_edit_photo ) {
     $articles_per_page = 5;
     $articles_query    = new WP_Query(
         array(
-            'post_type'      => 'post',
-            'posts_per_page' => $articles_per_page,
-            'author'         => $author_id,
-            'post_status'    => 'publish',
+            'post_type'           => 'post',
+            'posts_per_page'      => $articles_per_page,
+            'author'              => $author_id,
+            'post_status'         => 'publish',
+            'no_found_rows'       => true,
+            'ignore_sticky_posts' => true,
         )
     );
 
