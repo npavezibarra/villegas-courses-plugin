@@ -231,6 +231,15 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
             margin-top: 0px;
         }
 
+        .course-title-link {
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .course-title-link:hover {
+            text-decoration: underline;
+        }
+
         .section-footer {
             margin-top: 32px;
             display: flex;
@@ -432,13 +441,19 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                     <article class="course-card">
 
                         <!-- Thumbnail -->
-                        <img
-                            src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'large' ) ?: 'https://placehold.co/640x360/f2f2f0/111111?text=Sin+Imagen'; ?>"
-                            alt="<?php echo esc_attr( get_the_title() ); ?>"
-                        >
+                        <a href="<?php the_permalink(); ?>" aria-label="Ir al curso <?php the_title(); ?>">
+                            <img
+                                src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'large' ) ?: 'https://placehold.co/640x360/f2f2f0/111111?text=Sin+Imagen'; ?>"
+                                alt="<?php echo esc_attr( get_the_title() ); ?>"
+                            >
+                        </a>
 
                         <!-- Course Title -->
-                        <h3><?php the_title(); ?></h3>
+                        <h3>
+                            <a href="<?php the_permalink(); ?>" class="course-title-link">
+                                <?php the_title(); ?>
+                            </a>
+                        </h3>
 
                         <!-- Course Excerpt or Dummy Fallback -->
                         <p>
