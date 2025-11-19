@@ -129,11 +129,11 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
 
         .profile-details h3 {
             margin: 0;
-            font-size: 2.2rem;
+            font-size: 2.6rem;
             font-weight: 600;
             color: var(--text-primary);
-            font-variant: small-caps;
-            text-transform: lowercase;
+            /* font-variant: small-caps; */
+            /* text-transform: lowercase; */
         }
 
         .author-title {
@@ -403,7 +403,6 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             <div class="section-header">
                 <h2>Cursos</h2>
             </div>
-            <p class="section-description">Selección de cursos destacados dictados por Fernando.</p>
             <div class="courses-grid">
                 <article class="course-card">
                     <img src="https://placehold.co/640x360/f2f2f0/111111?text=Curso+01" alt="Curso destacado 1">
@@ -427,7 +426,6 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             <div class="section-header">
                 <h2>Columnas</h2>
             </div>
-            <p class="section-description">Últimas columnas de opinión en medios asociados.</p>
             <div class="columns-list">
                 <article class="column-item">
                     <img src="https://placehold.co/140x140/efefed/1d1d1b?text=Columna+01" alt="Columna 1">
@@ -452,7 +450,6 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
     <section class="books-section">
         <h2>Libros Fernando Villegas</h2>
-        <p class="books-description">Catálogo referencial con publicaciones impresas.</p>
         <div class="books-grid">
             <article class="book-item">
                 <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+01" alt="Libro 1">
