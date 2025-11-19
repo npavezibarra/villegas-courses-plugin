@@ -137,35 +137,81 @@
     </section>
 
     <!-- ============================
-         COURSES SECTION
+         COURSES SECTION (Dynamic)
     ============================= -->
     <section class="bg-white p-6 rounded-xl shadow-lg mb-10">
+
         <h2 class="section-title">Cursos</h2>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <!-- Placeholder course items -->
-            <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                <div class="w-16 h-16 bg-gray-200 rounded-lg"></div>
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-800">Course Title</h3>
-                    <p class="text-sm text-gray-500">Category</p>
-                </div>
+        <?php
+            $courses = new WP_Query([
+                'post_type'      => 'course',
+                'posts_per_page' => 5,
+                'author'         => $author_id,
+            ]);
+        ?>
+
+        <?php if ($courses->have_posts()): ?>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+                <?php while ($courses->have_posts()): $courses->the_post(); ?>
+
+                    <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg transition duration-200 hover:shadow-md">
+
+                        <!-- Thumbnail -->
+                        <a href="<?php the_permalink(); ?>">
+                            <?php if (has_post_thumbnail()): ?>
+                                <?php the_post_thumbnail('thumbnail', [
+                                    'class' => 'w-16 h-16 rounded-lg object-cover'
+                                ]); ?>
+                            <?php else: ?>
+                                <div class="w-16 h-16 rounded-lg bg-gray-200"></div>
+                            <?php endif; ?>
+                        </a>
+
+                        <!-- Title -->
+                        <div class="flex-1">
+                            <a href="<?php the_permalink(); ?>">
+                                <h3 class="text-lg font-semibold text-gray-800">
+                                    <?php the_title(); ?>
+                                </h3>
+                            </a>
+
+                            <!-- Optional Category -->
+                            <?php
+                                $terms = get_the_terms(get_the_ID(), 'course_category');
+                                if ($terms && !is_wp_error($terms)):
+                                    $first = $terms[0];
+                            ?>
+                                <p class="text-sm text-gray-500">
+                                    <?php echo esc_html($first->name); ?>
+                                </p>
+                            <?php endif; ?>
+                        </div>
+
+                    </div>
+
+                <?php endwhile; ?>
+                <?php wp_reset_postdata(); ?>
+
             </div>
 
-            <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                <div class="w-16 h-16 bg-gray-200 rounded-lg"></div>
-                <div>
-                    <h3 class="text-lg font-semibold text-gray-800">Course Title</h3>
-                    <p class="text-sm text-gray-500">Category</p>
-                </div>
-            </div>
-        </div>
+            <!-- View All Button -->
+            <div class="mt-6 text-center">
+                <a href="/cursos?autor=<?php echo $author_id; ?>"
+                   class="inline-block px-6 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition duration-150 shadow-md">
 
-        <div class="mt-6 text-center">
-            <a class="inline-block px-6 py-2 bg-blue-600 text-white font-medium rounded-full">
-                VER TODOS
-            </a>
-        </div>
+                   VER TODOS (<?php echo $courses->found_posts; ?>)
+                </a>
+            </div>
+
+        <?php else: ?>
+
+            <p class="text-gray-600">Este autor aún no tiene cursos publicados.</p>
+
+        <?php endif; ?>
+
     </section>
 
     <!-- ============================
