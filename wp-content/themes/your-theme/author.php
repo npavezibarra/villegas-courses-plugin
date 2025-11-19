@@ -1,5 +1,20 @@
 <?php get_header(); ?>
 
+<?php 
+    $author_id = get_queried_object_id();
+
+    // WP core fields
+    $author_name = get_the_author_meta('display_name', $author_id);
+    $author_bio  = get_the_author_meta('description', $author_id);
+
+    // ACF custom fields (optional, recommended)
+    $author_position = get_field('author_position', 'user_' . $author_id);
+    $author_photo    = get_field('author_photo', 'user_' . $author_id);
+
+    // Check if logged-in user is the same author → upload button visible
+    $is_author = (get_current_user_id() == $author_id);
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -57,41 +72,67 @@
             <div class="md:col-span-1 flex flex-col items-center text-center">
 
                 <div class="relative group w-36 h-36 mb-4">
-                    <!-- PROFILE IMAGE (dynamic later) -->
-                    <img class="w-full h-full object-cover rounded-full border-4 border-white shadow-md"
-                        src="https://placehold.co/144x144"
-                        alt="Author Photo">
 
-                    <!-- Upload button appears later -->
-                    <button class="hidden absolute inset-0 bg-black bg-opacity-50 text-white
-                        flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100
-                        transition duration-300 text-sm font-semibold cursor-pointer">
-                        Upload Photo
-                    </button>
+                    <!-- PROFILE IMAGE -->
+                    <img class="w-full h-full object-cover rounded-full border-4 border-white shadow-md"
+                         src="<?php 
+                            if ($author_photo) {
+                                echo esc_url($author_photo['url']);
+                            } else {
+                                echo get_avatar_url($author_id, ['size' => 256]);
+                            }
+                         ?>"
+                         alt="<?php echo esc_attr($author_name); ?>">
+
+                    <!-- Upload button (only if logged-in user = this author) -->
+                    <?php if ($is_author): ?>
+                        <button onclick="document.getElementById('upload-photo-input').click()"
+                            class="absolute inset-0 bg-black bg-opacity-50 text-white
+                                   flex items-center justify-center rounded-full opacity-0
+                                   group-hover:opacity-100 transition duration-300
+                                   text-sm font-semibold cursor-pointer">
+                            Upload Photo
+                        </button>
+
+                        <input id="upload-photo-input" type="file" accept="image/*"
+                               class="hidden" />
+                    <?php endif; ?>
+
                 </div>
 
                 <!-- AUTHOR NAME -->
                 <h1 class="text-2xl font-extrabold text-gray-900">
-                    AUTHOR NAME HERE
+                    <?php echo esc_html($author_name); ?>
                 </h1>
 
-                <!-- AUTHOR POSITION -->
-                <p class="text-md text-blue-600 font-medium">
-                    AUTHOR POSITION HERE
-                </p>
+                <!-- AUTHOR POSITION (ACF) -->
+                <?php if ($author_position): ?>
+                    <p class="text-md text-blue-600 font-medium">
+                        <?php echo esc_html($author_position); ?>
+                    </p>
+                <?php endif; ?>
+
             </div>
 
             <!-- RIGHT COLUMN: ABOUT AUTHOR -->
             <div class="md:col-span-2">
-                <h2 class="section-title">Sobre el Autor</h2>
+                <h2 class="section-title">Sobre <?php echo esc_html($author_name); ?></h2>
 
                 <div class="text-gray-700 leading-relaxed space-y-4 text-justify">
-                    <!-- BIO CONTENT -->
+
+                    <!-- WP BIO OR ACF BIO -->
                     <p>
-                        Author biography will be loaded here in Task 2.
+                        <?php 
+                            echo nl2br(
+                                esc_html(
+                                    $author_bio ?: 'Este autor aún no ha agregado una biografía.'
+                                )
+                            ); 
+                        ?>
                     </p>
                 </div>
             </div>
+
         </div>
     </section>
 
