@@ -501,7 +501,7 @@ if (!function_exists('vcp_add_google_login_submenu')) {
 add_action('admin_menu', 'vcp_add_google_login_submenu', 20);
 
 if (!function_exists('vcp_google_login_settings_page')) {
-    function vcp_google_login_settings_page() {
+function vcp_google_login_settings_page() {
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -555,4 +555,20 @@ if (!function_exists('vcp_google_login_settings_page')) {
         </div>
         <?php
     }
+}
+
+// Add Spanish rewrite for author pages
+add_action('init', 'villegas_add_autor_rewrite');
+function villegas_add_autor_rewrite() {
+    add_rewrite_rule(
+        '^autor/([^/]+)/?$',
+        'index.php?author_name=$matches[1]',
+        'top'
+    );
+}
+
+// Make WordPress generate /autor/ instead of /author/
+add_filter('author_link', 'villegas_spanish_author_link', 10, 3);
+function villegas_spanish_author_link($link, $author_id, $author_nicename) {
+    return home_url(user_trailingslashit('autor/' . $author_nicename));
 }

@@ -25,7 +25,7 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
     <title><?php esc_html_e( 'Autor | Fernando Villegas', 'villegas-course-plugin' ); ?></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cardo&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --font-inter: 'Inter', sans-serif;
@@ -223,12 +223,23 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .course-card h3 {
             font-size: 26px;
             margin: 0px;
+            font-family: 'Cardo', serif;
         }
 
         .course-card p {
             color: var(--text-secondary);
             flex: 1;
             margin-top: 0px;
+        }
+
+        .course-title-link {
+            text-decoration: none;
+            color: inherit;
+            font-family: 'Cardo', serif;
+        }
+
+        .course-title-link:hover {
+            text-decoration: underline;
         }
 
         .section-footer {
@@ -432,13 +443,19 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                     <article class="course-card">
 
                         <!-- Thumbnail -->
-                        <img
-                            src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'large' ) ?: 'https://placehold.co/640x360/f2f2f0/111111?text=Sin+Imagen'; ?>"
-                            alt="<?php echo esc_attr( get_the_title() ); ?>"
-                        >
+                        <a href="<?php the_permalink(); ?>" aria-label="Ir al curso <?php the_title(); ?>">
+                            <img
+                                src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'large' ) ?: 'https://placehold.co/640x360/f2f2f0/111111?text=Sin+Imagen'; ?>"
+                                alt="<?php echo esc_attr( get_the_title() ); ?>"
+                            >
+                        </a>
 
                         <!-- Course Title -->
-                        <h3><?php the_title(); ?></h3>
+                        <h3>
+                            <a href="<?php the_permalink(); ?>" class="course-title-link">
+                                <?php the_title(); ?>
+                            </a>
+                        </h3>
 
                         <!-- Course Excerpt or Dummy Fallback -->
                         <p>
