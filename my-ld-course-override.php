@@ -58,6 +58,18 @@ function villegas_override_learndash_templates( $template ) {
 }
 add_filter( 'template_include', 'villegas_override_learndash_templates', 99 );
 
+add_filter( 'template_include', 'villegas_override_author_template' );
+function villegas_override_author_template( $template ) {
+    if ( is_author() ) {
+        $new = plugin_dir_path( __FILE__ ) . 'templates/author-profile-template.php';
+
+        if ( file_exists( $new ) ) {
+            return $new;
+        }
+    }
+
+    return $template;
+}
 
 
 // Encolar estilo de Course Page
@@ -407,6 +419,7 @@ require_once plugin_dir_path(__FILE__) . 'includes/ajax-handlers.php';
 require_once plugin_dir_path(__FILE__) . 'opciones-usuario.php';
 /* PROFILE PHOTO */
 require_once plugin_dir_path(__FILE__) . 'profile/profile-picture.php';
+require_once plugin_dir_path(__FILE__) . 'profile/user-title.php';
 /* SHORTCODES */
 require_once plugin_dir_path(__FILE__) . 'shortcodes/villegas-circle-progress.php';
 require_once plugin_dir_path(__FILE__) . 'shortcodes/shortcode-cursos-finalizados.php';
