@@ -250,14 +250,14 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
             display: flex;
             flex-direction: column;
             gap: 18px;
-            margin-top: 20px;
+            margin-top: 0px;
         }
 
         .column-item {
             display: flex;
             gap: 16px;
             align-items: start;
-            padding: 16px 0px;
+            padding: 0px;
             border: none;
         }
 
@@ -435,16 +435,6 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                             src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'large' ) ?: 'https://placehold.co/640x360/f2f2f0/111111?text=Sin+Imagen'; ?>"
                             alt="<?php echo esc_attr( get_the_title() ); ?>"
                         >
-
-                        <!-- LearnDash Course Category (optional) -->
-                        <div class="course-meta">
-                            <?php
-                            $terms = get_the_terms( get_the_ID(), 'ld_course_category' );
-                            echo ( $terms && ! is_wp_error( $terms ) )
-                                ? esc_html( $terms[0]->name )
-                                : 'Curso';
-                            ?>
-                        </div>
 
                         <!-- Course Title -->
                         <h3><?php the_title(); ?></h3>
