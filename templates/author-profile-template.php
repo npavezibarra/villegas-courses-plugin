@@ -7,6 +7,14 @@
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
+
+$author_id       = get_queried_object_id();
+$author_first    = get_the_author_meta( 'first_name', $author_id );
+$author_last     = get_the_author_meta( 'last_name', $author_id );
+$author_name_raw = trim( $author_first . ' ' . $author_last );
+$author_name     = $author_name_raw ? $author_name_raw : get_the_author_meta( 'display_name', $author_id );
+$author_bio_raw  = get_the_author_meta( 'description', $author_id );
+$author_bio      = trim( wp_strip_all_tags( $author_bio_raw ) ) ? $author_bio_raw : __( 'Esta biografía es una representación ficticia utilizada únicamente como borrador visual. El objetivo es mostrar el flujo completo del perfil del autor manteniendo una estética monocromática.', 'villegas-course-plugin' );
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -51,13 +59,8 @@ if ( ! defined( 'ABSPATH' ) ) {
         .author-profile-page {
             min-height: 100vh;
             padding: 48px min(6vw, 72px) 96px;
-            background: var(--bg-base);
             max-width: 1420px;
             margin: auto;
-        }
-
-        .author-profile-page * {
-            border-radius: 0 !important;
         }
 
         .profile-section {
@@ -65,15 +68,62 @@ if ( ! defined( 'ABSPATH' ) ) {
             border: 1px solid var(--border-soft);
             padding: 40px;
             display: grid;
-            grid-template-columns: 260px 1fr;
+            grid-template-columns: 280px 1fr;
             gap: 36px;
             align-items: center;
         }
 
-        .profile-portrait {
-            width: 100%;
+        .profile-media {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .profile-avatar {
+            appearance: none;
             border: 1px solid var(--border-soft);
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            border-radius: 50%;
+            overflow: hidden;
             background: #f1f1ef;
+            padding: 0;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(12, 12, 12, 0.78);
+            color: #fff;
+            font-size: 0.9rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .profile-avatar:hover .avatar-overlay,
+        .profile-avatar:focus-visible .avatar-overlay {
+            opacity: 1;
+        }
+
+        .upload-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: center;
         }
 
         .profile-details h3 {
@@ -81,6 +131,8 @@ if ( ! defined( 'ABSPATH' ) ) {
             font-size: 2.2rem;
             font-weight: 600;
             color: var(--text-primary);
+            font-variant: small-caps;
+            text-transform: lowercase;
         }
 
         .profile-details .subtitle {
@@ -95,6 +147,16 @@ if ( ! defined( 'ABSPATH' ) ) {
             max-width: 620px;
         }
 
+        .author-bio {
+            margin-top: 16px;
+            color: var(--text-secondary);
+            max-width: 620px;
+        }
+
+        .author-bio p {
+            margin: 0 0 1em;
+        }
+
         .meta-list {
             margin-top: 24px;
             display: flex;
@@ -102,35 +164,6 @@ if ( ! defined( 'ABSPATH' ) ) {
             gap: 12px 24px;
             font-size: 0.95rem;
             color: var(--text-muted);
-        }
-
-        .upload-controls {
-            margin-top: 32px;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .upload-button {
-            appearance: none;
-            border: 1px solid var(--border-strong);
-            background: transparent;
-            padding: 10px 28px;
-            font-weight: 500;
-            font-size: 0.95rem;
-            cursor: pointer;
-            color: var(--text-primary);
-            transition: background 0.2s ease, color 0.2s ease;
-        }
-
-        .upload-button.is-active {
-            background: var(--text-primary);
-            color: #fff;
-        }
-
-        .upload-button.is-uploaded {
-            border-color: var(--text-primary);
         }
 
         .upload-hint {
@@ -175,6 +208,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             display: flex;
             flex-direction: column;
             gap: 16px;
+            border: none;
         }
 
         .course-meta {
@@ -222,6 +256,7 @@ if ( ! defined( 'ABSPATH' ) ) {
             gap: 16px;
             align-items: center;
             padding: 16px;
+            border: none;
         }
 
         .column-item img {
@@ -335,23 +370,26 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 ?>
 <div class="author-profile-page">
     <section class="profile-section">
-        <img class="profile-portrait" src="https://placehold.co/520x640/ededeb/1a1a1a?text=Retrato" alt="Retrato del autor" />
+        <div class="profile-media">
+            <button type="button" class="profile-avatar" data-avatar-toggle>
+                <img src="https://placehold.co/520x520/ededeb/1a1a1a?text=Retrato" alt="<?php echo esc_attr( $author_name ); ?>" />
+                <span class="avatar-overlay">Subir foto</span>
+            </button>
+            <div class="upload-controls">
+                <span class="upload-hint upload-status">Sin archivo seleccionado</span>
+                <input type="file" id="author-upload-input" class="upload-input" hidden>
+            </div>
+        </div>
         <div class="profile-details">
-            <h3>FERNANDO VILLEGAS</h3>
+            <h3><?php echo esc_html( $author_name ); ?></h3>
             <p class="subtitle">Director Académico Villegas</p>
-            <p>
-                Esta biografía es una representación ficticia utilizada únicamente como borrador visual.
-                El objetivo es mostrar el flujo completo del perfil del autor manteniendo una estética monocromática.
-            </p>
+            <div class="author-bio">
+                <?php echo wpautop( wp_kses_post( $author_bio ) ); ?>
+            </div>
             <div class="meta-list">
                 <span>15+ años experiencia</span>
                 <span>45 publicaciones</span>
                 <span>10 cursos activos</span>
-            </div>
-            <div class="upload-controls">
-                <button type="button" class="upload-button" data-upload-toggle>Subir nueva foto</button>
-                <span class="upload-hint upload-status">Sin archivo seleccionado</span>
-                <input type="file" id="author-upload-input" class="upload-input" hidden>
             </div>
         </div>
     </section>
@@ -446,37 +484,32 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
         }
 
         document.addEventListener('DOMContentLoaded', function() {
-            var uploadBtn = document.querySelector('[data-upload-toggle]');
+            var avatarBtn = document.querySelector('[data-avatar-toggle]');
             var uploadInput = document.getElementById('author-upload-input');
             var uploadStatus = document.querySelector('.upload-status');
+            var avatarOverlay = avatarBtn ? avatarBtn.querySelector('.avatar-overlay') : null;
 
-            if (!uploadBtn || !uploadInput) {
+            if (!avatarBtn || !uploadInput || !uploadStatus || !avatarOverlay) {
                 return;
             }
 
-            uploadBtn.addEventListener('click', function() {
-                uploadBtn.classList.toggle('is-active');
-                if (uploadBtn.classList.contains('is-active')) {
-                    uploadBtn.textContent = 'Seleccionar archivo';
-                    uploadInput.click();
-                } else {
-                    uploadBtn.textContent = 'Subir nueva foto';
-                }
+            avatarBtn.addEventListener('click', function() {
+                uploadInput.click();
             });
 
             uploadInput.addEventListener('change', function() {
                 if (!uploadInput.files.length) {
                     uploadStatus.textContent = 'Sin archivo seleccionado';
-                    uploadBtn.classList.remove('is-uploaded');
-                    uploadBtn.textContent = 'Subir nueva foto';
+                    avatarBtn.classList.remove('is-uploaded');
+                    avatarOverlay.textContent = 'Subir foto';
                     return;
                 }
 
                 uploadStatus.textContent = 'Subiendo…';
                 simulateAuthorUpload(uploadInput.files[0]).then(function() {
                     uploadStatus.textContent = 'Imagen subida correctamente (simulado)';
-                    uploadBtn.classList.add('is-uploaded');
-                    uploadBtn.textContent = 'Cambiar imagen';
+                    avatarBtn.classList.add('is-uploaded');
+                    avatarOverlay.textContent = 'Cambiar foto';
                 });
             });
         });
