@@ -268,6 +268,21 @@ add_action('init', function () {
     }
 });
 
+/**
+ * Load the custom author template that lives inside this plugin.
+ */
+add_filter('template_include', function ($template) {
+    if (is_author()) {
+        $custom_template = plugin_dir_path(__FILE__) . 'templates/author.php';
+
+        if (file_exists($custom_template)) {
+            return $custom_template;
+        }
+    }
+
+    return $template;
+});
+
 if (!function_exists('vcp_auth_handle_google')) {
     function vcp_auth_handle_google() {
         if (empty(VCP_GOOGLE_CLIENT_ID) || empty(VCP_GOOGLE_CLIENT_SECRET) || empty(VCP_GOOGLE_REDIRECT_URI)) {

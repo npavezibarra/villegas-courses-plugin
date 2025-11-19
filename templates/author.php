@@ -1,64 +1,56 @@
-<?php get_header(); ?>
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
 
-<?php 
-    $author_id = get_queried_object_id();
+wp_enqueue_script('vcp-author-tailwind', 'https://cdn.tailwindcss.com', [], null, false);
+wp_enqueue_style('vcp-author-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap', [], null);
 
-    // WP core fields
-    $author_name = get_the_author_meta('display_name', $author_id);
-    $author_bio  = get_the_author_meta('description', $author_id);
+get_header();
 
-    // ACF custom fields (optional, recommended)
-    $author_position = get_field('author_position', 'user_' . $author_id);
-    $author_photo    = get_field('author_photo', 'user_' . $author_id);
+$author_id = get_queried_object_id();
 
-    // Check if logged-in user is the same author → upload button visible
-    $is_author = (get_current_user_id() == $author_id);
+// WP core fields
+$author_name = get_the_author_meta('display_name', $author_id);
+$author_bio  = get_the_author_meta('description', $author_id);
+
+// ACF custom fields (optional, recommended)
+$author_position = get_field('author_position', 'user_' . $author_id);
+$author_photo    = get_field('author_photo', 'user_' . $author_id);
+
+// Check if logged-in user is the same author → upload button visible
+$is_author = (get_current_user_id() == $author_id);
 ?>
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Author Profile</title>
-
-    <!-- Optional: Tailwind CDN (we can remove later if needed) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
-
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f7f7f9;
-        }
-        .section-title {
-            position: relative;
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #1f2937;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-        }
-        .section-title::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            width: 50px;
-            height: 3px;
-            background-color: #3b82f6;
-            border-radius: 9999px;
-        }
-        .book-item:hover .book-cover {
-            transform: translateY(-4px);
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
-                        0 4px 6px -2px rgba(0, 0, 0, 0.05);
-        }
-    </style>
-</head>
-
-<body>
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f7f7f9;
+    }
+    .section-title {
+        position: relative;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+    }
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background-color: #3b82f6;
+        border-radius: 9999px;
+    }
+    .book-item:hover .book-cover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
 
 <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
 
@@ -75,11 +67,11 @@
 
                     <!-- PROFILE IMAGE -->
                     <img class="w-full h-full object-cover rounded-full border-4 border-white shadow-md"
-                         src="<?php 
+                         src="<?php
                             if ($author_photo) {
                                 echo esc_url($author_photo['url']);
                             } else {
-                                echo get_avatar_url($author_id, ['size' => 256]);
+                                echo esc_url(get_avatar_url($author_id, ['size' => 256]));
                             }
                          ?>"
                          alt="<?php echo esc_attr($author_name); ?>">
@@ -122,12 +114,12 @@
 
                     <!-- WP BIO OR ACF BIO -->
                     <p>
-                        <?php 
+                        <?php
                             echo nl2br(
                                 esc_html(
                                     $author_bio ?: 'Este autor aún no ha agregado una biografía.'
                                 )
-                            ); 
+                            );
                         ?>
                     </p>
                 </div>
@@ -199,10 +191,10 @@
 
             <!-- View All Button -->
             <div class="mt-6 text-center">
-                <a href="/cursos?autor=<?php echo $author_id; ?>"
+                <a href="/cursos?autor=<?php echo (int) $author_id; ?>"
                    class="inline-block px-6 py-2 bg-blue-600 text-white font-medium rounded-full hover:bg-blue-700 transition duration-150 shadow-md">
 
-                   VER TODOS (<?php echo $courses->found_posts; ?>)
+                   VER TODOS (<?php echo (int) $courses->found_posts; ?>)
                 </a>
             </div>
 
@@ -266,9 +258,9 @@
 
             <!-- View All Link -->
             <div class="mt-6 text-center">
-                <a href="/blog?autor=<?php echo $author_id; ?>"
+                <a href="/blog?autor=<?php echo (int) $author_id; ?>"
                    class="inline-block text-blue-600 font-medium hover:text-blue-700 transition duration-150 text-sm">
-                   VER TODOS (<?php echo $columns->found_posts; ?>)
+                   VER TODOS (<?php echo (int) $columns->found_posts; ?>)
                 </a>
             </div>
 
@@ -304,8 +296,5 @@
     </section>
 
 </main>
-
-</body>
-</html>
 
 <?php get_footer(); ?>
