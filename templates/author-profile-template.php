@@ -129,11 +129,11 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
 
         .profile-details h3 {
             margin: 0;
-            font-size: 2.2rem;
+            font-size: 2.6rem;
             font-weight: 600;
             color: var(--text-primary);
-            font-variant: small-caps;
-            text-transform: lowercase;
+            /* font-variant: small-caps; */
+            /* text-transform: lowercase; */
         }
 
         .author-title {
@@ -190,6 +190,8 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .section-header h2 {
             font-size: 1.8rem;
             margin: 8px 0 12px;
+            text-align: left;
+            font-family: 'Cardo';
         }
 
         .section-description {
@@ -204,7 +206,7 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         }
 
         .course-card {
-            padding: 20px;
+            padding: 0px;
             display: flex;
             flex-direction: column;
             gap: 16px;
@@ -254,8 +256,8 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .column-item {
             display: flex;
             gap: 16px;
-            align-items: center;
-            padding: 16px;
+            align-items: start;
+            padding: 16px 0px;
             border: none;
         }
 
@@ -287,6 +289,8 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .books-section h2 {
             font-size: 1.9rem;
             margin-bottom: 8px;
+            text-align: left;
+            font-family: 'Cardo';
         }
 
         .books-description {
@@ -301,7 +305,7 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         }
 
         .book-item {
-            padding: 20px;
+            padding: 0px;
             display: flex;
             flex-direction: column;
             gap: 12px;
@@ -312,13 +316,15 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         }
 
         .book-item h3 {
-            font-size: 1rem;
+            font-family: 'Cardo';
+            font-size: 1.4rem;
             margin: 0;
         }
 
         .book-price {
             font-size: 0.95rem;
             color: var(--text-secondary);
+            margin: 0px;
         }
 
         @media (max-width: 1024px) {
@@ -403,7 +409,6 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             <div class="section-header">
                 <h2>Cursos</h2>
             </div>
-            <p class="section-description">Selección de cursos destacados dictados por Fernando.</p>
             <div class="courses-grid">
                 <article class="course-card">
                     <img src="https://placehold.co/640x360/f2f2f0/111111?text=Curso+01" alt="Curso destacado 1">
@@ -427,32 +432,68 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             <div class="section-header">
                 <h2>Columnas</h2>
             </div>
-            <p class="section-description">Últimas columnas de opinión en medios asociados.</p>
+            <?php
+            $author_id = get_the_author_meta( 'ID' );
+
+            $args = [
+                'post_type'      => 'post',
+                'posts_per_page' => 3,
+                'author'         => $author_id,
+                'post_status'    => 'publish',
+            ];
+
+            $author_posts = new WP_Query( $args );
+            ?>
+
             <div class="columns-list">
-                <article class="column-item">
-                    <img src="https://placehold.co/140x140/efefed/1d1d1b?text=Columna+01" alt="Columna 1">
-                    <div>
-                        <a href="#">El regreso de la República Cívica</a>
-                        <p>Columna de opinión — Demo</p>
-                    </div>
-                </article>
-                <article class="column-item">
-                    <img src="https://placehold.co/140x140/efefed/1d1d1b?text=Columna+02" alt="Columna 2">
-                    <div>
-                        <a href="#">Democracia y Cultura Popular</a>
-                        <p>Ensayo semanal — Demo</p>
-                    </div>
-                </article>
+
+                <?php if ( $author_posts->have_posts() ) : ?>
+                    <?php while ( $author_posts->have_posts() ) : $author_posts->the_post(); ?>
+
+                        <article class="column-item">
+                            
+                            <!-- Thumbnail -->
+                            <img 
+                                src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'medium' ) ?: 'https://placehold.co/140x140/efefed/1d1d1b?text=No+Image'; ?>" 
+                                alt="<?php echo esc_attr( get_the_title() ); ?>"
+                            >
+
+                            <div>
+                                <!-- Post Title -->
+                                <a href="<?php the_permalink(); ?>">
+                                    <?php the_title(); ?>
+                                </a>
+
+                                <!-- Post Meta -->
+                                <p><?php echo get_the_date(); ?> — Columna</p>
+                            </div>
+
+                        </article>
+
+                    <?php endwhile; ?>
+                    <?php wp_reset_postdata(); ?>
+
+                <?php else : ?>
+
+                    <p>No hay columnas publicadas aún.</p>
+
+                <?php endif; ?>
+
             </div>
+
+            <?php
+            $author_archive_url = get_author_posts_url( $author_id );
+            ?>
             <div class="section-footer">
-                <a href="#" aria-label="Ver todas las columnas">Ver todos (+5)</a>
+                <a href="<?php echo esc_url( $author_archive_url ); ?>" aria-label="Ver todas las columnas">
+                    Ver todas
+                </a>
             </div>
         </div>
     </section>
 
     <section class="books-section">
         <h2>Libros Fernando Villegas</h2>
-        <p class="books-description">Catálogo referencial con publicaciones impresas.</p>
         <div class="books-grid">
             <article class="book-item">
                 <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+01" alt="Libro 1">
