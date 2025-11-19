@@ -572,3 +572,115 @@ add_filter('author_link', 'villegas_spanish_author_link', 10, 3);
 function villegas_spanish_author_link($link, $author_id, $author_nicename) {
     return home_url(user_trailingslashit('autor/' . $author_nicename));
 }
+
+add_action('wp_enqueue_scripts', 'villegas_enqueue_author_cropper');
+function villegas_enqueue_author_cropper() {
+    if (!is_author()) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'cropper-css',
+        'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css',
+        [],
+        '1.5.13'
+    );
+
+    wp_enqueue_script(
+        'cropper-js',
+        'https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js',
+        [],
+        '1.5.13',
+        true
+    );
+
+    wp_enqueue_script(
+        'villegas-author-avatar',
+        plugin_dir_url(__FILE__) . 'assets/js/author-avatar.js',
+        ['cropper-js'],
+        '1.0',
+        true
+    );
+
+    wp_localize_script('villegas-author-avatar', 'AuthorAvatarData', [
+        'ajaxurl' => admin_url('admin-ajax.php'),
+        'nonce'   => wp_create_nonce('author-avatar-upload'),
+        'user_id' => get_current_user_id(),
+    ]);
+}
+
+add_action('wp_ajax_villegas_save_author_avatar', 'villegas_save_author_avatar');
+function villegas_save_author_avatar() {
+    check_ajax_referer('author-avatar-upload', 'nonce');
+
+    $user_id = isset($_POST['user_id']) ? (int) wp_unslash($_POST['user_id']) : 0;
+
+    if (!$user_id || get_current_user_id() !== $user_id) {
+        wp_send_json_error('Invalid user.');
+    }
+
+    if (!isset($_FILES['file'])) {
+        wp_send_json_error('No image received.');
+    }
+
+    $file = $_FILES['file'];
+    $max_size = 1024 * 1024; // 1MB
+    $allowed_mimes = [
+        'jpg|jpeg' => 'image/jpeg',
+        'png'      => 'image/png',
+        'webp'     => 'image/webp',
+    ];
+
+    if (!empty($file['size']) && $file['size'] > $max_size) {
+        wp_send_json_error('La imagen debe ser menor a 1MB.');
+    }
+
+    $filetype = wp_check_filetype($file['name'], $allowed_mimes);
+    if (empty($filetype['type']) || empty($allowed_mimes[$filetype['ext']])) {
+        wp_send_json_error('Formatos permitidos: JPG, PNG o WEBP.');
+    }
+
+    // Delete previous avatar if exists
+    $old_url = get_user_meta($user_id, 'profile_picture', true);
+    if ($old_url) {
+        $old_attachment_id = attachment_url_to_postid($old_url);
+        if ($old_attachment_id) {
+            wp_delete_attachment($old_attachment_id, true);
+        }
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/file.php';
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+
+    $uploaded = wp_handle_upload($file, [
+        'test_form' => false,
+        'mimes'     => $allowed_mimes,
+    ]);
+
+    if (isset($uploaded['error'])) {
+        wp_send_json_error($uploaded['error']);
+    }
+
+    $filename = $uploaded['file'];
+    $filetype = wp_check_filetype(basename($filename), null);
+
+    $attachment_id = wp_insert_attachment([
+        'guid'           => $uploaded['url'],
+        'post_mime_type' => $filetype['type'],
+        'post_title'     => sanitize_file_name(basename($filename)),
+        'post_content'   => '',
+        'post_status'    => 'inherit',
+    ], $filename);
+
+    $metadata = wp_generate_attachment_metadata($attachment_id, $filename);
+    if (!is_wp_error($metadata)) {
+        wp_update_attachment_metadata($attachment_id, $metadata);
+    }
+
+    update_user_meta($user_id, 'profile_picture', esc_url($uploaded['url']));
+
+    wp_send_json_success([
+        'url'            => $uploaded['url'],
+        'attachment_id'  => $attachment_id,
+    ]);
+}

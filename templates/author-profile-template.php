@@ -16,6 +16,15 @@ $author_name     = $author_name_raw ? $author_name_raw : get_the_author_meta( 'd
 $author_bio_raw  = get_the_author_meta( 'description', $author_id );
 $author_bio      = trim( wp_strip_all_tags( $author_bio_raw ) ) ? $author_bio_raw : __( 'Esta biografía es una representación ficticia utilizada únicamente como borrador visual. El objetivo es mostrar el flujo completo del perfil del autor manteniendo una estética monocromática.', 'villegas-course-plugin' );
 $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true ) );
+$author_avatar   = (string) get_user_meta( $author_id, 'profile_picture', true );
+
+if ( empty( $author_avatar ) ) {
+    $author_avatar = get_avatar_url( $author_id, [ 'size' => 520 ] );
+}
+
+if ( empty( $author_avatar ) ) {
+    $author_avatar = 'https://placehold.co/520x520/ededeb/1a1a1a?text=Retrato';
+}
 ?>
 <!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -126,6 +135,28 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
             gap: 6px;
             align-items: center;
         }
+
+        .avatar-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.65);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 99999;
+        }
+
+        .avatar-modal.hidden { display: none; }
+
+        .avatar-modal-content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+        }
+
+        .cropper-area img { max-width: 100%; }
 
         .profile-details h3 {
             margin: 0;
@@ -387,15 +418,29 @@ include plugin_dir_path( __FILE__ ) . 'template-parts/header.php';
 echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
 ?>
 <div class="author-profile-page">
+    <div id="avatar-cropper-modal" class="avatar-modal hidden">
+        <div class="avatar-modal-content">
+            <h3>Recorta tu foto</h3>
+
+            <div class="cropper-area">
+                <img id="avatar-cropper-image" src="" alt="Imagen a recortar">
+            </div>
+
+            <div class="cropper-actions">
+                <button id="avatar-cropper-save">Guardar</button>
+                <button id="avatar-cropper-cancel">Cancelar</button>
+            </div>
+        </div>
+    </div>
     <section class="profile-section">
         <div class="profile-media">
             <button type="button" class="profile-avatar" data-avatar-toggle>
-                <img src="https://placehold.co/520x520/ededeb/1a1a1a?text=Retrato" alt="<?php echo esc_attr( $author_name ); ?>" />
+                <img src="<?php echo esc_url( $author_avatar ); ?>" alt="<?php echo esc_attr( $author_name ); ?>" />
                 <span class="avatar-overlay">Subir foto</span>
             </button>
             <div class="upload-controls">
                 <span class="upload-hint upload-status">Sin archivo seleccionado</span>
-                <input type="file" id="author-upload-input" class="upload-input" hidden>
+                <input type="file" id="author-upload-input" class="upload-input" accept="image/jpeg,image/png,image/webp" hidden>
             </div>
         </div>
         <div class="profile-details">
@@ -587,48 +632,6 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
         </div>
     </section>
 </div>
-<script>
-    (function() {
-        function simulateAuthorUpload(file) {
-            return new Promise(function(resolve) {
-                setTimeout(function() {
-                    resolve(file);
-                }, 900);
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            var avatarBtn = document.querySelector('[data-avatar-toggle]');
-            var uploadInput = document.getElementById('author-upload-input');
-            var uploadStatus = document.querySelector('.upload-status');
-            var avatarOverlay = avatarBtn ? avatarBtn.querySelector('.avatar-overlay') : null;
-
-            if (!avatarBtn || !uploadInput || !uploadStatus || !avatarOverlay) {
-                return;
-            }
-
-            avatarBtn.addEventListener('click', function() {
-                uploadInput.click();
-            });
-
-            uploadInput.addEventListener('change', function() {
-                if (!uploadInput.files.length) {
-                    uploadStatus.textContent = 'Sin archivo seleccionado';
-                    avatarBtn.classList.remove('is-uploaded');
-                    avatarOverlay.textContent = 'Subir foto';
-                    return;
-                }
-
-                uploadStatus.textContent = 'Subiendo…';
-                simulateAuthorUpload(uploadInput.files[0]).then(function() {
-                    uploadStatus.textContent = 'Imagen subida correctamente (simulado)';
-                    avatarBtn.classList.add('is-uploaded');
-                    avatarOverlay.textContent = 'Cambiar foto';
-                });
-            });
-        });
-    })();
-</script>
 <?php wp_footer(); ?>
 </body>
 </html>
