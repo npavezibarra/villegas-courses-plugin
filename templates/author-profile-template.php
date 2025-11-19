@@ -52,29 +52,17 @@ if ( ! defined( 'ABSPATH' ) ) {
             min-height: 100vh;
             padding: 48px min(6vw, 72px) 96px;
             background: var(--bg-base);
+            max-width: 1420px;
+            margin: auto;
         }
 
-        .page-header {
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-bottom: 32px;
-        }
-
-        .page-header h1 {
-            margin: 8px 0 0;
-            font-size: 2.75rem;
-            font-weight: 600;
-            letter-spacing: -0.02em;
-            text-transform: none;
-            color: var(--text-primary);
+        .author-profile-page * {
+            border-radius: 0 !important;
         }
 
         .profile-section {
             background: var(--surface);
             border: 1px solid var(--border-soft);
-            border-radius: 28px;
             padding: 40px;
             display: grid;
             grid-template-columns: 260px 1fr;
@@ -84,21 +72,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 
         .profile-portrait {
             width: 100%;
-            border-radius: 24px;
             border: 1px solid var(--border-soft);
             background: #f1f1ef;
         }
 
-        .profile-details h2 {
-            margin: 0;
-            font-size: 1.2rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-secondary);
-        }
-
         .profile-details h3 {
-            margin: 12px 0 0;
+            margin: 0;
             font-size: 2.2rem;
             font-weight: 600;
             color: var(--text-primary);
@@ -136,7 +115,6 @@ if ( ! defined( 'ABSPATH' ) ) {
         .upload-button {
             appearance: none;
             border: 1px solid var(--border-strong);
-            border-radius: 999px;
             background: transparent;
             padding: 10px 28px;
             font-weight: 500;
@@ -160,27 +138,6 @@ if ( ! defined( 'ABSPATH' ) ) {
             color: var(--text-muted);
         }
 
-        .about-section {
-            margin-top: 40px;
-            background: var(--surface);
-            border: 1px solid var(--border-soft);
-            border-radius: 28px;
-            padding: 32px 36px;
-        }
-
-        .about-section h2 {
-            font-size: 1.2rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--text-secondary);
-            margin-bottom: 16px;
-        }
-
-        .about-section p {
-            margin-bottom: 16px;
-            color: var(--text-secondary);
-        }
-
         .content-grid {
             margin-top: 40px;
             display: grid;
@@ -191,18 +148,10 @@ if ( ! defined( 'ABSPATH' ) ) {
         .section-card {
             background: var(--surface);
             border: 1px solid var(--border-soft);
-            border-radius: 28px;
             padding: 32px 36px;
             display: flex;
             flex-direction: column;
             height: 100%;
-        }
-
-        .section-header span {
-            font-size: 0.8rem;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--text-secondary);
         }
 
         .section-header h2 {
@@ -222,17 +171,10 @@ if ( ! defined( 'ABSPATH' ) ) {
         }
 
         .course-card {
-            border: 1px solid var(--border-soft);
-            border-radius: 24px;
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 16px;
-        }
-
-        .course-card img {
-            border-radius: 18px;
-            border: 1px solid var(--border-soft);
         }
 
         .course-meta {
@@ -279,16 +221,12 @@ if ( ! defined( 'ABSPATH' ) ) {
             display: flex;
             gap: 16px;
             align-items: center;
-            border: 1px solid var(--border-soft);
-            border-radius: 20px;
             padding: 16px;
         }
 
         .column-item img {
             width: 72px;
             height: 72px;
-            border-radius: 16px;
-            border: 1px solid var(--border-soft);
             object-fit: cover;
         }
 
@@ -308,7 +246,6 @@ if ( ! defined( 'ABSPATH' ) ) {
             margin-top: 48px;
             background: var(--surface);
             border: 1px solid var(--border-soft);
-            border-radius: 28px;
             padding: 36px 40px;
         }
 
@@ -324,13 +261,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 
         .books-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 24px;
         }
 
         .book-item {
-            border: 1px solid var(--border-soft);
-            border-radius: 20px;
             padding: 20px;
             display: flex;
             flex-direction: column;
@@ -338,8 +273,6 @@ if ( ! defined( 'ABSPATH' ) ) {
         }
 
         .book-item img {
-            border-radius: 16px;
-            border: 1px solid var(--border-soft);
             background: #f0f0ed;
         }
 
@@ -362,6 +295,10 @@ if ( ! defined( 'ABSPATH' ) ) {
             .content-grid {
                 grid-template-columns: 1fr;
             }
+
+            .books-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
         }
 
         @media (max-width: 640px) {
@@ -370,7 +307,6 @@ if ( ! defined( 'ABSPATH' ) ) {
             }
 
             .profile-section,
-            .about-section,
             .section-card,
             .books-section {
                 padding: 24px;
@@ -383,21 +319,24 @@ if ( ! defined( 'ABSPATH' ) ) {
             .column-item {
                 align-items: flex-start;
             }
+
+            .books-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
     <?php wp_head(); ?>
 </head>
 <body <?php body_class( 'author-profile-monochrome' ); ?>>
+<?php
+// Incluir header de tu tema o plantilla
+include plugin_dir_path( __FILE__ ) . 'template-parts/header.php';
+echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
+?>
 <div class="author-profile-page">
-    <header class="page-header">
-        <span>Perfil del autor</span>
-        <h1>Fernando Villegas</h1>
-    </header>
-
     <section class="profile-section">
         <img class="profile-portrait" src="https://placehold.co/520x640/ededeb/1a1a1a?text=Retrato" alt="Retrato del autor" />
         <div class="profile-details">
-            <h2>Autor invitado</h2>
             <h3>FERNANDO VILLEGAS</h3>
             <p class="subtitle">Director Académico Villegas</p>
             <p>
@@ -417,22 +356,9 @@ if ( ! defined( 'ABSPATH' ) ) {
         </div>
     </section>
 
-    <section class="about-section">
-        <h2>Sobre Fernando</h2>
-        <p>
-            Fernando Villegas es reconocido por sus investigaciones sobre historia política chilena y análisis comparado de
-            procesos sociales. Este bloque únicamente contiene texto de prueba para la maqueta.
-        </p>
-        <p>
-            En esta sección se podrán detallar hitos biográficos, proyectos recientes y su vínculo con la comunidad
-            académica del Villegas Institute. Todo el contenido será reemplazado posteriormente por datos reales.
-        </p>
-    </section>
-
     <section class="content-grid">
         <div class="section-card courses-section">
             <div class="section-header">
-                <span>Programas</span>
                 <h2>Cursos</h2>
             </div>
             <p class="section-description">Selección de cursos destacados dictados por Fernando.</p>
@@ -457,7 +383,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 
         <div class="section-card columns-section">
             <div class="section-header">
-                <span>Artículos</span>
                 <h2>Columnas</h2>
             </div>
             <p class="section-description">Últimas columnas de opinión en medios asociados.</p>
@@ -506,16 +431,6 @@ if ( ! defined( 'ABSPATH' ) ) {
                 <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+04" alt="Libro 4">
                 <h3>Memorias del Debate Público</h3>
                 <p class="book-price">$14.990</p>
-            </article>
-            <article class="book-item">
-                <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+05" alt="Libro 5">
-                <h3>Atlas de la Política Chilena</h3>
-                <p class="book-price">$21.990</p>
-            </article>
-            <article class="book-item">
-                <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+06" alt="Libro 6">
-                <h3>Ensayos de Cultura Cívica</h3>
-                <p class="book-price">$18.990</p>
             </article>
         </div>
     </section>
