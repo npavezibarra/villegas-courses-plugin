@@ -988,3 +988,76 @@ function villegas_enforce_quiz_access_control() {
 
 add_action( 'template_redirect', 'villegas_enforce_quiz_access_control' );
 
+/**
+ * Retrieve all WooCommerce products assigned to a given user through the
+ * `_product_assigned_authors` meta key.
+ *
+ * @param int $user_id User ID.
+ *
+ * @return WP_Post[]
+ */
+function villegas_get_user_books( $user_id ) {
+    $args = [
+        'post_type'      => 'product',
+        'posts_per_page' => -1,
+        'post_status'    => 'publish',
+        'meta_query'     => [
+            [
+                'key'     => '_product_assigned_authors',
+                'value'   => '"' . intval( $user_id ) . '"',
+                'compare' => 'LIKE',
+            ],
+        ],
+    ];
+
+    return get_posts( $args );
+}
+
+/**
+ * Render the books section for the currently logged-in user.
+ *
+ * @return string
+ */
+function villegas_render_user_books_section() {
+    if ( ! is_user_logged_in() ) {
+        return '';
+    }
+
+    $user_id = get_current_user_id();
+    $books   = villegas_get_user_books( $user_id );
+
+    ob_start();
+    ?>
+
+    <section class="books-section">
+        <h2>Libros</h2>
+        <div class="books-grid">
+
+            <?php if ( ! empty( $books ) ) : ?>
+                <?php foreach ( $books as $book ) :
+                    $price     = get_post_meta( $book->ID, '_price', true );
+                    $thumbnail = get_the_post_thumbnail_url( $book->ID, 'medium' );
+
+                    if ( ! $thumbnail ) {
+                        $thumbnail = 'https://placehold.co/320x480/ededeb/111111?text=Libro';
+                    }
+                    ?>
+                    <article class="book-item">
+                        <img src="<?php echo esc_url( $thumbnail ); ?>" alt="<?php echo esc_attr( $book->post_title ); ?>">
+                        <h3><?php echo esc_html( $book->post_title ); ?></h3>
+                        <p class="book-price">
+                            <?php echo wc_price( $price ); ?>
+                        </p>
+                    </article>
+                <?php endforeach; ?>
+            <?php else : ?>
+                <p>No books assigned to your profile.</p>
+            <?php endif; ?>
+
+        </div>
+    </section>
+
+    <?php
+    return ob_get_clean();
+}
+

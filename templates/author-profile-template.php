@@ -606,31 +606,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
         </div>
     </section>
 
-    <section class="books-section">
-        <h2>Libros Fernando Villegas</h2>
-        <div class="books-grid">
-            <article class="book-item">
-                <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+01" alt="Libro 1">
-                <h3>Historia de las Ideas Chilenas</h3>
-                <p class="book-price">$19.990</p>
-            </article>
-            <article class="book-item">
-                <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+02" alt="Libro 2">
-                <h3>Cartas a una República</h3>
-                <p class="book-price">$15.990</p>
-            </article>
-            <article class="book-item">
-                <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+03" alt="Libro 3">
-                <h3>El Ciclo de la Ciudadanía</h3>
-                <p class="book-price">$17.990</p>
-            </article>
-            <article class="book-item">
-                <img src="https://placehold.co/320x480/ededeb/111111?text=Libro+04" alt="Libro 4">
-                <h3>Memorias del Debate Público</h3>
-                <p class="book-price">$14.990</p>
-            </article>
-        </div>
-    </section>
+    <?php echo villegas_render_user_books_section(); ?>
 </div>
 <?php wp_footer(); ?>
 </body>
