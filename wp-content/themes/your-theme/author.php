@@ -215,28 +215,69 @@
     </section>
 
     <!-- ============================
-         COLUMNS / ARTICLES SECTION
+         COLUMNAS SECTION (Dynamic)
     ============================= -->
     <section class="bg-white p-6 rounded-xl shadow-lg mb-10">
+
         <h2 class="section-title">Columnas</h2>
 
-        <div class="space-y-4">
-            <div class="flex items-center space-x-4 p-2 border-b border-gray-100">
-                <div class="w-12 h-12 bg-gray-200 rounded-md"></div>
-                <span class="text-base text-gray-800 font-medium">Article Title</span>
+        <?php
+            // Query Columns (Blog Posts)
+            $columns = new WP_Query([
+                'post_type'      => 'post',
+                'posts_per_page' => 5,
+                'author'         => $author_id,
+                // Uncomment the next line if “Columnas” is a category
+                // 'category_name'  => 'columnas',
+            ]);
+        ?>
+
+        <?php if ($columns->have_posts()): ?>
+
+            <div class="space-y-4">
+
+                <?php while ($columns->have_posts()): $columns->the_post(); ?>
+
+                    <div class="flex items-center space-x-4 p-2 border-b border-gray-100">
+
+                        <!-- Thumbnail -->
+                        <a href="<?php the_permalink(); ?>">
+                            <?php if (has_post_thumbnail()): ?>
+                                <?php the_post_thumbnail('thumbnail', [
+                                    'class' => 'w-12 h-12 rounded-md object-cover'
+                                ]); ?>
+                            <?php else: ?>
+                                <div class="w-12 h-12 bg-gray-200 rounded-md"></div>
+                            <?php endif; ?>
+                        </a>
+
+                        <!-- Title -->
+                        <a href="<?php the_permalink(); ?>"
+                           class="text-base text-gray-800 font-medium hover:text-blue-600 transition duration-150">
+                           <?php the_title(); ?>
+                        </a>
+
+                    </div>
+
+                <?php endwhile; ?>
+                <?php wp_reset_postdata(); ?>
+
             </div>
 
-            <div class="flex items-center space-x-4 p-2 border-b border-gray-100">
-                <div class="w-12 h-12 bg-gray-200 rounded-md"></div>
-                <span class="text-base text-gray-800 font-medium">Article Title</span>
+            <!-- View All Link -->
+            <div class="mt-6 text-center">
+                <a href="/blog?autor=<?php echo $author_id; ?>"
+                   class="inline-block text-blue-600 font-medium hover:text-blue-700 transition duration-150 text-sm">
+                   VER TODOS (<?php echo $columns->found_posts; ?>)
+                </a>
             </div>
-        </div>
 
-        <div class="mt-6 text-center">
-            <a class="inline-block text-blue-600 font-medium">
-                VER TODOS
-            </a>
-        </div>
+        <?php else: ?>
+
+            <p class="text-gray-600">Este autor aún no ha publicado columnas.</p>
+
+        <?php endif; ?>
+
     </section>
 
     <!-- ============================
