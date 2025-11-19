@@ -223,6 +223,7 @@ $author_title    = trim( (string) get_user_meta( $author_id, 'user_title', true 
         .course-card h3 {
             font-size: 26px;
             margin: 0px;
+            font-family: 'Cardo';
         }
 
         .course-card p {
