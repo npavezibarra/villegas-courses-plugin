@@ -58,6 +58,18 @@ function villegas_override_learndash_templates( $template ) {
 }
 add_filter( 'template_include', 'villegas_override_learndash_templates', 99 );
 
+add_filter( 'template_include', 'villegas_override_author_template' );
+function villegas_override_author_template( $template ) {
+    if ( is_author() ) {
+        $new_template = plugin_dir_path( __FILE__ ) . 'templates/author-profile-template.php';
+
+        if ( file_exists( $new_template ) ) {
+            return $new_template;
+        }
+    }
+
+    return $template;
+}
 
 
 // Encolar estilo de Course Page
