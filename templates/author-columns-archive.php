@@ -27,7 +27,7 @@ $author_name     = $author_name ?: $author->display_name;
 <?php wp_head(); ?>
 </head>
 
-<body <?php body_class('author-profile-monochrome'); ?>>
+<body <?php body_class(['author-profile-monochrome', 'author-columns-archive']); ?>>
 
 <?php
 // LOAD THE SAME EXACT HEADER USED IN YOUR AUTHOR PROFILE PAGE

@@ -59,9 +59,9 @@
 }
 
 .author-profile-page {
-    width: 84%;
+    width: 94%;
     margin: auto;
-    max-width: 1290px;
+    max-width: 1420px;
 }
 
 .author-profile-page h1,
@@ -76,6 +76,13 @@
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 32px;
+}
+
+/* Override when inside the COLUMNS ARCHIVE ( /autor/{slug}/columnas/ ) */
+.author-columns-archive .author-profile-page {
+    width: 84%;
+    margin: auto;
+    max-width: 1290px;
 }
 
 /* From 990px down to 620px → 2 columns */
