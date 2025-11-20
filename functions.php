@@ -1175,7 +1175,7 @@ function villegas_render_author_columns( $author_id, $paged = 1 ) {
         'post_type'      => 'post',
         'post_status'    => 'publish',
         'author'         => $author_id,
-        'posts_per_page' => 3,
+        'posts_per_page' => 4,
         'paged'          => max( 1, (int) $paged ),
     ];
 
@@ -1198,9 +1198,11 @@ function villegas_render_author_columns( $author_id, $paged = 1 ) {
 
     echo '</div>';
 
-    echo '<div class="columns-pagination">';
-    echo villegas_render_columns_pagination( $query );
-    echo '</div>';
+    if ( $query->found_posts > 4 ) {
+        echo '<div class="columns-pagination">';
+        echo villegas_render_columns_pagination( $query );
+        echo '</div>';
+    }
 
     wp_reset_postdata();
 
@@ -1215,6 +1217,10 @@ function villegas_render_author_columns( $author_id, $paged = 1 ) {
  * @return string
  */
 function villegas_render_columns_pagination( $query ) {
+    if ( (int) $query->max_num_pages <= 1 ) {
+        return '';
+    }
+
     $pagination = paginate_links( [
         'base'      => '%_%',
         'format'    => '?paged=%#%',
