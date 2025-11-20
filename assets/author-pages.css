@@ -30,3 +30,33 @@
     font-size: 12px;
     color: #666;
 }
+
+.columns-archive-grid {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 32px;
+}
+
+.column-item-large img {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    background: #f0f0ed;
+}
+
+.column-item-large h3 {
+    font-family: 'Cardo', serif;
+    font-size: 1.4rem;
+    margin: 12px 0 6px;
+}
+
+.column-item-large .excerpt {
+    font-size: 0.95rem;
+    color: #444;
+}
+
+.column-item-large .date {
+    font-size: 0.9rem;
+    color: #868683;
+}
