@@ -1094,6 +1094,27 @@ function villegas_count_courses_by_author( $user_id ) {
 }
 
 /**
+ * Count how many LearnDash courses are authored by the given user.
+ *
+ * @param int $author_id Author ID.
+ *
+ * @return int
+ */
+function villegas_count_learndash_courses_by_author( $author_id ) {
+    $args = [
+        'post_type'      => 'sfwd-courses',
+        'post_status'    => 'publish',
+        'author'         => $author_id,
+        'fields'         => 'ids',
+        'posts_per_page' => -1,
+    ];
+
+    $courses = get_posts( $args );
+
+    return count( $courses );
+}
+
+/**
  * Count how many blog posts are authored by the given user.
  *
  * @param int $user_id User ID.
