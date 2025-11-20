@@ -60,3 +60,8 @@
     font-size: 0.9rem;
     color: #868683;
 }
+
+.author-profile-page {
+    max-width: 1280px;
+    margin: auto;
+}
