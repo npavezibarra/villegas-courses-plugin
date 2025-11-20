@@ -58,7 +58,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 <article class="column-item-large">
 
                     <a href="<?php the_permalink(); ?>">
-                        <?php
+                        <?php 
                         if (has_post_thumbnail()) {
                             the_post_thumbnail('large');
                         } else {
@@ -73,12 +73,12 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                         </a>
                     </h3>
 
-                    <p class="excerpt">
-                        <?php echo wp_trim_words(get_the_excerpt(), 25); ?>
-                    </p>
-
                     <p class="date">
                         <?php echo get_the_date('F j, Y'); ?>
+                    </p>
+
+                    <p class="excerpt">
+                        <?php echo wp_trim_words(get_the_excerpt(), 25); ?>
                     </p>
 
                 </article>
