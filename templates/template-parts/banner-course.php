@@ -257,8 +257,20 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
             $first_name = get_the_author_meta('first_name', $author_id);
             echo '<span class="user-initial" style="width:30px;height:30px;border-radius:50%;background:#ccc;color:#fff;display:flex;align-items:center;justify-content:center;">' . esc_html(strtoupper(substr($first_name, 0, 1))) . '</span>';
         }
+
+        $author_id   = get_post_field('post_author', get_the_ID());
+        $author_data = get_user_by('ID', $author_id);
+        $author_slug = $author_data->user_nicename;
+
+        $author_url   = home_url("/autor/{$author_slug}/");
+        $display_name = $author_data->display_name;
         ?>
-        <h4 style="margin: 0;">Profesor <?php echo esc_html($author_name); ?></h4>
+        <h4 style="margin: 0;">
+            Profesor 
+            <a href="<?php echo esc_url($author_url); ?>" style="color: inherit; text-decoration: none;">
+                <?php echo esc_html($display_name); ?>
+            </a>
+        </h4>
     </div>
 <?php endif; ?>
 
