@@ -1004,7 +1004,7 @@ function villegas_get_user_books( $user_id ) {
         'meta_query'     => [
             [
                 'key'     => '_product_assigned_authors',
-                'value'   => '"' . intval( $user_id ) . '"',
+                'value'   => 'i:' . intval( $user_id ) . ';',
                 'compare' => 'LIKE',
             ],
         ],
