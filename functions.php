@@ -1163,14 +1163,14 @@ function villegas_render_single_column_item() {
 }
 
 /**
- * Render the author columns list with pagination support.
+ * Render the author columns list for AJAX/infinite scroll consumption.
  *
  * @param int $author_id Author ID.
  * @param int $paged     Page number.
  *
  * @return string
  */
-function villegas_render_author_columns( $author_id, $paged = 1 ) {
+function villegas_render_author_columns( $author_id, $paged = 1, $return_data = false ) {
     $args = [
         'post_type'      => 'post',
         'post_status'    => 'publish',
@@ -1198,52 +1198,19 @@ function villegas_render_author_columns( $author_id, $paged = 1 ) {
 
     echo '</div>';
 
-    if ( $query->found_posts > 4 ) {
-        echo '<div class="columns-pagination">';
-        echo villegas_render_columns_pagination( $query );
-        echo '</div>';
-    }
-
     wp_reset_postdata();
 
-    return ob_get_clean();
-}
+    $rendered = ob_get_clean();
 
-/**
- * Render pagination links for the author columns list.
- *
- * @param WP_Query $query Query instance used for pagination data.
- *
- * @return string
- */
-function villegas_render_columns_pagination( $query ) {
-    if ( (int) $query->max_num_pages <= 1 ) {
-        return '';
+    if ( $return_data ) {
+        return [
+            'html'         => $rendered,
+            'current_page' => max( 1, (int) $query->get( 'paged', $paged ) ),
+            'max_pages'    => (int) $query->max_num_pages,
+        ];
     }
 
-    $pagination = paginate_links( [
-        'base'      => add_query_arg( 'paged', '%#%' ),
-        'format'    => '',
-        'current'   => max( 1, (int) $query->get( 'paged', get_query_var( 'paged' ) ) ),
-        'total'     => (int) $query->max_num_pages,
-        'type'      => 'array',
-        'prev_text' => '←',
-        'next_text' => '→',
-    ] );
-
-    if ( ! $pagination ) {
-        return '';
-    }
-
-    $output = '<nav class="villegas-pagination"><ul>';
-
-    foreach ( $pagination as $page ) {
-        $output .= '<li>' . $page . '</li>';
-    }
-
-    $output .= '</ul></nav>';
-
-    return $output;
+    return $rendered;
 }
 
 add_action( 'wp_ajax_villegas_load_author_columns', 'villegas_load_author_columns' );
@@ -1271,15 +1238,15 @@ function villegas_enqueue_author_columns_script() {
     }
 
     wp_enqueue_script(
-        'villegas-author-columns',
-        plugin_dir_url( __FILE__ ) . 'assets/js/author-columns.js',
+        'villegas-author-infinite-scroll',
+        plugin_dir_url( __FILE__ ) . 'assets/js/author-infinite-scroll.js',
         [ 'jquery' ],
         '1.0',
         true
     );
 
     wp_localize_script(
-        'villegas-author-columns',
+        'villegas-author-infinite-scroll',
         'villegasColumns',
         [
             'ajaxurl' => admin_url( 'admin-ajax.php' ),
