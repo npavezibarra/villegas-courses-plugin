@@ -1222,8 +1222,8 @@ function villegas_render_columns_pagination( $query ) {
     }
 
     $pagination = paginate_links( [
-        'base'      => '%_%',
-        'format'    => '?paged=%#%',
+        'base'      => add_query_arg( 'paged', '%#%' ),
+        'format'    => '',
         'current'   => max( 1, (int) $query->get( 'paged', get_query_var( 'paged' ) ) ),
         'total'     => (int) $query->max_num_pages,
         'type'      => 'array',
