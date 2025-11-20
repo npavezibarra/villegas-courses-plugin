@@ -58,6 +58,13 @@
     color: #868683;
 }
 
+.course-card.no-courses p {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0;
+    line-height: 1.5;
+}
+
 
 /* Default is for the AUTHOR PROFILE ( /autor/{slug}/ ) */
 .author-profile-page {

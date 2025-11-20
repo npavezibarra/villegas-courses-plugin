@@ -536,9 +536,33 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
             <?php else : ?>
 
+                <?php
+                $author_id    = get_queried_object_id();
+                $current_user = wp_get_current_user();
+                $is_owner     = ( $current_user->ID === $author_id );
+                $display_name = get_the_author_meta( 'display_name', $author_id );
+                ?>
+
                 <!-- Placeholder when no courses exist -->
-                <article class="course-card" style="display:flex; align-items:center; justify-content:center; text-align:center; height:260px; background:#f7f7f7;">
-                    <p style="font-size:1.1rem; color:#666; margin:0;">No has publicado cursos</p>
+                <article class="course-card no-courses"
+                    style="display:flex; align-items:center; justify-content:center; text-align:center; height:260px; background:#f7f7f7; padding:20px;">
+
+                    <?php if ( $is_owner ) : ?>
+
+                        <p style="font-size:1.1rem; color:#666; margin:0;">
+                            No tienes cursos publicados.<br><br>
+                            ¿Te gustaría publicar y vender cursos en nuestra plataforma?<br>
+                            Escríbenos en <strong>villeguistas@gmail.com</strong> detallando un plan de curso.
+                        </p>
+
+                    <?php else : ?>
+
+                        <p style="font-size:1.1rem; color:#666; margin:0;">
+                            <?php echo esc_html( $display_name ); ?> no tiene cursos.
+                        </p>
+
+                    <?php endif; ?>
+
                 </article>
 
             <?php endif; ?>
