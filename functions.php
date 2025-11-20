@@ -988,3 +988,150 @@ function villegas_enforce_quiz_access_control() {
 
 add_action( 'template_redirect', 'villegas_enforce_quiz_access_control' );
 
+/**
+ * Retrieve all WooCommerce products assigned to a given user through the
+ * `_product_assigned_authors` meta key.
+ *
+ * @param int $user_id User ID.
+ *
+ * @return WP_Post[]
+ */
+function villegas_get_user_books( $user_id ) {
+    $pattern = 'i:' . intval( $user_id ) . ';';
+
+    $args = [
+        'post_type'      => 'product',
+        'posts_per_page' => -1,
+        'post_status'    => 'publish',
+        'meta_query'     => [
+            [
+                'key'     => '_product_assigned_authors',
+                'value'   => $pattern,
+                'compare' => 'LIKE',
+            ],
+        ],
+    ];
+
+    return get_posts( $args );
+}
+
+/**
+ * Render the books section for the author in the current archive view.
+ *
+ * @return string
+ */
+function villegas_render_user_books_section() {
+    $author_id = get_queried_object_id();
+
+    if ( ! $author_id ) {
+        return '';
+    }
+
+    $books = villegas_get_user_books( $author_id );
+
+    ob_start();
+    ?>
+
+    <section class="books-section">
+        <h2>Libros</h2>
+        <div class="books-grid">
+
+            <?php if ( ! empty( $books ) ) : ?>
+                <?php foreach ( $books as $book ) :
+                    $price     = get_post_meta( $book->ID, '_price', true );
+                    $thumbnail = get_the_post_thumbnail_url( $book->ID, 'medium' );
+
+                    if ( ! $thumbnail ) {
+                        $thumbnail = 'https://placehold.co/320x480/ededeb/111111?text=Libro';
+                    }
+                    ?>
+                    <article class="book-item">
+                        <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>">
+                            <img src="<?php echo esc_url( $thumbnail ); ?>" alt="<?php echo esc_attr( $book->post_title ); ?>">
+                        </a>
+                        <h3>
+                            <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>">
+                                <?php echo esc_html( $book->post_title ); ?>
+                            </a>
+                        </h3>
+                        <p class="book-price">
+                            <?php echo wc_price( $price ); ?>
+                        </p>
+                    </article>
+                <?php endforeach; ?>
+            <?php else : ?>
+                <p>No books assigned to this author.</p>
+            <?php endif; ?>
+
+        </div>
+    </section>
+
+    <?php
+    return ob_get_clean();
+}
+
+/**
+ * Count how many WooCommerce courses (products) are assigned to a given author.
+ *
+ * @param int $user_id User ID.
+ *
+ * @return int
+ */
+function villegas_count_courses_by_author( $user_id ) {
+    global $wpdb;
+
+    $serialized = 'i:' . intval( $user_id ) . ';';
+
+    $query = $wpdb->prepare(
+        "SELECT COUNT(*)
+        FROM {$wpdb->postmeta}
+        WHERE meta_key = '_product_assigned_authors'
+        AND meta_value LIKE %s",
+        '%' . $wpdb->esc_like( $serialized ) . '%'
+    );
+
+    return intval( $wpdb->get_var( $query ) );
+}
+
+/**
+ * Count how many LearnDash courses are authored by the given user.
+ *
+ * @param int $author_id Author ID.
+ *
+ * @return int
+ */
+function villegas_count_learndash_courses_by_author( $author_id ) {
+    $args = [
+        'post_type'      => 'sfwd-courses',
+        'post_status'    => 'publish',
+        'author'         => $author_id,
+        'fields'         => 'ids',
+        'posts_per_page' => -1,
+    ];
+
+    $courses = get_posts( $args );
+
+    return count( $courses );
+}
+
+/**
+ * Count how many blog posts are authored by the given user.
+ *
+ * @param int $user_id User ID.
+ *
+ * @return int
+ */
+function villegas_count_columns_by_author( $user_id ) {
+    $args = [
+        'post_type'      => 'post',
+        'post_status'    => 'publish',
+        'author'         => $user_id,
+        'fields'         => 'ids',
+        'posts_per_page' => -1,
+    ];
+
+    $posts = get_posts( $args );
+
+    return count( $posts );
+}
+
