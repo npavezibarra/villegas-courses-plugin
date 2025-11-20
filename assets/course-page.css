@@ -87,18 +87,23 @@ div#main-menu {
     margin: auto auto 0px;
 }
 
-/* Ensure the teacher name link remains clickable above banner overlays */
-#datos-generales-curso {
-    position: relative !important;
-    z-index: 99999 !important;
+/* Allow the course header to remain clickable even when cover overlays are present */
+.wp-block-cover,
+.wp-block-cover__image-background,
+.wp-block-cover__video-background,
+.wp-block-cover__gradient-background {
+    pointer-events: none !important;
+}
+
+#datos-generales-curso,
+#datos-generales-curso * {
     pointer-events: auto !important;
 }
 
 #datos-generales-curso a {
-    pointer-events: auto !important;
-    color: inherit !important;
-    text-decoration: none !important;
-    font-family: 'Cardo', serif !important;
+    color: inherit;
+    text-decoration: none;
+    font-family: 'Cardo', serif;
 }
 
 #datos-generales-curso h1,
