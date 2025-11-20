@@ -61,9 +61,9 @@
 
 /* Default is for the AUTHOR PROFILE ( /autor/{slug}/ ) */
 .author-profile-page {
-    width: 84%;
+    width: 94%;
     margin: auto;
-    max-width: 1290px;
+    max-width: 1420px;
 }
 
 .author-profile-page h1,

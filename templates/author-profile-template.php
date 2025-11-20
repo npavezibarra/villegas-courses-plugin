@@ -69,8 +69,9 @@ if ( empty( $author_avatar ) ) {
         .author-profile-page {
             min-height: 100vh;
             padding: 48px min(6vw, 72px) 96px;
-            max-width: 1420px;
+            width: 94%;
             margin: auto;
+            max-width: 1420px;
         }
 
         .profile-section {
