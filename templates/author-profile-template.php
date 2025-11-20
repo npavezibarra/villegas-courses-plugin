@@ -376,6 +376,19 @@ if ( empty( $author_avatar ) ) {
                 text-align: left;
             }
 
+            .profile-media {
+                width: 190px;
+                margin: auto;
+            }
+
+            .profile-details {
+                margin: 0 auto;
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
             .content-grid {
                 grid-template-columns: 1fr;
             }
