@@ -59,8 +59,9 @@
 }
 
 .author-profile-page {
-    width: 90%;
+    width: 84%;
     margin: auto;
+    max-width: 1290px;
 }
 
 /* Default: 4 columns per row */
@@ -82,5 +83,10 @@
 @media (max-width: 619px) {
     .columns-archive-grid {
         grid-template-columns: 1fr;
+    }
+
+    h1 {
+        font-size: 24px;
+        line-height: 1.15;
     }
 }

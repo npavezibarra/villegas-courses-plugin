@@ -37,7 +37,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
 <div class="author-profile-page">
 
-    <h1>Archivo: <?php echo esc_html($author_name); ?></h1>
+    <h1>Archivo: <a href="<?php echo esc_url(get_author_posts_url($author_id)); ?>"><?php echo esc_html($author_name); ?></a></h1>
 
     <div class="columns-archive-grid">
         <?php
