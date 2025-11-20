@@ -997,6 +997,8 @@ add_action( 'template_redirect', 'villegas_enforce_quiz_access_control' );
  * @return WP_Post[]
  */
 function villegas_get_user_books( $user_id ) {
+    $pattern = 'i:' . intval( $user_id ) . ';';
+
     $args = [
         'post_type'      => 'product',
         'posts_per_page' => -1,
@@ -1004,7 +1006,7 @@ function villegas_get_user_books( $user_id ) {
         'meta_query'     => [
             [
                 'key'     => '_product_assigned_authors',
-                'value'   => 'i:' . intval( $user_id ) . ';',
+                'value'   => $pattern,
                 'compare' => 'LIKE',
             ],
         ],
@@ -1014,17 +1016,18 @@ function villegas_get_user_books( $user_id ) {
 }
 
 /**
- * Render the books section for the currently logged-in user.
+ * Render the books section for the author in the current archive view.
  *
  * @return string
  */
 function villegas_render_user_books_section() {
-    if ( ! is_user_logged_in() ) {
+    $author_id = get_queried_object_id();
+
+    if ( ! $author_id ) {
         return '';
     }
 
-    $user_id = get_current_user_id();
-    $books   = villegas_get_user_books( $user_id );
+    $books = villegas_get_user_books( $author_id );
 
     ob_start();
     ?>
@@ -1057,7 +1060,7 @@ function villegas_render_user_books_section() {
                     </article>
                 <?php endforeach; ?>
             <?php else : ?>
-                <p>No books assigned to your profile.</p>
+                <p>No books assigned to this author.</p>
             <?php endif; ?>
 
         </div>
