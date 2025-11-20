@@ -41,7 +41,7 @@ $author_name = trim( esc_html( $first_name . ' ' . $last_name ) );
 
 // Generar el banner
 ?>
-<div id="body-content" style="position: relative; background-image: url('<?php echo esc_url( $thumbnail_url ); ?>'); background-size: cover; background-position: center; background-repeat: no-repeat; padding: 40px 20px; margin-bottom: 20px;z-index: -9999999;">
+<div id="body-content" style="position: relative; background-image: url('<?php echo esc_url( $thumbnail_url ); ?>'); background-size: cover; background-position: center; background-repeat: no-repeat; padding: 40px 20px; margin-bottom: 20px; z-index: 0;">
 
     <!-- Gradiente negro en la parte inferior -->
     <div style="position: absolute; bottom: 0; left: 0; width: 100%; height: 65%; background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent); pointer-events: none;"></div>
