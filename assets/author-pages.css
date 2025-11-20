@@ -64,6 +64,13 @@
     max-width: 1290px;
 }
 
+@media (min-width: 620px) {
+    .author-profile-page h1 a {
+        font-family: 'Cardo', serif;
+        font-size: 32px;
+    }
+}
+
 /* Default: 4 columns per row */
 .columns-archive-grid {
     margin-top: 40px;
