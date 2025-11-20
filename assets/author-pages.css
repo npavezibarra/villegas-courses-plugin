@@ -10,14 +10,20 @@
 }
 
 .column-item img {
-    width: 80px;
-    height: auto;
-    border-radius: 6px;
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: #f0f0f0;
 }
 
 .column-item h3 {
     font-size: 18px;
     margin-top: 10px;
+}
+
+.column-item a {
+    line-height: 16px;
 }
 
 .column-excerpt {
@@ -26,9 +32,10 @@
     margin: 6px 0;
 }
 
-.column-date {
-    font-size: 12px;
-    color: #666;
+.column-item p {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-top: 6px;
 }
 
 .column-item-large img {
