@@ -1215,17 +1215,29 @@ function villegas_render_author_columns( $author_id, $paged = 1 ) {
  * @return string
  */
 function villegas_render_columns_pagination( $query ) {
-    $current_page = max( 1, (int) $query->get( 'paged', 1 ) );
-
-    return paginate_links( [
-        'base'      => add_query_arg( 'paged', '%#%' ),
-        'format'    => '',
-        'current'   => $current_page,
+    $pagination = paginate_links( [
+        'base'      => '%_%',
+        'format'    => '?paged=%#%',
+        'current'   => max( 1, (int) $query->get( 'paged', get_query_var( 'paged' ) ) ),
         'total'     => (int) $query->max_num_pages,
-        'type'      => 'list',
+        'type'      => 'array',
         'prev_text' => '←',
         'next_text' => '→',
     ] );
+
+    if ( ! $pagination ) {
+        return '';
+    }
+
+    $output = '<nav class="villegas-pagination"><ul>';
+
+    foreach ( $pagination as $page ) {
+        $output .= '<li>' . $page . '</li>';
+    }
+
+    $output .= '</ul></nav>';
+
+    return $output;
 }
 
 add_action( 'wp_ajax_villegas_load_author_columns', 'villegas_load_author_columns' );

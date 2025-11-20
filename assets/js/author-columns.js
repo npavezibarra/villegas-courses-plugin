@@ -8,15 +8,6 @@ jQuery(document).ready(function ($) {
     const authorId = container.data('author-id');
     let isLoading = false;
 
-    const getPageFromHref = (href) => {
-        try {
-            const url = new URL(href, window.location.href);
-            return parseInt(url.searchParams.get('paged'), 10) || 1;
-        } catch (error) {
-            return 1;
-        }
-    };
-
     const updateHistory = (paged) => {
         const newUrl = new URL(window.location.href);
 
@@ -55,10 +46,12 @@ jQuery(document).ready(function ($) {
         });
     };
 
-    container.on('click', '.page-numbers a', function (event) {
+    container.on('click', '.villegas-pagination a', function (event) {
         event.preventDefault();
 
-        const paged = getPageFromHref($(this).attr('href'));
+        const url = $(this).attr('href');
+        const params = new URLSearchParams(url.split('?')[1]);
+        const paged = parseInt(params.get('paged'), 10) || 1;
         loadColumnsPage(paged);
     });
 

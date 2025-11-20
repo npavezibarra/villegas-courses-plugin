@@ -311,3 +311,43 @@
   background: #000;
   color: #fff;
 }
+
+/* Author columns pagination */
+.villegas-pagination {
+  text-align: center;
+  margin-top: 25px;
+}
+
+.villegas-pagination ul {
+  list-style: none !important;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.villegas-pagination li {
+  display: inline-block;
+}
+
+.villegas-pagination a,
+.villegas-pagination span {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 14px;
+  text-decoration: none;
+  color: #222;
+  border: 1px solid #ddd;
+  transition: all .2s ease;
+}
+
+.villegas-pagination a:hover {
+  background: #f0f0f0;
+}
+
+.villegas-pagination .current {
+  background: #222;
+  color: #fff;
+  border-color: #222;
+}
