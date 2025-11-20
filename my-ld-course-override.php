@@ -148,6 +148,16 @@ function my_custom_ld_course_styles() {
 add_action('wp_enqueue_scripts', 'my_custom_ld_course_styles');
 
 add_action('wp_enqueue_scripts', function () {
+    wp_enqueue_script(
+        'villegas-responsive-navigation',
+        plugin_dir_url(__FILE__) . 'assets/js/responsive-navigation.js',
+        [],
+        filemtime(plugin_dir_path(__FILE__) . 'assets/js/responsive-navigation.js'),
+        true
+    );
+});
+
+add_action('wp_enqueue_scripts', function () {
     if ( is_singular('sfwd-lessons') ) {
         wp_enqueue_script(
             'vil-lesson-navigation-mobile',
