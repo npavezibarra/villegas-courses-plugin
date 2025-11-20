@@ -614,9 +614,13 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             </div>
             <div class="section-footer">
                 <?php
-                $author_archive_url = get_author_posts_url( $author_id );
+                $author_id   = get_the_author_meta( 'ID' );
+                $author_data = get_user_by( 'ID', $author_id );
+                $author_slug = $author_data->user_nicename;
+
+                $columns_archive_url = home_url( "/autor/{$author_slug}/columnas/" );
                 ?>
-                <a href="<?php echo esc_url( $author_archive_url ); ?>" aria-label="Ver todas las columnas">
+                <a href="<?php echo esc_url( $columns_archive_url ); ?>" aria-label="Ver todas las columnas">
                     Ver todas
                 </a>
             </div>
