@@ -567,16 +567,8 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             <?php
             $author_id     = get_the_author_meta( 'ID' );
             $current_page  = max( 1, get_query_var( 'paged' ) );
-            $columns_data  = villegas_render_author_columns( $author_id, $current_page, true );
             ?>
-            <div
-                id="author-columns-container"
-                data-author-id="<?php echo esc_attr( $author_id ); ?>"
-                data-current-page="<?php echo esc_attr( $columns_data['current_page'] ); ?>"
-                data-max-pages="<?php echo esc_attr( $columns_data['max_pages'] ); ?>"
-            >
-                <?php echo $columns_data['html']; ?>
-            </div>
+            <?php echo villegas_render_author_columns( $author_id, $current_page ); ?>
         </div>
     </section>
 

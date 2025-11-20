@@ -1168,7 +1168,7 @@ function villegas_render_single_column_item() {
  * @param int $author_id Author ID.
  * @param int $paged     Page number.
  *
- * @return string
+ * @return string|array
  */
 function villegas_render_author_columns( $author_id, $paged = 1, $return_data = false ) {
     $args = [
@@ -1181,8 +1181,12 @@ function villegas_render_author_columns( $author_id, $paged = 1, $return_data = 
 
     $query = new WP_Query( $args );
 
+    $current_page = max( 1, (int) $query->get( 'paged', $paged ) );
+    $max_pages    = (int) $query->max_num_pages;
+
     ob_start();
 
+    echo '<div id="author-columns-container" data-author-id="' . esc_attr( $author_id ) . '" data-current-page="' . esc_attr( $current_page ) . '" data-max-pages="' . esc_attr( $max_pages ) . '">';
     echo '<div class="columns-list">';
 
     if ( $query->have_posts() ) :
@@ -1197,6 +1201,7 @@ function villegas_render_author_columns( $author_id, $paged = 1, $return_data = 
     endif;
 
     echo '</div>';
+    echo '</div>';
 
     wp_reset_postdata();
 
@@ -1205,8 +1210,8 @@ function villegas_render_author_columns( $author_id, $paged = 1, $return_data = 
     if ( $return_data ) {
         return [
             'html'         => $rendered,
-            'current_page' => max( 1, (int) $query->get( 'paged', $paged ) ),
-            'max_pages'    => (int) $query->max_num_pages,
+            'current_page' => $current_page,
+            'max_pages'    => $max_pages,
         ];
     }
 

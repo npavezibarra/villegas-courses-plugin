@@ -351,3 +351,9 @@
   color: #fff;
   border-color: #222;
 }
+
+/* Author columns infinite scroll container */
+#author-columns-container {
+  max-height: 600px;
+  overflow-y: auto;
+}
