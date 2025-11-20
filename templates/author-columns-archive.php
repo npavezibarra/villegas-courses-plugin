@@ -10,12 +10,7 @@ if (!$author) {
     wp_die('Author not found.');
 }
 
-// --------------------------------------------------------------
-// ADD THE HEADER SNIPPET YOU REQUESTED
-// --------------------------------------------------------------
-include plugin_dir_path( __FILE__ ) . 'template-parts/header.php';
-echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
-// --------------------------------------------------------------
+get_header();
 ?>
 
 <div class="author-columns-archive">
@@ -78,7 +73,4 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
     </div>
 </div>
 
-<?php
-// Include footer if needed
-// get_footer();
-?>
+<?php get_footer(); ?>
