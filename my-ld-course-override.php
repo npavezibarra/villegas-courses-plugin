@@ -35,6 +35,26 @@ if ( is_admin() ) {
 
 require_once plugin_dir_path( __FILE__ ) . 'villegas-course-plugin.php';
 
+add_action(
+    'init',
+    function () {
+        add_rewrite_rule(
+            '^autor/([^/]+)/columnas/?$',
+            'index.php?author_name=$matches[1]&villegas_author_columns=1',
+            'top'
+        );
+    }
+);
+
+add_filter(
+    'query_vars',
+    function ( $vars ) {
+        $vars[] = 'villegas_author_columns';
+
+        return $vars;
+    }
+);
+
 // Reemplazar la plantilla del curso de LearnDash
 function my_custom_ld_course_template( $template ) {
     if ( is_singular( 'sfwd-courses' ) ) {
@@ -72,6 +92,18 @@ function villegas_override_author_template( $template ) {
     return $template;
 }
 
+add_filter(
+    'template_include',
+    function ( $template ) {
+        if ( intval( get_query_var( 'villegas_author_columns' ) ) === 1 ) {
+            return plugin_dir_path( __FILE__ ) . 'templates/author-columns-archive.php';
+        }
+
+        return $template;
+    },
+    20
+);
+
 
 // Encolar estilo de Course Page
 function my_custom_ld_course_styles() {
@@ -101,6 +133,16 @@ function my_custom_ld_course_styles() {
     if (isset($post->post_content) && has_shortcode($post->post_content, 'login_register_form')) {
         // Encolar estilos específicos para el formulario de login/registro
         wp_enqueue_style('login-register-style', plugin_dir_url(__FILE__) . 'assets/login-register.css', [], '1.0', 'all');
+    }
+
+    if ( is_author() || intval( get_query_var( 'villegas_author_columns' ) ) === 1 ) {
+        wp_enqueue_style(
+            'villegas-author-pages',
+            plugin_dir_url(__FILE__) . 'assets/author-pages.css',
+            [],
+            '1.0',
+            'all'
+        );
     }
 }
 add_action('wp_enqueue_scripts', 'my_custom_ld_course_styles');
