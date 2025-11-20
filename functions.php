@@ -1043,8 +1043,14 @@ function villegas_render_user_books_section() {
                     }
                     ?>
                     <article class="book-item">
-                        <img src="<?php echo esc_url( $thumbnail ); ?>" alt="<?php echo esc_attr( $book->post_title ); ?>">
-                        <h3><?php echo esc_html( $book->post_title ); ?></h3>
+                        <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>">
+                            <img src="<?php echo esc_url( $thumbnail ); ?>" alt="<?php echo esc_attr( $book->post_title ); ?>">
+                        </a>
+                        <h3>
+                            <a href="<?php echo esc_url( get_permalink( $book->ID ) ); ?>">
+                                <?php echo esc_html( $book->post_title ); ?>
+                            </a>
+                        </h3>
                         <p class="book-price">
                             <?php echo wc_price( $price ); ?>
                         </p>
