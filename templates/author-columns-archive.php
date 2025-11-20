@@ -27,7 +27,7 @@ $author_name     = $author_name ?: $author->display_name;
 <?php wp_head(); ?>
 </head>
 
-<body <?php body_class(['author-profile-monochrome', 'author-columns-archive']); ?>>
+<body <?php body_class('author-profile-monochrome'); ?>>
 
 <?php
 // LOAD THE SAME EXACT HEADER USED IN YOUR AUTHOR PROFILE PAGE
@@ -35,7 +35,7 @@ include plugin_dir_path(__FILE__) . 'template-parts/header.php';
 echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
 ?>
 
-<div class="author-profile-page">
+<div id="archive-author-columnas" class="author-profile-page">
 
     <h1>Archivo: <a href="<?php echo esc_url(get_author_posts_url($author_id)); ?>"><?php echo esc_html($author_name); ?></a></h1>
 

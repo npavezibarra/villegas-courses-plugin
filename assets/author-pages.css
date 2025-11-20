@@ -58,10 +58,12 @@
     color: #868683;
 }
 
+
+/* Default is for the AUTHOR PROFILE ( /autor/{slug}/ ) */
 .author-profile-page {
-    width: 94%;
+    width: 84%;
     margin: auto;
-    max-width: 1420px;
+    max-width: 1290px;
 }
 
 .author-profile-page h1,
@@ -79,10 +81,10 @@
 }
 
 /* Override when inside the COLUMNS ARCHIVE ( /autor/{slug}/columnas/ ) */
-.author-columns-archive .author-profile-page {
-    width: 84%;
+#archive-author-columnas {
+    width: 94%;
     margin: auto;
-    max-width: 1290px;
+    max-width: 1420px;
 }
 
 /* From 990px down to 620px → 2 columns */
