@@ -82,9 +82,9 @@
 
 /* Override when inside the COLUMNS ARCHIVE ( /autor/{slug}/columnas/ ) */
 #archive-author-columnas {
-    width: 94%;
+    width: 84%;
     margin: auto;
-    max-width: 1420px;
+    max-width: 1280px;
 }
 
 /* From 990px down to 620px → 2 columns */
