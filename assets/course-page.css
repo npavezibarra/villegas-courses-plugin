@@ -87,6 +87,20 @@ div#main-menu {
     margin: auto auto 0px;
 }
 
+/* Ensure the teacher name link remains clickable above banner overlays */
+#datos-generales-curso {
+    position: relative !important;
+    z-index: 99999 !important;
+    pointer-events: auto !important;
+}
+
+#datos-generales-curso a {
+    pointer-events: auto !important;
+    color: inherit !important;
+    text-decoration: none !important;
+    font-family: 'Cardo', serif !important;
+}
+
 #datos-generales-curso h1,
 #datos-generales-curso h4 {
     color: rgb(255, 255, 255);
