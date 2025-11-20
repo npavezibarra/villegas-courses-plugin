@@ -3,13 +3,19 @@
 
 if (!defined('ABSPATH')) exit;
 
+// Retrieve author based on URL
 $author = get_user_by('slug', get_query_var('author_name'));
 
 if (!$author) {
     wp_die('Author not found.');
 }
 
-get_header();
+// --------------------------------------------------------------
+// ADD THE HEADER SNIPPET YOU REQUESTED
+// --------------------------------------------------------------
+include plugin_dir_path( __FILE__ ) . 'template-parts/header.php';
+echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName":"header"} /-->');
+// --------------------------------------------------------------
 ?>
 
 <div class="author-columns-archive">
@@ -72,4 +78,7 @@ get_header();
     </div>
 </div>
 
-<?php get_footer(); ?>
+<?php
+// Include footer if needed
+// get_footer();
+?>
