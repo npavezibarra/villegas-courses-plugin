@@ -453,10 +453,14 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
             <div class="author-bio">
                 <?php echo wpautop( wp_kses_post( $author_bio ) ); ?>
             </div>
+            <?php
+            $user_id        = get_current_user_id();
+            $courses_count  = villegas_count_courses_by_author( $user_id );
+            $columns_count  = villegas_count_columns_by_author( $user_id );
+            ?>
             <div class="meta-list">
-                <span>15+ años experiencia</span>
-                <span>45 publicaciones</span>
-                <span>10 cursos activos</span>
+                <span><?php echo esc_html( $courses_count ); ?> cursos</span>
+                <span><?php echo esc_html( $columns_count ); ?> columnas</span>
             </div>
         </div>
     </section>

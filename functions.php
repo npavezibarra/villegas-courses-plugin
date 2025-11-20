@@ -1067,3 +1067,47 @@ function villegas_render_user_books_section() {
     return ob_get_clean();
 }
 
+/**
+ * Count how many WooCommerce courses (products) are assigned to a given author.
+ *
+ * @param int $user_id User ID.
+ *
+ * @return int
+ */
+function villegas_count_courses_by_author( $user_id ) {
+    global $wpdb;
+
+    $serialized = 'i:' . intval( $user_id ) . ';';
+
+    $query = $wpdb->prepare(
+        "SELECT COUNT(*)
+        FROM {$wpdb->postmeta}
+        WHERE meta_key = '_product_assigned_authors'
+        AND meta_value LIKE %s",
+        '%' . $wpdb->esc_like( $serialized ) . '%'
+    );
+
+    return intval( $wpdb->get_var( $query ) );
+}
+
+/**
+ * Count how many blog posts are authored by the given user.
+ *
+ * @param int $user_id User ID.
+ *
+ * @return int
+ */
+function villegas_count_columns_by_author( $user_id ) {
+    $args = [
+        'post_type'      => 'post',
+        'post_status'    => 'publish',
+        'author'         => $user_id,
+        'fields'         => 'ids',
+        'posts_per_page' => -1,
+    ];
+
+    $posts = get_posts( $args );
+
+    return count( $posts );
+}
+
