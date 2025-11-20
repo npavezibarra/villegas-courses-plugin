@@ -565,60 +565,11 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 <h2>Columnas</h2>
             </div>
             <?php
-            $author_id = get_the_author_meta( 'ID' );
-
-            $args = [
-                'post_type'      => 'post',
-                'posts_per_page' => 3,
-                'author'         => $author_id,
-                'post_status'    => 'publish',
-            ];
-
-            $author_posts = new WP_Query( $args );
+            $author_id     = get_the_author_meta( 'ID' );
+            $current_page  = max( 1, get_query_var( 'paged' ) );
             ?>
-
-            <div class="columns-list">
-
-            <?php if ( $author_posts->have_posts() ) : ?>
-                <?php while ( $author_posts->have_posts() ) : $author_posts->the_post(); ?>
-
-                    <article class="column-item">
-                        
-                        <!-- Thumbnail -->
-                        <img 
-                            src="<?php echo get_the_post_thumbnail_url( get_the_ID(), 'medium' ) ?: 'https://placehold.co/140x140/efefed/1d1d1b?text=No+Image'; ?>" 
-                            alt="<?php echo esc_attr( get_the_title() ); ?>"
-                        >
-
-                        <div>
-                            <!-- Post Title -->
-                            <a href="<?php the_permalink(); ?>">
-                                <?php the_title(); ?>
-                            </a>
-
-                            <!-- Post Meta -->
-                            <p><?php echo get_the_date(); ?> — Columna</p>
-                        </div>
-
-                    </article>
-
-                <?php endwhile; ?>
-                <?php wp_reset_postdata(); ?>
-
-            <?php else : ?>
-
-                <p>No hay columnas publicadas aún.</p>
-
-            <?php endif; ?>
-
-            </div>
-            <div class="section-footer">
-                <?php
-                $author_archive_url = get_author_posts_url( $author_id );
-                ?>
-                <a href="<?php echo esc_url( $author_archive_url ); ?>" aria-label="Ver todas las columnas">
-                    Ver todas
-                </a>
+            <div id="author-columns-container" data-author-id="<?php echo esc_attr( $author_id ); ?>">
+                <?php echo villegas_render_author_columns( $author_id, $current_page ); ?>
             </div>
         </div>
     </section>

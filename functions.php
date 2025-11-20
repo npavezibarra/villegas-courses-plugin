@@ -1135,3 +1135,137 @@ function villegas_count_columns_by_author( $user_id ) {
     return count( $posts );
 }
 
+/**
+ * Render a single column item for the author columns list.
+ */
+function villegas_render_single_column_item() {
+    ?>
+    <article class="column-item">
+
+        <!-- Thumbnail -->
+        <img
+            src="<?php echo esc_url( get_the_post_thumbnail_url( get_the_ID(), 'medium' ) ?: 'https://placehold.co/140x140/efefed/1d1d1b?text=No+Image' ); ?>"
+            alt="<?php echo esc_attr( get_the_title() ); ?>"
+        >
+
+        <div>
+            <!-- Post Title -->
+            <a href="<?php the_permalink(); ?>">
+                <?php the_title(); ?>
+            </a>
+
+            <!-- Post Meta -->
+            <p><?php echo esc_html( get_the_date() ); ?> — Columna</p>
+        </div>
+
+    </article>
+    <?php
+}
+
+/**
+ * Render the author columns list with pagination support.
+ *
+ * @param int $author_id Author ID.
+ * @param int $paged     Page number.
+ *
+ * @return string
+ */
+function villegas_render_author_columns( $author_id, $paged = 1 ) {
+    $args = [
+        'post_type'      => 'post',
+        'post_status'    => 'publish',
+        'author'         => $author_id,
+        'posts_per_page' => 3,
+        'paged'          => max( 1, (int) $paged ),
+    ];
+
+    $query = new WP_Query( $args );
+
+    ob_start();
+
+    echo '<div class="columns-list">';
+
+    if ( $query->have_posts() ) :
+        while ( $query->have_posts() ) :
+            $query->the_post();
+
+            villegas_render_single_column_item();
+
+        endwhile;
+    else :
+        echo '<p>No hay columnas publicadas aún.</p>';
+    endif;
+
+    echo '</div>';
+
+    echo '<div class="columns-pagination">';
+    echo villegas_render_columns_pagination( $query );
+    echo '</div>';
+
+    wp_reset_postdata();
+
+    return ob_get_clean();
+}
+
+/**
+ * Render pagination links for the author columns list.
+ *
+ * @param WP_Query $query Query instance used for pagination data.
+ *
+ * @return string
+ */
+function villegas_render_columns_pagination( $query ) {
+    $current_page = max( 1, (int) $query->get( 'paged', 1 ) );
+
+    return paginate_links( [
+        'base'      => add_query_arg( 'paged', '%#%' ),
+        'format'    => '',
+        'current'   => $current_page,
+        'total'     => (int) $query->max_num_pages,
+        'type'      => 'list',
+        'prev_text' => '←',
+        'next_text' => '→',
+    ] );
+}
+
+add_action( 'wp_ajax_villegas_load_author_columns', 'villegas_load_author_columns' );
+add_action( 'wp_ajax_nopriv_villegas_load_author_columns', 'villegas_load_author_columns' );
+
+/**
+ * AJAX handler to load author columns via pagination.
+ */
+function villegas_load_author_columns() {
+    $author_id = isset( $_POST['author_id'] ) ? intval( $_POST['author_id'] ) : 0;
+    $paged     = isset( $_POST['paged'] ) ? intval( $_POST['paged'] ) : 1;
+
+    echo villegas_render_author_columns( $author_id, $paged );
+    wp_die();
+}
+
+add_action( 'wp_enqueue_scripts', 'villegas_enqueue_author_columns_script' );
+
+/**
+ * Enqueue script for AJAX-based author columns pagination.
+ */
+function villegas_enqueue_author_columns_script() {
+    if ( ! is_page_template( 'templates/author-profile-template.php' ) ) {
+        return;
+    }
+
+    wp_enqueue_script(
+        'villegas-author-columns',
+        plugin_dir_url( __FILE__ ) . 'assets/js/author-columns.js',
+        [ 'jquery' ],
+        '1.0',
+        true
+    );
+
+    wp_localize_script(
+        'villegas-author-columns',
+        'villegasColumns',
+        [
+            'ajaxurl' => admin_url( 'admin-ajax.php' ),
+        ]
+    );
+}
+
