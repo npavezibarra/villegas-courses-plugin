@@ -6,7 +6,7 @@ function villegasAuthorAvatarInit() {
     const img = document.getElementById('avatar-cropper-image');
     const saveBtn = document.getElementById('avatar-cropper-save');
     const cancelBtn = document.getElementById('avatar-cropper-cancel');
-    const avatarButton = document.querySelector('[data-avatar-toggle]');
+    const avatarButton = window.jQuery ? window.jQuery('[data-avatar-toggle]') : null;
     const avatarImage = document.querySelector('.profile-avatar img');
     const uploadStatus = document.querySelector('.upload-status');
     const avatarOverlay = document.querySelector('.avatar-overlay');
@@ -71,7 +71,9 @@ function villegasAuthorAvatarInit() {
         reader.readAsDataURL(file);
     };
 
-    avatarButton?.addEventListener('click', () => input.click());
+    if (avatarButton && avatarButton.length) {
+        avatarButton.on('click', () => input.click());
+    }
 
     input.addEventListener('change', (evt) => {
         const file = evt.target.files[0];

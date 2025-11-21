@@ -637,10 +637,16 @@ function villegas_save_profile_picture_handler() {
     }
 
     $user_id   = get_current_user_id();
+    $author_id = $user_id;
     $user_data = get_userdata($user_id);
     $username  = sanitize_title($user_data->user_login);
     $date      = current_time('Ymd');
     $filename  = "{$username}-{$date}-profile-photo.{$extension}";
+
+    // Security: prevent uploading to another user's profile
+    if ($user_id !== get_current_user_id()) {
+        wp_send_json_error(['message' => 'You cannot update another user’s profile photo.']);
+    }
 
     $old_url = get_user_meta($user_id, 'profile_picture', true);
 

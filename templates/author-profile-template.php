@@ -130,6 +130,14 @@ if ( empty( $author_avatar ) ) {
             opacity: 1;
         }
 
+        .profile-avatar[style*="pointer-events: none;"] .avatar-overlay {
+            display: none !important;
+        }
+
+        .profile-avatar[style*="pointer-events: none;"] {
+            opacity: 1;
+        }
+
         .upload-controls {
             display: flex;
             flex-direction: column;
@@ -451,14 +459,30 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
     </div>
     <section class="profile-section">
         <div class="profile-media">
-            <button type="button" class="profile-avatar" data-avatar-toggle>
+            <?php
+            $current_user_id = get_current_user_id();
+            $is_own_profile  = ( $current_user_id === $author_id );
+            ?>
+
+            <button
+                type="button"
+                class="profile-avatar"
+                <?php if ( $is_own_profile ) echo 'data-avatar-toggle'; ?>
+                style="<?php echo $is_own_profile ? '' : 'cursor: default; pointer-events: none;'; ?>"
+            >
                 <img src="<?php echo esc_url( $author_avatar ); ?>" alt="<?php echo esc_attr( $author_name ); ?>" />
-                <span class="avatar-overlay">Subir foto</span>
+
+                <?php if ( $is_own_profile ) : ?>
+                    <span class="avatar-overlay">Subir foto</span>
+                <?php endif; ?>
             </button>
-            <div class="upload-controls">
-                <span class="upload-hint upload-status">Sin archivo seleccionado</span>
-                <input type="file" id="author-upload-input" class="upload-input" accept="image/jpeg,image/png,image/webp" hidden>
-            </div>
+
+            <?php if ( $is_own_profile ) : ?>
+                <div class="upload-controls">
+                    <span class="upload-hint upload-status">Sin archivo seleccionado</span>
+                    <input type="file" id="author-upload-input" class="upload-input" accept="image/jpeg,image/png,image/webp" hidden>
+                </div>
+            <?php endif; ?>
         </div>
         <div class="profile-details">
             <h3><?php echo esc_html( $author_name ); ?></h3>
