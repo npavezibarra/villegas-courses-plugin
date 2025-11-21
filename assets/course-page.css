@@ -254,6 +254,7 @@ div#buy-button-stats {
     width: 100%;
     position: relative;
     z-index: 50;
+    box-shadow: 0 0px 14px 0 rgba(0, 0, 0, 0.10);
 }
 
 @media (max-width: 850px) {
