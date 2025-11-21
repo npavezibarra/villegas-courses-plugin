@@ -65,11 +65,21 @@
     color: #868683;
 }
 
+.course-card.no-courses {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    height: 260px;
+    background: #f7f7f7;
+    padding: 20px;
+}
+
 .course-card.no-courses p {
     font-size: 1.1rem;
     color: #666;
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.6;
 }
 
 

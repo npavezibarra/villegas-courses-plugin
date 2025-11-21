@@ -571,12 +571,11 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 ?>
 
                 <!-- Placeholder when no courses exist -->
-                <article class="course-card no-courses"
-                    style="display:flex; align-items:center; justify-content:center; text-align:center; height:260px; background:#f7f7f7; padding:20px;">
+                <article class="course-card no-courses">
 
                     <?php if ( $is_owner ) : ?>
 
-                        <p style="font-size:1.1rem; color:#666; margin:0;">
+                        <p>
                             No tienes cursos publicados.<br><br>
                             ¿Te gustaría publicar y vender cursos en nuestra plataforma?<br>
                             Escríbenos en <strong>villeguistas@gmail.com</strong> detallando un plan de curso.
@@ -584,7 +583,7 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
 
                     <?php else : ?>
 
-                        <p style="font-size:1.1rem; color:#666; margin:0;">
+                        <p>
                             <?php echo esc_html( $display_name ); ?> no tiene cursos.
                         </p>
 
