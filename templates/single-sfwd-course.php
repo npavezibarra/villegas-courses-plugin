@@ -29,11 +29,8 @@ include plugin_dir_path(__FILE__) . 'template-parts/login-message.php';
 <!--ABOUT COURSE -->
 <?php include plugin_dir_path(__FILE__) . 'template-parts/about-course.php'; ?>
 
-<!--AUTHOR BOX -->
-<?php include plugin_dir_path(__FILE__) . 'template-parts/author.php'; ?>
-
 <!--FOOTER -->
-<?php 
+<?php
 // Load the default Twenty Twenty-Four footer template part
 echo do_blocks('<!-- wp:template-part {"slug":"footer","area":"footer","tagName":"footer"} /-->');
 

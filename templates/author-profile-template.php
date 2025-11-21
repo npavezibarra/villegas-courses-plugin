@@ -281,7 +281,7 @@ if ( empty( $author_avatar ) ) {
         }
 
         .section-footer a {
-            font-size: 0.95rem;
+            font-size: 0.75rem;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             text-decoration: none;
@@ -309,16 +309,19 @@ if ( empty( $author_avatar ) ) {
             width: 72px;
             height: 72px;
             object-fit: cover;
+            border-radius: 4px;
+            background: #f0f0f0;
         }
 
         .column-item a {
             font-weight: 600;
             color: var(--text-primary);
             text-decoration: none;
+            line-height: 16px;
         }
 
         .column-item p {
-            font-size: 0.9rem;
+            font-size: 0.7rem;
             color: var(--text-muted);
             margin-top: 6px;
         }
