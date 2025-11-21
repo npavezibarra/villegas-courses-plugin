@@ -66,20 +66,23 @@
 }
 
 .course-card.no-courses {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    height: 260px;
     background: #f7f7f7;
-    padding: 20px;
+    height: 260px;
+    padding: 0 20px;
+    display: flex;
+}
+
+.no-courses-inner {
+    margin: auto;
+    max-width: 80%;
 }
 
 .course-card.no-courses p {
+    margin: 0;
     font-size: 1.1rem;
     color: #666;
-    margin: 0;
-    line-height: 1.6;
+    line-height: 1.7;
+    text-align: center;
 }
 
 
