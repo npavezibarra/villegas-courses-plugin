@@ -58,6 +58,14 @@ div#main-menu {
     border-radius: 8px;
 }
 
+#body-content * {
+    pointer-events: auto;
+}
+
+#body-content .banner-gradient-overlay {
+    pointer-events: none;
+}
+
 @media (max-width: 1318px) {
     #body-content {
         border-radius: 0px;
@@ -244,6 +252,8 @@ div#buy-button-stats {
     padding: 20px;
     border-radius: 10px;
     width: 100%;
+    position: relative;
+    z-index: 50;
 }
 
 @media (max-width: 850px) {
