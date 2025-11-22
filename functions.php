@@ -22,6 +22,59 @@ require_once plugin_dir_path( __FILE__ ) . 'includes/emails.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/first-quiz-email-ajax.php';
 require_once plugin_dir_path( __FILE__ ) . 'includes/first-quiz-email-rendered.php';
 
+add_action( 'wp_enqueue_scripts', 'villegas_enqueue_quiz_attempt_bar_styles' );
+
+/**
+ * Register front-end styles for the quiz attempt indicator.
+ */
+function villegas_enqueue_quiz_attempt_bar_styles() {
+    if ( ! is_singular( 'sfwd-quiz' ) ) {
+        return;
+    }
+
+    wp_enqueue_style(
+        'villegas-quiz-attempt-bar',
+        plugin_dir_url( __FILE__ ) . 'assets/css/quiz-attempt-bar.css',
+        [],
+        '1.0'
+    );
+}
+
+/**
+ * Display a quiz attempt indicator above the quiz card.
+ *
+ * @param int $quiz_id The current quiz post ID.
+ * @param int $user_id The current user ID.
+ */
+function villegas_quiz_attempt_bar( $quiz_id, $user_id ) {
+    $quiz_id = absint( $quiz_id );
+    $user_id = absint( $user_id );
+
+    if ( ! $quiz_id || ! $user_id ) {
+        return;
+    }
+
+    global $wpdb;
+
+    $attempts = (int) $wpdb->get_var(
+        $wpdb->prepare(
+            "
+            SELECT COUNT(*)
+            FROM {$wpdb->prefix}learndash_user_activity
+            WHERE user_id = %d
+                AND post_id = %d
+                AND activity_type = 'quiz'
+            ",
+            $user_id,
+            $quiz_id
+        )
+    );
+
+    $label = ( 0 === $attempts ) ? 'Tu primer intento' : 'Intento ' . ( $attempts + 1 );
+
+    echo '<div id="quiz-attempt-bar">' . esc_html( $label ) . '</div>';
+}
+
 function allow_pending_role_users_access_quiz( $has_access, $post_id, $user_id ) {
     // Get the user's role(s)
     $user = get_userdata( $user_id );
