@@ -130,6 +130,14 @@ if ( empty( $author_avatar ) ) {
             opacity: 1;
         }
 
+        .profile-avatar[style*="pointer-events: none;"] .avatar-overlay {
+            display: none !important;
+        }
+
+        .profile-avatar[style*="pointer-events: none;"] {
+            opacity: 1;
+        }
+
         .upload-controls {
             display: flex;
             flex-direction: column;
@@ -451,14 +459,30 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
     </div>
     <section class="profile-section">
         <div class="profile-media">
-            <button type="button" class="profile-avatar" data-avatar-toggle>
+            <?php
+            $current_user_id = get_current_user_id();
+            $is_own_profile  = ( $current_user_id === $author_id );
+            ?>
+
+            <button
+                type="button"
+                class="profile-avatar"
+                <?php if ( $is_own_profile ) echo 'data-avatar-toggle'; ?>
+                style="<?php echo $is_own_profile ? '' : 'cursor: default; pointer-events: none;'; ?>"
+            >
                 <img src="<?php echo esc_url( $author_avatar ); ?>" alt="<?php echo esc_attr( $author_name ); ?>" />
-                <span class="avatar-overlay">Subir foto</span>
+
+                <?php if ( $is_own_profile ) : ?>
+                    <span class="avatar-overlay">Subir foto</span>
+                <?php endif; ?>
             </button>
-            <div class="upload-controls">
-                <span class="upload-hint upload-status">Sin archivo seleccionado</span>
-                <input type="file" id="author-upload-input" class="upload-input" accept="image/jpeg,image/png,image/webp" hidden>
-            </div>
+
+            <?php if ( $is_own_profile ) : ?>
+                <div class="upload-controls">
+                    <span class="upload-hint upload-status">Sin archivo seleccionado</span>
+                    <input type="file" id="author-upload-input" class="upload-input" accept="image/jpeg,image/png,image/webp" hidden>
+                </div>
+            <?php endif; ?>
         </div>
         <div class="profile-details">
             <h3><?php echo esc_html( $author_name ); ?></h3>
@@ -547,25 +571,24 @@ echo do_blocks('<!-- wp:template-part {"slug":"header","area":"header","tagName"
                 ?>
 
                 <!-- Placeholder when no courses exist -->
-                <article class="course-card no-courses"
-                    style="display:flex; align-items:center; justify-content:center; text-align:center; height:260px; background:#f7f7f7; padding:20px;">
+                <article class="course-card no-courses">
+                    <div class="no-courses-inner">
+                        <?php if ( $is_owner ) : ?>
 
-                    <?php if ( $is_owner ) : ?>
+                            <p>
+                                No tienes cursos publicados.<br><br>
+                                ¿Te gustaría publicar y vender cursos en nuestra plataforma?<br>
+                                Escríbenos en <strong>villeguistas@gmail.com</strong> detallando un plan de curso.
+                            </p>
 
-                        <p style="font-size:1.1rem; color:#666; margin:0;">
-                            No tienes cursos publicados.<br><br>
-                            ¿Te gustaría publicar y vender cursos en nuestra plataforma?<br>
-                            Escríbenos en <strong>villeguistas@gmail.com</strong> detallando un plan de curso.
-                        </p>
+                        <?php else : ?>
 
-                    <?php else : ?>
+                            <p>
+                                <?php echo esc_html( $display_name ); ?> no tiene cursos.
+                            </p>
 
-                        <p style="font-size:1.1rem; color:#666; margin:0;">
-                            <?php echo esc_html( $display_name ); ?> no tiene cursos.
-                        </p>
-
-                    <?php endif; ?>
-
+                        <?php endif; ?>
+                    </div>
                 </article>
 
             <?php endif; ?>

@@ -597,51 +597,80 @@ function villegas_enqueue_author_cropper() {
     wp_enqueue_script(
         'villegas-author-avatar',
         plugin_dir_url(__FILE__) . 'assets/js/author-avatar.js',
-        ['cropper-js'],
+        ['cropper-js', 'jquery'],
         '1.0',
         true
     );
 
-    wp_localize_script('villegas-author-avatar', 'AuthorAvatarData', [
+    wp_localize_script('villegas-author-avatar', 'villegasAvatar', [
         'ajaxurl' => admin_url('admin-ajax.php'),
-        'nonce'   => wp_create_nonce('author-avatar-upload'),
-        'user_id' => get_current_user_id(),
+        'nonce'   => wp_create_nonce('villegas_avatar_nonce'),
     ]);
 }
 
-add_action('wp_ajax_villegas_save_author_avatar', 'villegas_save_author_avatar');
-function villegas_save_author_avatar() {
-    check_ajax_referer('author-avatar-upload', 'nonce');
-
-    $user_id = isset($_POST['user_id']) ? (int) wp_unslash($_POST['user_id']) : 0;
-
-    if (!$user_id || get_current_user_id() !== $user_id) {
-        wp_send_json_error('Invalid user.');
+add_action('wp_ajax_villegas_save_profile_picture', 'villegas_save_profile_picture_handler');
+function villegas_save_profile_picture_handler() {
+    if (!is_user_logged_in()) {
+        wp_send_json_error(['message' => 'Not logged in.']);
     }
 
-    if (!isset($_FILES['file'])) {
-        wp_send_json_error('No image received.');
+    if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'villegas_avatar_nonce')) {
+        wp_send_json_error(['message' => 'Invalid security token.']);
     }
 
-    $file = $_FILES['file'];
-    $max_size = 1024 * 1024; // 1MB
-    $allowed_mimes = [
-        'jpg|jpeg' => 'image/jpeg',
-        'png'      => 'image/png',
-        'webp'     => 'image/webp',
+    if (empty($_POST['image'])) {
+        wp_send_json_error(['message' => 'No image received.']);
+    }
+
+    $img_data = (string) $_POST['image'];
+    $extension = 'png';
+
+    if (preg_match('/^data:image\/(png|jpe?g|webp);base64,/', $img_data, $matches)) {
+        $extension = $matches[1] === 'jpeg' ? 'jpg' : $matches[1];
+        $img_data  = substr($img_data, strpos($img_data, ',') + 1);
+    }
+
+    $img_data = base64_decode($img_data);
+
+    if (!$img_data) {
+        wp_send_json_error(['message' => 'Invalid image data.']);
+    }
+
+    $user_id   = get_current_user_id();
+    $author_id = $user_id;
+    $user_data = get_userdata($user_id);
+    $username  = sanitize_title($user_data->user_login);
+    $date      = current_time('Ymd');
+    $filename  = "{$username}-{$date}-profile-photo.{$extension}";
+
+    // Security: prevent uploading to another user's profile
+    if ($user_id !== get_current_user_id()) {
+        wp_send_json_error(['message' => 'You cannot update another user’s profile photo.']);
+    }
+
+    $old_url = get_user_meta($user_id, 'profile_picture', true);
+
+    $upload = wp_upload_bits($filename, null, $img_data);
+
+    if (!empty($upload['error'])) {
+        wp_send_json_error(['message' => $upload['error']]);
+    }
+
+    $filetype = wp_check_filetype($filename, null);
+
+    $attachment = [
+        'post_mime_type' => $filetype['type'],
+        'post_title'     => sanitize_file_name($filename),
+        'post_content'   => '',
+        'post_status'    => 'inherit',
     ];
 
-    if (!empty($file['size']) && $file['size'] > $max_size) {
-        wp_send_json_error('La imagen debe ser menor a 1MB.');
-    }
+    $attach_id = wp_insert_attachment($attachment, $upload['file']);
 
-    $filetype = wp_check_filetype($file['name'], $allowed_mimes);
-    if (empty($filetype['type']) || empty($allowed_mimes[$filetype['ext']])) {
-        wp_send_json_error('Formatos permitidos: JPG, PNG o WEBP.');
-    }
+    require_once ABSPATH . 'wp-admin/includes/image.php';
+    $attach_data = wp_generate_attachment_metadata($attach_id, $upload['file']);
+    wp_update_attachment_metadata($attach_id, $attach_data);
 
-    // Delete previous avatar if exists
-    $old_url = get_user_meta($user_id, 'profile_picture', true);
     if ($old_url) {
         $old_attachment_id = attachment_url_to_postid($old_url);
         if ($old_attachment_id) {
@@ -649,38 +678,11 @@ function villegas_save_author_avatar() {
         }
     }
 
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/image.php';
-
-    $uploaded = wp_handle_upload($file, [
-        'test_form' => false,
-        'mimes'     => $allowed_mimes,
-    ]);
-
-    if (isset($uploaded['error'])) {
-        wp_send_json_error($uploaded['error']);
-    }
-
-    $filename = $uploaded['file'];
-    $filetype = wp_check_filetype(basename($filename), null);
-
-    $attachment_id = wp_insert_attachment([
-        'guid'           => $uploaded['url'],
-        'post_mime_type' => $filetype['type'],
-        'post_title'     => sanitize_file_name(basename($filename)),
-        'post_content'   => '',
-        'post_status'    => 'inherit',
-    ], $filename);
-
-    $metadata = wp_generate_attachment_metadata($attachment_id, $filename);
-    if (!is_wp_error($metadata)) {
-        wp_update_attachment_metadata($attachment_id, $metadata);
-    }
-
-    update_user_meta($user_id, 'profile_picture', esc_url($uploaded['url']));
+    update_user_meta($user_id, 'profile_picture', esc_url_raw($upload['url']));
 
     wp_send_json_success([
-        'url'            => $uploaded['url'],
-        'attachment_id'  => $attachment_id,
+        'message'       => 'Profile picture saved.',
+        'url'           => esc_url_raw($upload['url']),
+        'attachment_id' => $attach_id,
     ]);
 }

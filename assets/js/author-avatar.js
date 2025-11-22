@@ -6,7 +6,7 @@ function villegasAuthorAvatarInit() {
     const img = document.getElementById('avatar-cropper-image');
     const saveBtn = document.getElementById('avatar-cropper-save');
     const cancelBtn = document.getElementById('avatar-cropper-cancel');
-    const avatarButton = document.querySelector('[data-avatar-toggle]');
+    const avatarButton = window.jQuery ? window.jQuery('[data-avatar-toggle]') : null;
     const avatarImage = document.querySelector('.profile-avatar img');
     const uploadStatus = document.querySelector('.upload-status');
     const avatarOverlay = document.querySelector('.avatar-overlay');
@@ -71,7 +71,9 @@ function villegasAuthorAvatarInit() {
         reader.readAsDataURL(file);
     };
 
-    avatarButton?.addEventListener('click', () => input.click());
+    if (avatarButton && avatarButton.length) {
+        avatarButton.on('click', () => input.click());
+    }
 
     input.addEventListener('change', (evt) => {
         const file = evt.target.files[0];
@@ -100,52 +102,59 @@ function villegasAuthorAvatarInit() {
             imageSmoothingQuality: 'high',
         });
 
-        canvas.toBlob((blob) => {
-            if (!blob) {
-                resetModal();
-                return;
-            }
+        const croppedImageBase64 = canvas.toDataURL('image/png');
 
-            const formData = new FormData();
-            formData.append('action', 'villegas_save_author_avatar');
-            formData.append('nonce', AuthorAvatarData.nonce);
-            formData.append('user_id', AuthorAvatarData.user_id);
-            formData.append('file', blob, 'avatar.png');
-
+        const ajaxUrl = (window.villegasAvatar && villegasAvatar.ajaxurl) || window.ajaxurl;
+        if (!ajaxUrl || !window.jQuery) {
             if (uploadStatus) {
-                uploadStatus.textContent = 'Subiendo…';
+                uploadStatus.textContent = 'Ocurrió un error al subir la imagen.';
             }
+            resetModal();
+            return;
+        }
 
-            fetch(AuthorAvatarData.ajaxurl, {
-                method: 'POST',
-                body: formData,
-            })
-                .then((res) => res.json())
-                .then((response) => {
-                    if (response.success) {
-                        const newUrl = response.data?.url || response.url;
-                        if (newUrl && avatarImage) {
-                            avatarImage.src = newUrl;
-                        }
-                        if (avatarOverlay) {
-                            avatarOverlay.textContent = 'Cambiar foto';
-                        }
-                        if (uploadStatus) {
-                            uploadStatus.textContent = 'Imagen actualizada correctamente';
-                        }
-                    } else if (uploadStatus) {
-                        uploadStatus.textContent = response.data || 'No se pudo actualizar la imagen.';
+        if (uploadStatus) {
+            uploadStatus.textContent = 'Subiendo…';
+        }
+
+        window.jQuery.post(
+            ajaxUrl,
+            {
+                action: 'villegas_save_profile_picture',
+                nonce: (window.villegasAvatar && villegasAvatar.nonce) || '',
+                image: croppedImageBase64,
+            },
+            (response) => {
+                if (response.success) {
+                    const newUrl = response.data?.url || response.url;
+                    if (newUrl && avatarImage) {
+                        avatarImage.src = newUrl;
                     }
-                })
-                .catch(() => {
+                    if (avatarOverlay) {
+                        avatarOverlay.textContent = 'Cambiar foto';
+                    }
                     if (uploadStatus) {
-                        uploadStatus.textContent = 'Ocurrió un error al subir la imagen.';
+                        uploadStatus.textContent = 'Imagen actualizada correctamente';
                     }
-                })
-                .finally(() => {
-                    resetModal();
-                });
-        }, 'image/png');
+                } else {
+                    if (uploadStatus) {
+                        uploadStatus.textContent = response.data?.message || response.data || 'No se pudo actualizar la imagen.';
+                    }
+                    if (response.data?.message) {
+                        // eslint-disable-next-line no-console
+                        console.error(response.data.message);
+                    }
+                }
+            }
+        )
+            .fail(() => {
+                if (uploadStatus) {
+                    uploadStatus.textContent = 'Ocurrió un error al subir la imagen.';
+                }
+            })
+            .always(() => {
+                resetModal();
+            });
     });
 }
 
