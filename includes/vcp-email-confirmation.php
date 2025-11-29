@@ -10,7 +10,7 @@ if (!defined('ABSPATH')) {
  * @param string $token   Confirmation token.
  * @return bool True on success, false on failure.
  */
-function vcp_send_confirmation_email($user_id, $token)
+function vcp_send_confirmation_email($user_id, $token, $is_reminder = false)
 {
     $user = get_userdata($user_id);
     if (!$user) {
@@ -18,7 +18,7 @@ function vcp_send_confirmation_email($user_id, $token)
     }
 
     $confirmation_link = home_url('/confirmar-cuenta/' . $token);
-    $subject = 'Confirma tu cuenta en El Villegas';
+    $subject = $is_reminder ? 'Recordatorio: Confirma tu cuenta en El Villegas' : 'Confirma tu cuenta en El Villegas';
     $logo_url = get_option('vcp_email_logo');
 
     // Fallback to site logo if plugin option is empty
@@ -208,8 +208,13 @@ function vcp_send_confirmation_email($user_id, $token)
                         <h2 class="headline">¡Te damos la bienvenida!</h2>
 
                         <p class="text">
-                            Hola, acabas de dar el primer paso para unirte a nuestra comunidad en
-                            <strong>elvillegas.cl</strong>. Estamos muy contentos de que hayas decidido sumarte.
+                            <?php if ($is_reminder): ?>
+                                Hola nuevamente, notamos que aún no has confirmado tu cuenta en <strong>elvillegas.cl</strong>.
+                                ¡Queremos asegurarnos de que puedas disfrutar de todo el contenido sin problemas!
+                            <?php else: ?>
+                                Hola, acabas de dar el primer paso para unirte a nuestra comunidad en
+                                <strong>elvillegas.cl</strong>. Estamos muy contentos de que hayas decidido sumarte.
+                            <?php endif; ?>
                         </p>
 
                         <p class="text">

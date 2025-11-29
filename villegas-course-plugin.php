@@ -189,6 +189,7 @@ function vcp_render_new_users_page()
                         <th><?php esc_html_e('Username', 'villegas-course-plugin'); ?></th>
                         <th><?php esc_html_e('Email', 'villegas-course-plugin'); ?></th>
                         <th><?php esc_html_e('Registered', 'villegas-course-plugin'); ?></th>
+                        <th><?php esc_html_e('Confirmed', 'villegas-course-plugin'); ?></th>
                         <th><?php esc_html_e('Actions', 'villegas-course-plugin'); ?></th>
                     </tr>
                 </thead>
@@ -202,6 +203,17 @@ function vcp_render_new_users_page()
                             <td><?php echo esc_html($user->user_login); ?></td>
                             <td><?php echo esc_html($user->user_email); ?></td>
                             <td><?php echo esc_html($user->user_registered); ?></td>
+                            <td>
+                                <?php
+                                $is_confirmed = get_user_meta($user->ID, 'vcp_email_confirmed', true);
+                                if ($is_confirmed) {
+                                    echo '<span style="color: green; font-size: 1.2em;" title="' . esc_attr__('Confirmed', 'villegas-course-plugin') . '">✅</span>';
+                                } else {
+                                    echo '<span style="color: red; font-size: 1.2em;" title="' . esc_attr__('Not Confirmed', 'villegas-course-plugin') . '">❌</span>';
+                                    echo ' <button type="button" class="button vcp-resend-confirmation" data-user="' . esc_attr($user->ID) . '" data-nonce="' . wp_create_nonce('vcp_resend_nonce_' . $user->ID) . '" title="' . esc_attr__('Resend Confirmation Email', 'villegas-course-plugin') . '"><span class="dashicons dashicons-email-alt" style="line-height: 1.3;"></span></button>';
+                                }
+                                ?>
+                            </td>
                             <td>
                                 <button class="button delete-user-btn" data-user="<?php echo esc_attr($user->ID); ?>"
                                     data-nonce="<?php echo esc_attr(wp_create_nonce('vcp_delete_user_' . $user->ID)); ?>">

@@ -130,4 +130,37 @@ jQuery(document).ready(function ($) {
                 btn.prop('disabled', false).text('Delete');
             });
     });
+    // Resend Confirmation Email
+    $(document).on('click', '.vcp-resend-confirmation', function (e) {
+        e.preventDefault();
+        const btn = $(this);
+        const userId = btn.data('user');
+        const nonce = btn.data('nonce');
+        const originalIcon = btn.html();
+
+        btn.prop('disabled', true).html('<span class="dashicons dashicons-update" style="line-height: 1.3; animation: spin 2s linear infinite;"></span>');
+
+        $.post(VCP_USERS.ajax, {
+            action: 'vcp_resend_confirmation',
+            user_id: userId,
+            nonce: nonce
+        })
+            .done((response) => {
+                if (response.success) {
+                    alert('Correo de confirmación reenviado exitosamente.');
+                } else {
+                    alert(response.data?.message || 'Error al reenviar el correo.');
+                }
+            })
+            .fail((xhr, status, error) => {
+                console.error('AJAX error:', status, error);
+                alert('Error de conexión. Por favor, inténtalo de nuevo.');
+            })
+            .always(() => {
+                btn.prop('disabled', false).html(originalIcon);
+            });
+    });
 });
+
+// Add spin animation style
+$('<style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>').appendTo('head');

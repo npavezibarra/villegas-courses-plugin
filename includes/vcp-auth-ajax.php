@@ -3,6 +3,38 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+add_action('wp_ajax_vcp_resend_confirmation', 'vcp_resend_confirmation_ajax');
+
+function vcp_resend_confirmation_ajax()
+{
+    if (!current_user_can('manage_options')) {
+        wp_send_json_error(['message' => 'No tienes permisos para realizar esta acción.']);
+    }
+
+    $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : 0;
+    $nonce = isset($_POST['nonce']) ? sanitize_text_field($_POST['nonce']) : '';
+
+    if (!wp_verify_nonce($nonce, 'vcp_resend_nonce_' . $user_id)) {
+        wp_send_json_error(['message' => 'Nonce inválido.']);
+    }
+
+    $user = get_userdata($user_id);
+    if (!$user) {
+        wp_send_json_error(['message' => 'Usuario no encontrado.']);
+    }
+
+    // Generate a new token if needed, or retrieve existing one.
+// For simplicity, we'll generate a new one to ensure it's fresh.
+    $token = bin2hex(random_bytes(32));
+    update_user_meta($user_id, 'vcp_confirmation_token', $token);
+
+    if (vcp_send_confirmation_email($user_id, $token, true)) {
+        wp_send_json_success(['message' => 'Correo de confirmación reenviado.']);
+    } else {
+        wp_send_json_error(['message' => 'Error al enviar el correo.']);
+    }
+}
+
 // LOGIN
 add_action('wp_ajax_nopriv_vcp_auth_login', 'vcp_auth_login');
 function vcp_auth_login()
