@@ -334,6 +334,7 @@ function vcp_process_confirmation()
     // Activate user
     delete_user_meta($user->ID, 'vcp_confirmation_token');
     update_user_meta($user->ID, 'vcp_account_status', 'active');
+    update_user_meta($user->ID, 'vcp_email_confirmed', true);
 
     // Auto login after confirmation (optional, but good UX)
     wp_set_current_user($user->ID);
