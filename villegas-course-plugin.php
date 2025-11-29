@@ -819,6 +819,33 @@ function villegas_spanish_author_link($link, $author_id, $author_nicename)
     return home_url(user_trailingslashit('autor/' . $author_nicename));
 }
 
+add_action('template_redirect', 'villegas_block_lms_access');
+function villegas_block_lms_access()
+{
+    $lms_enabled = get_option('villegas_lms_enabled', 'yes');
+    if ($lms_enabled === 'no') {
+        if (is_post_type_archive('sfwd-courses') || is_singular('sfwd-courses') || is_singular('sfwd-lessons') || is_singular('sfwd-topic') || is_singular('sfwd-quiz')) {
+            wp_redirect(home_url());
+            exit;
+        }
+
+        // Check for WooCommerce endpoint
+        if (function_exists('is_wc_endpoint_url') && is_wc_endpoint_url('mis-cursos')) {
+            wp_redirect(home_url());
+            exit;
+        }
+
+        // Also check for /cursos in URL as a fallback
+        if (strpos($_SERVER['REQUEST_URI'], '/cursos') !== false) {
+            // Avoid redirecting if it's the admin page or other safe pages
+            if (!is_admin()) {
+                wp_redirect(home_url());
+                exit;
+            }
+        }
+    }
+}
+
 add_action('wp_enqueue_scripts', 'villegas_enqueue_author_cropper');
 function villegas_enqueue_author_cropper()
 {
