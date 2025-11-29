@@ -92,6 +92,12 @@ function vcp_render_new_users_page()
             <p><?php esc_html_e('No new users found in this period.', 'villegas-course-plugin'); ?></p>
         <?php else: ?>
             <div class="tablenav top">
+                <div class="alignleft actions bulkactions">
+                    <button type="button" id="vcp-bulk-delete-btn" class="button action"
+                        style="display:none; color: #b32d2e; border-color: #b32d2e;">
+                        <?php esc_html_e('Delete Selected', 'villegas-course-plugin'); ?>
+                    </button>
+                </div>
                 <div class="tablenav-pages">
                     <span
                         class="displaying-num"><?php echo sprintf(_n('%s item', '%s items', $total_users, 'villegas-course-plugin'), number_format_i18n($total_users)); ?></span>
@@ -115,6 +121,9 @@ function vcp_render_new_users_page()
             <table class="widefat striped">
                 <thead>
                     <tr>
+                        <td id="cb" class="manage-column column-cb check-column">
+                            <input id="cb-select-all-1" type="checkbox">
+                        </td>
                         <th><?php esc_html_e('Username', 'villegas-course-plugin'); ?></th>
                         <th><?php esc_html_e('Email', 'villegas-course-plugin'); ?></th>
                         <th><?php esc_html_e('Registered', 'villegas-course-plugin'); ?></th>
@@ -124,6 +133,10 @@ function vcp_render_new_users_page()
                 <tbody>
                     <?php foreach ($users as $user): ?>
                         <tr id="user-<?php echo esc_attr($user->ID); ?>">
+                            <th scope="row" class="check-column">
+                                <input type="checkbox" name="users[]" class="user-checkbox"
+                                    value="<?php echo esc_attr($user->ID); ?>">
+                            </th>
                             <td><?php echo esc_html($user->user_login); ?></td>
                             <td><?php echo esc_html($user->user_email); ?></td>
                             <td><?php echo esc_html($user->user_registered); ?></td>
@@ -174,6 +187,32 @@ add_action('wp_ajax_vcp_delete_user', function () {
     wp_send_json_success(['message' => __('User deleted', 'villegas-course-plugin')]);
 });
 
+add_action('wp_ajax_vcp_bulk_delete_users', function () {
+    if (!current_user_can('delete_users')) {
+        wp_send_json_error(['message' => __('No permission', 'villegas-course-plugin')]);
+    }
+
+    $user_ids = isset($_POST['user_ids']) ? array_map('intval', $_POST['user_ids']) : [];
+    $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+
+    if (empty($user_ids) || !wp_verify_nonce($nonce, 'vcp_bulk_delete_nonce')) {
+        wp_send_json_error(['message' => __('Invalid request', 'villegas-course-plugin')]);
+    }
+
+    require_once ABSPATH . 'wp-admin/includes/user.php';
+    $deleted_count = 0;
+    $current_user_id = get_current_user_id();
+
+    foreach ($user_ids as $user_id) {
+        if ($user_id !== $current_user_id) {
+            wp_delete_user($user_id);
+            $deleted_count++;
+        }
+    }
+
+    wp_send_json_success(['message' => sprintf(__('%d users deleted', 'villegas-course-plugin'), $deleted_count), 'deleted_count' => $deleted_count]);
+});
+
 add_action('admin_enqueue_scripts', function ($hook) {
     if (strpos($hook, 'villegaslms-new-users') === false) {
         return;
@@ -189,6 +228,7 @@ add_action('admin_enqueue_scripts', function ($hook) {
 
     wp_localize_script('vcp-new-users', 'VCP_USERS', [
         'ajax' => admin_url('admin-ajax.php'),
+        'bulk_nonce' => wp_create_nonce('vcp_bulk_delete_nonce'),
     ]);
 
     wp_register_style('vcp-new-users-admin', false);

@@ -7,6 +7,85 @@ jQuery(document).ready(function ($) {
         $(this).closest('form').submit();
     });
 
+    // Select All Checkbox
+    $('#cb-select-all-1').on('change', function () {
+        const isChecked = $(this).is(':checked');
+        $('.user-checkbox').prop('checked', isChecked);
+        toggleBulkDeleteButton();
+    });
+
+    // Individual Checkbox
+    $(document).on('change', '.user-checkbox', function () {
+        toggleBulkDeleteButton();
+        // Update "Select All" state
+        const allChecked = $('.user-checkbox').length === $('.user-checkbox:checked').length;
+        $('#cb-select-all-1').prop('checked', allChecked);
+    });
+
+    function toggleBulkDeleteButton() {
+        const checkedCount = $('.user-checkbox:checked').length;
+        if (checkedCount > 0) {
+            $('#vcp-bulk-delete-btn').fadeIn(200).text('Delete Selected (' + checkedCount + ')');
+        } else {
+            $('#vcp-bulk-delete-btn').fadeOut(200);
+        }
+    }
+
+    // Bulk Delete Action
+    $('#vcp-bulk-delete-btn').on('click', function () {
+        const btn = $(this);
+        const selectedUsers = [];
+        $('.user-checkbox:checked').each(function () {
+            selectedUsers.push($(this).val());
+        });
+
+        if (selectedUsers.length === 0) return;
+
+        if (!confirm('Are you sure you want to delete ' + selectedUsers.length + ' users? This action is irreversible.')) {
+            return;
+        }
+
+        btn.prop('disabled', true).text('Deleting...');
+
+        // Create a nonce specifically for bulk delete if needed, or reuse a generic one if available.
+        // Since we didn't pass a specific bulk nonce in the localized script, we might need to rely on the per-user nonce or add one.
+        // However, for bulk actions, it's better to have a general nonce.
+        // Let's check if we can grab a nonce from one of the rows or if we need to update the PHP to pass a bulk nonce.
+        // UPDATE: I added 'vcp_bulk_delete_nonce' check in PHP, but didn't localize it.
+        // I need to update the PHP to localize 'bulk_nonce' or grab it from the page.
+        // For now, let's assume we need to add it to the localized script.
+        // Wait, I can't easily update PHP and JS in one go.
+        // Let's use a workaround: The PHP expects 'vcp_bulk_delete_nonce'.
+        // I will update the PHP in the next step to localize this nonce.
+        // For now, I'll write the JS code expecting VCP_USERS.bulk_nonce.
+
+        $.post(VCP_USERS.ajax, {
+            action: 'vcp_bulk_delete_users',
+            user_ids: selectedUsers,
+            nonce: VCP_USERS.bulk_nonce
+        })
+            .done((response) => {
+                console.log('Bulk delete response:', response);
+                if (response.success) {
+                    selectedUsers.forEach(id => {
+                        $('#user-' + id).css('background', '#ffcccc').fadeOut(400, function () {
+                            $(this).remove();
+                        });
+                    });
+                    btn.hide().prop('disabled', false);
+                    $('#cb-select-all-1').prop('checked', false);
+                } else {
+                    alert(response.data?.message || 'Error deleting users.');
+                    btn.prop('disabled', false).text('Delete Selected');
+                }
+            })
+            .fail((xhr, status, error) => {
+                console.error('AJAX error:', status, error);
+                alert('AJAX error. Please try again.');
+                btn.prop('disabled', false).text('Delete Selected');
+            });
+    });
+
     // Delete User with Event Delegation
     $(document).on('click', '.delete-user-btn', function (e) {
         e.preventDefault();

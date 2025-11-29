@@ -1,4 +1,4 @@
-(function($){
+(function ($) {
   const qs = (selector, ctx = document) => ctx.querySelector(selector);
   const qsa = (selector, ctx = document) => Array.from(ctx.querySelectorAll(selector));
   const getModalElements = () => ({
@@ -323,14 +323,27 @@
     }
   });
 
-  qsa('.vcp-auth-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      qsa('.vcp-auth-tab').forEach(t => t.classList.remove('is-active'));
-      qsa('.vcp-auth-panel').forEach(p => p.classList.remove('is-active'));
-      tab.classList.add('is-active');
-      const panel = qs(tab.dataset.target);
+  document.addEventListener('click', (e) => {
+    const tab = e.target.closest('.vcp-auth-tab');
+    if (!tab) return;
+
+    e.preventDefault();
+    const modal = tab.closest('.vcp-auth-modal');
+    if (!modal) return;
+
+    // Deactivate all tabs and panels in this modal
+    modal.querySelectorAll('.vcp-auth-tab').forEach(t => t.classList.remove('is-active'));
+    modal.querySelectorAll('.vcp-auth-panel').forEach(p => p.classList.remove('is-active'));
+
+    // Activate clicked tab
+    tab.classList.add('is-active');
+
+    // Activate target panel
+    const targetSelector = tab.dataset.target;
+    if (targetSelector) {
+      const panel = modal.querySelector(targetSelector);
       if (panel) panel.classList.add('is-active');
-    });
+    }
   });
 
   document.addEventListener('submit', async e => {
