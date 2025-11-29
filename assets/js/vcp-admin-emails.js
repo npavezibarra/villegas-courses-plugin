@@ -12,9 +12,9 @@ jQuery(document).ready(function ($) {
 
         // Extend the wp.media object
         mediaUploader = wp.media.frames.file_frame = wp.media({
-            title: 'Select Email Logo',
+            title: 'Seleccionar Logo del Correo',
             button: {
-                text: 'Use this logo'
+                text: 'Usar este logo'
             },
             multiple: false
         });

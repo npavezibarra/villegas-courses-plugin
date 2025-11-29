@@ -20,8 +20,14 @@ function vcp_send_confirmation_email($user_id, $token)
     $confirmation_link = home_url('/confirmar-cuenta/' . $token);
     $subject = 'Confirma tu cuenta en El Villegas';
     $logo_url = get_option('vcp_email_logo');
+
+    // Fallback to site logo if plugin option is empty
     if (empty($logo_url)) {
-        $logo_url = 'http://devvillegas.local/wp-content/uploads/2025/11/villegaslogowhite2.png';
+        $custom_logo_id = get_theme_mod('custom_logo');
+        if ($custom_logo_id) {
+            $image = wp_get_attachment_image_src($custom_logo_id, 'full');
+            $logo_url = $image[0];
+        }
     }
 
     ob_start();
@@ -211,10 +217,17 @@ function vcp_send_confirmation_email($user_id, $token)
                             necesitamos confirmar esta dirección de correo electrónico. Es solo un clic.
                         </p>
 
-                        <div class="btn-container">
-                            <a href="<?php echo esc_url($confirmation_link); ?>" target="_blank" class="btn">Confirmar mi
-                                cuenta</a>
-                        </div>
+                        <table class="btn-container" role="presentation" border="0" cellpadding="0" cellspacing="0"
+                            style="margin: 30px 0;">
+                            <tr>
+                                <td align="center" bgcolor="#d32f2f" style="border-radius: 6px;">
+                                    <a href="<?php echo esc_url($confirmation_link); ?>" target="_blank"
+                                        style="padding: 14px 30px; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; display: inline-block; border: 1px solid #d32f2f; border-radius: 6px; font-family: Helvetica, Arial, sans-serif;">
+                                        Confirmar mi cuenta
+                                    </a>
+                                </td>
+                            </tr>
+                        </table>
 
                         <p class="text" style="font-size: 14px; margin-top: 30px; color: #888;">
                             Si el botón no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:<br>

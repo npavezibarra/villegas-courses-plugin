@@ -25,7 +25,7 @@ jQuery(document).ready(function ($) {
     function toggleBulkDeleteButton() {
         const checkedCount = $('.user-checkbox:checked').length;
         if (checkedCount > 0) {
-            $('#vcp-bulk-delete-btn').fadeIn(200).text('Delete Selected (' + checkedCount + ')');
+            $('#vcp-bulk-delete-btn').fadeIn(200).text('Eliminar seleccionados (' + checkedCount + ')');
         } else {
             $('#vcp-bulk-delete-btn').fadeOut(200);
         }
@@ -41,11 +41,11 @@ jQuery(document).ready(function ($) {
 
         if (selectedUsers.length === 0) return;
 
-        if (!confirm('Are you sure you want to delete ' + selectedUsers.length + ' users? This action is irreversible.')) {
+        if (!confirm('¿Estás seguro de que deseas eliminar ' + selectedUsers.length + ' usuarios? Esta acción es irreversible.')) {
             return;
         }
 
-        btn.prop('disabled', true).text('Deleting...');
+        btn.prop('disabled', true).text('Eliminando...');
 
         // Create a nonce specifically for bulk delete if needed, or reuse a generic one if available.
         // Since we didn't pass a specific bulk nonce in the localized script, we might need to rely on the per-user nonce or add one.
@@ -75,14 +75,14 @@ jQuery(document).ready(function ($) {
                     btn.hide().prop('disabled', false);
                     $('#cb-select-all-1').prop('checked', false);
                 } else {
-                    alert(response.data?.message || 'Error deleting users.');
-                    btn.prop('disabled', false).text('Delete Selected');
+                    alert(response.data?.message || 'Error al eliminar usuarios.');
+                    btn.prop('disabled', false).text('Eliminar seleccionados');
                 }
             })
             .fail((xhr, status, error) => {
                 console.error('AJAX error:', status, error);
-                alert('AJAX error. Please try again.');
-                btn.prop('disabled', false).text('Delete Selected');
+                alert('Error de AJAX. Por favor, inténtalo de nuevo.');
+                btn.prop('disabled', false).text('Eliminar seleccionados');
             });
     });
 
@@ -95,7 +95,7 @@ jQuery(document).ready(function ($) {
         const nonce = btn.data('nonce');
         console.log('User ID:', userId, 'Nonce:', nonce);
 
-        if (!confirm('Are you sure you want to delete this user? This action is irreversible and will delete all data associated with the user.')) {
+        if (!confirm('¿Estás seguro de que deseas eliminar este usuario? Esta acción es irreversible y eliminará todos los datos asociados al usuario.')) {
             return;
         }
 
