@@ -237,7 +237,7 @@ function vcp_send_confirmation_email($user_id, $token)
                             </div>
                         <?php else: ?>
                             <table class="btn-container" role="presentation" border="0" cellpadding="0" cellspacing="0"
-                                style="margin: 30px 0;">
+                                style="margin: 30px auto;" align="center">
                                 <tr>
                                     <td align="center" bgcolor="#d32f2f" style="border-radius: 6px;">
                                         <a href="<?php echo esc_url($confirmation_link); ?>" target="_blank"
