@@ -10,6 +10,7 @@
   cursor: pointer;
   transition: background .2s;
 }
+
 .vcp-auth-open:hover {
   background: #333;
 }
@@ -18,12 +19,13 @@
 .vcp-auth-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.7);
+  background: rgba(0, 0, 0, 0.7);
   opacity: 0;
   visibility: hidden;
   transition: opacity .25s ease;
   z-index: 99998;
 }
+
 .vcp-auth-overlay.is-visible {
   opacity: 1;
   visibility: visible;
@@ -41,7 +43,7 @@
   transition: opacity .25s ease, transform .25s ease;
   background: #fff;
   border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
   display: flex;
   flex-direction: column;
   align-items: stretch;
@@ -50,6 +52,7 @@
   padding: 2rem;
   font-family: "Inter", "Helvetica Neue", sans-serif;
 }
+
 .vcp-auth-modal.is-visible {
   opacity: 1;
   visibility: visible;
@@ -82,6 +85,7 @@
   place-items: center;
   line-height: 1;
 }
+
 .vcp-auth-close:hover {
   background: #333;
 }
@@ -93,6 +97,7 @@
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+
 .vcp-auth-tab {
   border: none;
   background: #eee;
@@ -102,6 +107,7 @@
   font-weight: 500;
   transition: background .2s;
 }
+
 .vcp-auth-tab.is-active {
   background: #111;
   color: #fff;
@@ -111,22 +117,27 @@
 .vcp-auth-panel {
   display: none;
 }
+
 .vcp-auth-panel.is-active {
   display: block;
 }
+
 .vcp-auth-panel h3 {
   margin-top: 0;
   margin-bottom: 1rem;
   font-size: 1.35rem;
 }
+
 .vcp-field {
   margin-bottom: 1rem;
 }
+
 .vcp-field label {
   display: block;
   font-size: 0.9rem;
   margin-bottom: 0.25rem;
 }
+
 .vcp-field input {
   width: 100%;
   padding: 0.6rem 0.8rem;
@@ -135,6 +146,7 @@
   font-size: 1rem;
   box-sizing: border-box;
 }
+
 .vcp-field input:focus {
   border-color: #111;
   outline: none;
@@ -169,6 +181,7 @@
 .vcp-actions {
   margin-top: 1.25rem;
 }
+
 .vcp-actions button {
   width: 100%;
   padding: 0.75rem;
@@ -180,6 +193,7 @@
   cursor: pointer;
   transition: background .2s;
 }
+
 .vcp-actions button:hover {
   background: #333;
 }
@@ -189,6 +203,7 @@
   text-align: center;
   margin-bottom: 1.5rem;
 }
+
 .vcp-google-login {
   border: 1px solid #ccc;
   padding: 0.6rem 1rem;
@@ -198,6 +213,7 @@
   font-weight: 500;
   transition: background .2s;
 }
+
 .vcp-google-login:hover {
   background: #f2f2f2;
 }
@@ -233,9 +249,11 @@
   border-radius: 6px;
   font-family: "Inter", sans-serif;
 }
+
 .vcp-auth-greet {
   font-weight: 500;
 }
+
 .vcp-auth-logout {
   border: 0;
   background: #111;
@@ -245,6 +263,7 @@
   cursor: pointer;
   transition: background .2s;
 }
+
 .vcp-auth-logout:hover {
   background: #333;
 }
@@ -298,6 +317,7 @@
   gap: 1rem;
   margin-bottom: 1.5rem;
 }
+
 .vcp-auth-tab {
   background: #eee;
   color: #000;
@@ -307,7 +327,101 @@
   cursor: pointer;
   font-size: 0.95rem;
 }
+
 .vcp-auth-tab.is-active {
   background: #000;
   color: #fff;
+}
+
+/* Success Overlay */
+.vcp-success-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.45);
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.vcp-success-overlay.is-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.vcp-success-overlay.is-fading {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.vcp-success-content {
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  transform: translateY(20px);
+  transition: transform 0.3s ease;
+  position: relative;
+}
+
+.vcp-success-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  color: #999;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s, color 0.2s;
+}
+
+.vcp-success-close:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.vcp-success-overlay.is-visible .vcp-success-content {
+  transform: translateY(0);
+}
+
+.vcp-success-icon {
+  width: 60px;
+  height: 60px;
+  background: #4CAF50;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: white;
+}
+
+.vcp-success-icon svg {
+  width: 32px;
+  height: 32px;
+}
+
+.vcp-success-message {
+  font-size: 18px;
+  color: #333;
+  line-height: 1.5;
+  font-weight: 500;
 }

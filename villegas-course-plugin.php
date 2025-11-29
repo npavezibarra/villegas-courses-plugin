@@ -389,7 +389,7 @@ add_action('wp_enqueue_scripts', function () {
         'vcp-auth-js',
         plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js',
         ['jquery'],
-        '1.4',
+        '1.6',
         true
     );
 
@@ -961,3 +961,25 @@ function villegas_save_profile_picture_handler()
         'attachment_id' => $attach_id,
     ]);
 }
+
+/**
+ * Render Success Overlay
+ */
+function vcp_render_success_overlay()
+{
+    ?>
+    <div class="vcp-success-overlay" hidden>
+        <div class="vcp-success-content">
+            <button type="button" class="vcp-success-close">&times;</button>
+            <div class="vcp-success-icon">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+            </div>
+            <div class="vcp-success-message"></div>
+        </div>
+    </div>
+    <?php
+}
+add_action('wp_footer', 'vcp_render_success_overlay');

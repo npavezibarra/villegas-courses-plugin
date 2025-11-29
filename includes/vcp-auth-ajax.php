@@ -101,7 +101,9 @@ function vcp_auth_login()
      */
     do_action('vcp_user_logged_in', $user);
 
-    wp_send_json_success(true);
+    wp_send_json_success([
+        'user_display_name' => $user->display_name ?: $user->user_login
+    ]);
 }
 
 // REGISTER

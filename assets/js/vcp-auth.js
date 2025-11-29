@@ -10,6 +10,51 @@
   let lastFocus = null;
   const loginValidationTimers = new WeakMap();
 
+  function showSuccessOverlay(message, callback, duration = 3000) {
+    const overlay = document.querySelector('.vcp-success-overlay');
+    if (!overlay) {
+      if (typeof callback === 'function') callback();
+      return;
+    }
+
+    const messageEl = overlay.querySelector('.vcp-success-message');
+    if (messageEl) {
+      messageEl.textContent = message;
+    }
+
+    let timer = null;
+    let fadeTimer = null;
+
+    const finish = () => {
+      if (timer) clearTimeout(timer);
+      if (fadeTimer) clearTimeout(fadeTimer);
+
+      overlay.classList.remove('is-visible', 'is-fading');
+      overlay.hidden = true;
+      if (typeof callback === 'function') callback();
+    };
+
+    const closeBtn = overlay.querySelector('.vcp-success-close');
+    if (closeBtn) {
+      closeBtn.onclick = (e) => {
+        e.preventDefault();
+        finish();
+      };
+    }
+
+    overlay.hidden = false;
+    // Force reflow
+    void overlay.offsetWidth;
+    overlay.classList.add('is-visible');
+
+    timer = setTimeout(() => {
+      overlay.classList.add('is-fading');
+      fadeTimer = setTimeout(() => {
+        finish();
+      }, 500);
+    }, duration);
+  }
+
   function showModal() {
     let { modal, overlay } = getModalElements();
 
@@ -395,18 +440,24 @@
       const json = await response.json();
 
       if (json.success) {
+        // REGISTRATION SUCCESS
         if (json.data && json.data.confirmation_required) {
-          if (messageBox) {
-            messageBox.style.display = 'block';
-            messageBox.style.color = '#0a8f08';
-            messageBox.textContent = 'Cuenta creada. Por favor revisa tu correo para confirmar tu cuenta.';
-          } else {
-            window.alert('Cuenta creada. Por favor revisa tu correo para confirmar tu cuenta.');
-          }
-          form.reset();
+          if (messageBox) messageBox.style.display = 'none';
+
+          // Hide modal immediately
+          hideModal();
+
+          showSuccessOverlay(
+            'Gracias por registrarte! Te enviamos un correo para que confirmes esta cuenta. Por mientras ya puedes comprar y más en elvillegas.cl. 😊',
+            () => {
+              form.reset();
+            },
+            6000 // 6 seconds for registration
+          );
           return;
         }
 
+        // LOGIN SUCCESS
         if (messageBox) {
           messageBox.style.display = 'none';
           messageBox.textContent = '';
@@ -414,15 +465,27 @@
 
         document.dispatchEvent(new CustomEvent('vcp-login-success', { detail: json }));
 
+        const displayName = (json.data && json.data.user_display_name)
+          ? json.data.user_display_name
+          : 'Usuario';
+
+        // Hide login modal immediately
         hideModal();
 
-        const target = redirectConfig && redirectConfig.redirect
-          ? redirectConfig.redirect
-          : '';
+        showSuccessOverlay(
+          `Hola ${displayName} has ingresado con éxito a tu cuenta! 👍`,
+          () => {
+            const target = redirectConfig && redirectConfig.redirect
+              ? redirectConfig.redirect
+              : '';
 
-        if (target) {
-          window.location.href = target;
-        }
+            if (target) {
+              window.location.href = target;
+            } else {
+              window.location.reload();
+            }
+          }
+        );
 
         return;
       }
