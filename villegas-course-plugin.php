@@ -229,36 +229,36 @@ function vcp_render_new_users_page()
 
 add_action('wp_ajax_vcp_delete_user', function () {
     if (!current_user_can('delete_users')) {
-        wp_send_json_error(['message' => __('No permission', 'villegas-course-plugin')]);
+        wp_send_json_error(['message' => __('Sin permiso', 'villegas-course-plugin')]);
     }
 
     $user_id = isset($_POST['user_id']) ? (int) wp_unslash($_POST['user_id']) : 0;
     $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
 
     if (!$user_id || !wp_verify_nonce($nonce, 'vcp_delete_user_' . $user_id)) {
-        wp_send_json_error(['message' => __('Invalid request', 'villegas-course-plugin')]);
+        wp_send_json_error(['message' => __('Solicitud inválida', 'villegas-course-plugin')]);
     }
 
     if (get_current_user_id() === $user_id) {
-        wp_send_json_error(['message' => __('You cannot delete yourself', 'villegas-course-plugin')]);
+        wp_send_json_error(['message' => __('No puedes eliminarte a ti mismo', 'villegas-course-plugin')]);
     }
 
     require_once ABSPATH . 'wp-admin/includes/user.php';
     wp_delete_user($user_id);
 
-    wp_send_json_success(['message' => __('User deleted', 'villegas-course-plugin')]);
+    wp_send_json_success(['message' => __('Usuario eliminado', 'villegas-course-plugin')]);
 });
 
 add_action('wp_ajax_vcp_bulk_delete_users', function () {
     if (!current_user_can('delete_users')) {
-        wp_send_json_error(['message' => __('No permission', 'villegas-course-plugin')]);
+        wp_send_json_error(['message' => __('Sin permiso', 'villegas-course-plugin')]);
     }
 
     $user_ids = isset($_POST['user_ids']) ? array_map('intval', $_POST['user_ids']) : [];
     $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
 
     if (empty($user_ids) || !wp_verify_nonce($nonce, 'vcp_bulk_delete_nonce')) {
-        wp_send_json_error(['message' => __('Invalid request', 'villegas-course-plugin')]);
+        wp_send_json_error(['message' => __('Solicitud inválida', 'villegas-course-plugin')]);
     }
 
     require_once ABSPATH . 'wp-admin/includes/user.php';
@@ -272,7 +272,7 @@ add_action('wp_ajax_vcp_bulk_delete_users', function () {
         }
     }
 
-    wp_send_json_success(['message' => sprintf(__('%d users deleted', 'villegas-course-plugin'), $deleted_count), 'deleted_count' => $deleted_count]);
+    wp_send_json_success(['message' => sprintf(__('%d usuarios eliminados', 'villegas-course-plugin'), $deleted_count), 'deleted_count' => $deleted_count]);
 });
 
 add_action('admin_enqueue_scripts', function ($hook) {

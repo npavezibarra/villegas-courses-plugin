@@ -8,7 +8,7 @@ add_action('wp_ajax_nopriv_vcp_auth_login', 'vcp_auth_login');
 function vcp_auth_login()
 {
     if (!isset($_POST['nonce']) || !wp_verify_nonce(wp_unslash($_POST['nonce']), 'vcp_auth_nonce')) {
-        wp_send_json_error('Security check failed.');
+        wp_send_json_error('Error de seguridad.');
     }
 
     $captcha = isset($_POST['captcha_token']) ? sanitize_text_field(wp_unslash($_POST['captcha_token'])) : '';
@@ -16,7 +16,7 @@ function vcp_auth_login()
         $secret_key = defined('VCP_RECAPTCHA_SECRET_KEY') ? VCP_RECAPTCHA_SECRET_KEY : '';
 
         if (empty($secret_key)) {
-            wp_send_json_error('Captcha validation failed.');
+            wp_send_json_error('Falló la validación del Captcha.');
         }
 
         $response = wp_remote_post('https://www.google.com/recaptcha/api/siteverify', [
@@ -27,12 +27,12 @@ function vcp_auth_login()
         ]);
 
         if (is_wp_error($response)) {
-            wp_send_json_error('Captcha validation failed.');
+            wp_send_json_error('Falló la validación del Captcha.');
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
         if (empty($body['success'])) {
-            wp_send_json_error('Captcha validation failed.');
+            wp_send_json_error('Falló la validación del Captcha.');
         }
     }
 
@@ -40,7 +40,7 @@ function vcp_auth_login()
     $pass = isset($_POST['pwd']) ? (string) wp_unslash($_POST['pwd']) : '';
 
     if (empty($login) || empty($pass)) {
-        wp_send_json_error('Username and password required.');
+        wp_send_json_error('Usuario y contraseña requeridos.');
     }
 
     $creds = [
@@ -76,7 +76,7 @@ add_action('wp_ajax_nopriv_vcp_auth_register', 'vcp_auth_register');
 function vcp_auth_register()
 {
     if (!isset($_POST['nonce']) || !wp_verify_nonce(wp_unslash($_POST['nonce']), 'vcp_auth_nonce')) {
-        wp_send_json_error('Security check failed.');
+        wp_send_json_error('Error de seguridad.');
     }
 
     $captcha = isset($_POST['captcha_token']) ? sanitize_text_field(wp_unslash($_POST['captcha_token'])) : '';
@@ -84,7 +84,7 @@ function vcp_auth_register()
         $secret_key = defined('VCP_RECAPTCHA_SECRET_KEY') ? VCP_RECAPTCHA_SECRET_KEY : '';
 
         if (empty($secret_key)) {
-            wp_send_json_error('Captcha validation failed.');
+            wp_send_json_error('Falló la validación del Captcha.');
         }
 
         $response = wp_remote_post('https://www.google.com/recaptcha/api/siteverify', [
@@ -95,12 +95,12 @@ function vcp_auth_register()
         ]);
 
         if (is_wp_error($response)) {
-            wp_send_json_error('Captcha validation failed.');
+            wp_send_json_error('Falló la validación del Captcha.');
         }
 
         $body = json_decode(wp_remote_retrieve_body($response), true);
         if (empty($body['success'])) {
-            wp_send_json_error('Captcha validation failed.');
+            wp_send_json_error('Falló la validación del Captcha.');
         }
     }
 
@@ -109,19 +109,19 @@ function vcp_auth_register()
     $pass = isset($_POST['user_pass']) ? (string) wp_unslash($_POST['user_pass']) : '';
 
     if (!is_email($email)) {
-        wp_send_json_error('Invalid email.');
+        wp_send_json_error('Correo electrónico inválido.');
     }
     if (empty($login)) {
-        wp_send_json_error('Username required.');
+        wp_send_json_error('Nombre de usuario requerido.');
     }
     if (empty($pass)) {
-        wp_send_json_error('Password required.');
+        wp_send_json_error('Contraseña requerida.');
     }
     if (username_exists($login)) {
-        wp_send_json_error('Username already taken.');
+        wp_send_json_error('El nombre de usuario ya está en uso.');
     }
     if (email_exists($email)) {
-        wp_send_json_error('Email already registered.');
+        wp_send_json_error('El correo electrónico ya está registrado.');
     }
 
     $user_id = wp_create_user($login, $pass, $email);
@@ -155,16 +155,16 @@ add_action('wp_ajax_vcp_auth_logout', function () {
     if (!wp_verify_nonce($nonce, 'vcp_auth_nonce')) {
         wp_logout();
 
-        wp_send_json_success(['message' => 'Logged out (no nonce check)']);
+        wp_send_json_success(['message' => 'Sesión cerrada (sin verificación de nonce)']);
     }
 
     wp_logout();
 
-    wp_send_json_success(['message' => 'Logged out']);
+    wp_send_json_success(['message' => 'Sesión cerrada']);
 });
 
 add_action('wp_ajax_nopriv_vcp_auth_logout', function () {
-    wp_send_json_error(['message' => 'Not logged in']);
+    wp_send_json_error(['message' => 'No has iniciado sesión']);
 });
 
 /**
