@@ -395,6 +395,18 @@
       const json = await response.json();
 
       if (json.success) {
+        if (json.data && json.data.confirmation_required) {
+          if (messageBox) {
+            messageBox.style.display = 'block';
+            messageBox.style.color = '#0a8f08';
+            messageBox.textContent = 'Cuenta creada. Por favor revisa tu correo para confirmar tu cuenta.';
+          } else {
+            window.alert('Cuenta creada. Por favor revisa tu correo para confirmar tu cuenta.');
+          }
+          form.reset();
+          return;
+        }
+
         if (messageBox) {
           messageBox.style.display = 'none';
           messageBox.textContent = '';

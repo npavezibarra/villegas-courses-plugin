@@ -11,8 +11,13 @@ if (!defined('ABSPATH')) {
 
 require_once __DIR__ . '/includes/class-vcp-auth-shortcode.php';
 require_once __DIR__ . '/includes/vcp-auth-ajax.php';
+require_once __DIR__ . '/includes/vcp-email-confirmation.php';
 
-function vcp_register_new_users_submenu()
+require_once __DIR__ . '/includes/class-vcp-auth-shortcode.php';
+require_once __DIR__ . '/includes/vcp-auth-ajax.php';
+require_once __DIR__ . '/includes/vcp-email-confirmation.php';
+
+function vcp_register_admin_menu()
 {
     add_submenu_page(
         'villegas-lms',
@@ -22,8 +27,65 @@ function vcp_register_new_users_submenu()
         'villegaslms-new-users',
         'vcp_render_new_users_page'
     );
+
+    add_submenu_page(
+        'villegas-lms',
+        __('Emails', 'villegas-course-plugin'),
+        __('Emails', 'villegas-course-plugin'),
+        'manage_options',
+        'vcp-emails',
+        'vcp_render_emails_page'
+    );
 }
-add_action('admin_menu', 'vcp_register_new_users_submenu', 20);
+add_action('admin_menu', 'vcp_register_admin_menu', 20);
+
+function vcp_enqueue_admin_scripts($hook)
+{
+    if ($hook === 'villegaslms_page_vcp-emails') {
+        wp_enqueue_media();
+        wp_enqueue_script('vcp-admin-emails', plugin_dir_url(__FILE__) . 'assets/js/vcp-admin-emails.js', ['jquery'], '1.0', true);
+    }
+}
+add_action('admin_enqueue_scripts', 'vcp_enqueue_admin_scripts');
+
+function vcp_render_emails_page()
+{
+    if (isset($_POST['vcp_email_logo'])) {
+        if (!isset($_POST['vcp_emails_nonce']) || !wp_verify_nonce($_POST['vcp_emails_nonce'], 'vcp_save_emails')) {
+            echo '<div class="notice notice-error"><p>Security check failed.</p></div>';
+        } else {
+            update_option('vcp_email_logo', esc_url_raw($_POST['vcp_email_logo']));
+            echo '<div class="notice notice-success"><p>Settings saved.</p></div>';
+        }
+    }
+
+    $logo_url = get_option('vcp_email_logo', '');
+    ?>
+    <div class="wrap">
+        <h1><?php _e('Email Settings', 'villegas-course-plugin'); ?></h1>
+        <form method="post">
+            <?php wp_nonce_field('vcp_save_emails', 'vcp_emails_nonce'); ?>
+            <table class="form-table">
+                <tr valign="top">
+                    <th scope="row"><?php _e('Email Logo', 'villegas-course-plugin'); ?></th>
+                    <td>
+                        <input type="text" name="vcp_email_logo" id="vcp_email_logo"
+                            value="<?php echo esc_attr($logo_url); ?>" class="regular-text">
+                        <input type="button" id="vcp-upload-logo-btn" class="button"
+                            value="<?php _e('Select Logo', 'villegas-course-plugin'); ?>">
+                        <input type="button" id="vcp-remove-logo-btn" class="button"
+                            value="<?php _e('Remove', 'villegas-course-plugin'); ?>">
+                        <br>
+                        <img id="vcp-logo-preview" src="<?php echo esc_attr($logo_url); ?>"
+                            style="max-width: 200px; margin-top: 10px; display: <?php echo $logo_url ? 'block' : 'none'; ?>;">
+                    </td>
+                </tr>
+            </table>
+            <?php submit_button(); ?>
+        </form>
+    </div>
+    <?php
+}
 
 function vcp_render_new_users_page()
 {
