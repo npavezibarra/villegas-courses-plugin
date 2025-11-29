@@ -217,23 +217,43 @@ function vcp_send_confirmation_email($user_id, $token)
                             necesitamos confirmar esta dirección de correo electrónico. Es solo un clic.
                         </p>
 
-                        <table class="btn-container" role="presentation" border="0" cellpadding="0" cellspacing="0"
-                            style="margin: 30px 0;">
-                            <tr>
-                                <td align="center" bgcolor="#d32f2f" style="border-radius: 6px;">
-                                    <a href="<?php echo esc_url($confirmation_link); ?>" target="_blank"
-                                        style="padding: 14px 30px; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; display: inline-block; border: 1px solid #d32f2f; border-radius: 6px; font-family: Helvetica, Arial, sans-serif;">
-                                        Confirmar mi cuenta
-                                    </a>
-                                </td>
-                            </tr>
-                        </table>
+                        <?php
+                        $is_yahoo = (strpos($email, '@yahoo') !== false);
 
-                        <p class="text" style="font-size: 14px; margin-top: 30px; color: #888;">
-                            Si el botón no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:<br>
-                            <a href="<?php echo esc_url($confirmation_link); ?>"
-                                style="color: #d32f2f; word-break: break-all;"><?php echo esc_html($confirmation_link); ?></a>
-                        </p>
+                        if ($is_yahoo): ?>
+                            <div
+                                style="background-color: #fff3cd; color: #856404; padding: 15px; border-radius: 6px; border: 1px solid #ffeeba; margin: 20px 0; text-align: center;">
+                                <p style="margin: 0 0 10px 0; font-weight: bold;">⚠️ ¡Ups! Detectamos que usas Yahoo.</p>
+                                <p style="margin: 0; font-size: 14px;">
+                                    A veces Yahoo se pone un poco "celoso" con nuestros botones y no deja que funcionen.
+                                    ¡Cosas de la tecnología! 🤷‍♂️<br><br>
+                                    Para confirmar tu cuenta, por favor <strong>copia y pega</strong> el siguiente enlace en tu
+                                    navegador:
+                                </p>
+                                <p style="margin: 15px 0 0 0; word-break: break-all;">
+                                    <a href="<?php echo esc_url($confirmation_link); ?>"
+                                        style="color: #d32f2f;"><?php echo esc_html($confirmation_link); ?></a>
+                                </p>
+                            </div>
+                        <?php else: ?>
+                            <table class="btn-container" role="presentation" border="0" cellpadding="0" cellspacing="0"
+                                style="margin: 30px 0;">
+                                <tr>
+                                    <td align="center" bgcolor="#d32f2f" style="border-radius: 6px;">
+                                        <a href="<?php echo esc_url($confirmation_link); ?>" target="_blank"
+                                            style="padding: 14px 30px; font-size: 16px; font-weight: bold; color: #ffffff; text-decoration: none; display: inline-block; border: 1px solid #d32f2f; border-radius: 6px; font-family: Helvetica, Arial, sans-serif;">
+                                            Confirmar mi cuenta
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p class="text" style="font-size: 14px; margin-top: 30px; color: #888;">
+                                Si el botón no funciona, puedes copiar y pegar el siguiente enlace en tu navegador:<br>
+                                <a href="<?php echo esc_url($confirmation_link); ?>"
+                                    style="color: #d32f2f; word-break: break-all;"><?php echo esc_html($confirmation_link); ?></a>
+                            </p>
+                        <?php endif; ?>
                     </td>
                 </tr>
 
