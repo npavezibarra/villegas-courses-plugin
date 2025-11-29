@@ -29,6 +29,7 @@ function vcp_resend_confirmation_ajax()
     update_user_meta($user_id, 'vcp_confirmation_token', $token);
 
     if (vcp_send_confirmation_email($user_id, $token, true)) {
+        update_user_meta($user_id, 'vcp_last_confirmation_sent', current_time('mysql'));
         wp_send_json_success(['message' => 'Correo de confirmación reenviado.']);
     } else {
         wp_send_json_error(['message' => 'Error al enviar el correo.']);

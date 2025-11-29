@@ -209,8 +209,24 @@ function vcp_render_new_users_page()
                                 if ($is_confirmed) {
                                     echo '<span style="color: green; font-size: 1.2em;" title="' . esc_attr__('Confirmed', 'villegas-course-plugin') . '">✅</span>';
                                 } else {
+                                    $last_sent = get_user_meta($user->ID, 'vcp_last_confirmation_sent', true);
+                                    $can_resend = true;
+
+                                    if ($last_sent) {
+                                        $sent_time = strtotime($last_sent);
+                                        $sixty_days_ago = strtotime('-60 days');
+                                        if ($sent_time > $sixty_days_ago) {
+                                            $can_resend = false;
+                                        }
+                                    }
+
                                     echo '<span style="color: red; font-size: 1.2em;" title="' . esc_attr__('Not Confirmed', 'villegas-course-plugin') . '">❌</span>';
-                                    echo ' <button type="button" class="button vcp-resend-confirmation" data-user="' . esc_attr($user->ID) . '" data-nonce="' . wp_create_nonce('vcp_resend_nonce_' . $user->ID) . '" title="' . esc_attr__('Resend Confirmation Email', 'villegas-course-plugin') . '"><span class="dashicons dashicons-email-alt" style="line-height: 1.3;"></span></button>';
+
+                                    if ($can_resend) {
+                                        echo ' <button type="button" class="button vcp-resend-confirmation" data-user="' . esc_attr($user->ID) . '" data-nonce="' . wp_create_nonce('vcp_resend_nonce_' . $user->ID) . '" title="' . esc_attr__('Resend Confirmation Email', 'villegas-course-plugin') . '"><span class="dashicons dashicons-email-alt" style="line-height: 1.3;"></span></button>';
+                                    } else {
+                                        echo ' <span class="dashicons dashicons-hourglass" style="color: orange; font-size: 1.2em; vertical-align: middle;" title="' . esc_attr__('Waiting for confirmation. Email sent recently.', 'villegas-course-plugin') . '"></span>';
+                                    }
                                 }
                                 ?>
                             </td>

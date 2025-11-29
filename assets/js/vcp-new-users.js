@@ -148,15 +148,16 @@ jQuery(document).ready(function ($) {
             .done((response) => {
                 if (response.success) {
                     alert('Correo de confirmación reenviado exitosamente.');
+                    // Replace button with hourglass immediately
+                    btn.replaceWith('<span class="dashicons dashicons-hourglass" style="color: orange; font-size: 1.2em; vertical-align: middle;" title="Waiting for confirmation. Email sent recently."></span>');
                 } else {
                     alert(response.data?.message || 'Error al reenviar el correo.');
+                    btn.prop('disabled', false).html(originalIcon);
                 }
             })
             .fail((xhr, status, error) => {
                 console.error('AJAX error:', status, error);
                 alert('Error de conexión. Por favor, inténtalo de nuevo.');
-            })
-            .always(() => {
                 btn.prop('disabled', false).html(originalIcon);
             });
     });
