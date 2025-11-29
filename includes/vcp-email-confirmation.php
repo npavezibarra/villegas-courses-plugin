@@ -301,7 +301,7 @@ function vcp_process_confirmation()
     wp_set_current_user($user->ID);
     wp_set_auth_cookie($user->ID, true);
 
-    wp_redirect(home_url('/?vcp_confirmed=success'));
+    wp_redirect(home_url('/mi-cuenta?vcp_confirmed=success'));
     exit;
 }
 add_action('template_redirect', 'vcp_process_confirmation');
