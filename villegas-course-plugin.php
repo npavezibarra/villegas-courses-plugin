@@ -12,7 +12,8 @@ if (!defined('ABSPATH')) {
 require_once __DIR__ . '/includes/class-vcp-auth-shortcode.php';
 require_once __DIR__ . '/includes/vcp-auth-ajax.php';
 
-function vcp_register_new_users_submenu() {
+function vcp_register_new_users_submenu()
+{
     add_submenu_page(
         'villegas-lms',
         __('New Users', 'villegas-course-plugin'),
@@ -24,27 +25,93 @@ function vcp_register_new_users_submenu() {
 }
 add_action('admin_menu', 'vcp_register_new_users_submenu', 20);
 
-function vcp_render_new_users_page() {
-    $since = strtotime('-7 days');
-    $args  = [
-        'orderby'    => 'registered',
-        'order'      => 'DESC',
+function vcp_render_new_users_page()
+{
+    $period = isset($_GET['period']) ? sanitize_text_field($_GET['period']) : '7days';
+    $paged = isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1;
+    $number = 20;
+    $offset = ($paged - 1) * $number;
+
+    switch ($period) {
+        case '1day':
+            $since = strtotime('-1 day');
+            break;
+        case '30days':
+            $since = strtotime('-30 days');
+            break;
+        case '7days':
+        default:
+            $since = strtotime('-7 days');
+            break;
+    }
+
+    $args = [
+        'orderby' => 'registered',
+        'order' => 'DESC',
         'meta_query' => [],
         'date_query' => [
             [
                 'after' => date('Y-m-d H:i:s', $since),
             ],
         ],
+        'number' => $number,
+        'offset' => $offset,
+        'count_total' => true, // Needed for pagination
         'fields' => ['ID', 'user_login', 'user_email', 'user_registered'],
     ];
 
-    $users = get_users($args);
+    $user_query = new WP_User_Query($args);
+    $users = $user_query->get_results();
+    $total_users = $user_query->get_total();
+    $total_pages = ceil($total_users / $number);
+
+    $base_url = add_query_arg('page', 'villegaslms-new-users', admin_url('admin.php'));
     ?>
     <div class="wrap">
-        <h1><?php esc_html_e('New Users (Last 7 Days)', 'villegas-course-plugin'); ?></h1>
-        <?php if (empty($users)) : ?>
-            <p><?php esc_html_e('No new users found in the last week.', 'villegas-course-plugin'); ?></p>
-        <?php else : ?>
+        <h1 class="wp-heading-inline"><?php esc_html_e('New Users', 'villegas-course-plugin'); ?></h1>
+
+        <form method="get" style="display:inline-block; margin-left: 10px;">
+            <input type="hidden" name="page" value="villegaslms-new-users" />
+            <select name="period" id="vcp-period-filter">
+                <option value="1day" <?php selected($period, '1day'); ?>>
+                    <?php esc_html_e('Last 24 Hours', 'villegas-course-plugin'); ?>
+                </option>
+                <option value="7days" <?php selected($period, '7days'); ?>>
+                    <?php esc_html_e('Last 7 Days', 'villegas-course-plugin'); ?>
+                </option>
+                <option value="30days" <?php selected($period, '30days'); ?>>
+                    <?php esc_html_e('Last 30 Days', 'villegas-course-plugin'); ?>
+                </option>
+            </select>
+            <button type="submit" class="button"><?php esc_html_e('Filter', 'villegas-course-plugin'); ?></button>
+        </form>
+
+        <hr class="wp-header-end">
+
+        <?php if (empty($users)): ?>
+            <p><?php esc_html_e('No new users found in this period.', 'villegas-course-plugin'); ?></p>
+        <?php else: ?>
+            <div class="tablenav top">
+                <div class="tablenav-pages">
+                    <span
+                        class="displaying-num"><?php echo sprintf(_n('%s item', '%s items', $total_users, 'villegas-course-plugin'), number_format_i18n($total_users)); ?></span>
+                    <?php
+                    $page_links = paginate_links([
+                        'base' => add_query_arg('paged', '%#%', $base_url . '&period=' . $period),
+                        'format' => '',
+                        'prev_text' => __('&laquo;'),
+                        'next_text' => __('&raquo;'),
+                        'total' => $total_pages,
+                        'current' => $paged,
+                    ]);
+
+                    if ($page_links) {
+                        echo '<span class="pagination-links">' . $page_links . '</span>';
+                    }
+                    ?>
+                </div>
+            </div>
+
             <table class="widefat striped">
                 <thead>
                     <tr>
@@ -55,17 +122,14 @@ function vcp_render_new_users_page() {
                     </tr>
                 </thead>
                 <tbody>
-                    <?php foreach ($users as $user) : ?>
+                    <?php foreach ($users as $user): ?>
                         <tr id="user-<?php echo esc_attr($user->ID); ?>">
                             <td><?php echo esc_html($user->user_login); ?></td>
                             <td><?php echo esc_html($user->user_email); ?></td>
                             <td><?php echo esc_html($user->user_registered); ?></td>
                             <td>
-                                <button
-                                    class="button delete-user-btn"
-                                    data-user="<?php echo esc_attr($user->ID); ?>"
-                                    data-nonce="<?php echo esc_attr(wp_create_nonce('vcp_delete_user_' . $user->ID)); ?>"
-                                >
+                                <button class="button delete-user-btn" data-user="<?php echo esc_attr($user->ID); ?>"
+                                    data-nonce="<?php echo esc_attr(wp_create_nonce('vcp_delete_user_' . $user->ID)); ?>">
                                     <?php esc_html_e('Delete', 'villegas-course-plugin'); ?>
                                 </button>
                             </td>
@@ -73,6 +137,16 @@ function vcp_render_new_users_page() {
                     <?php endforeach; ?>
                 </tbody>
             </table>
+
+            <div class="tablenav bottom">
+                <div class="tablenav-pages">
+                    <?php
+                    if ($page_links) {
+                        echo '<span class="pagination-links">' . $page_links . '</span>';
+                    }
+                    ?>
+                </div>
+            </div>
         <?php endif; ?>
     </div>
     <?php
@@ -84,7 +158,7 @@ add_action('wp_ajax_vcp_delete_user', function () {
     }
 
     $user_id = isset($_POST['user_id']) ? (int) wp_unslash($_POST['user_id']) : 0;
-    $nonce   = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
+    $nonce = isset($_POST['nonce']) ? sanitize_text_field(wp_unslash($_POST['nonce'])) : '';
 
     if (!$user_id || !wp_verify_nonce($nonce, 'vcp_delete_user_' . $user_id)) {
         wp_send_json_error(['message' => __('Invalid request', 'villegas-course-plugin')]);
@@ -101,7 +175,7 @@ add_action('wp_ajax_vcp_delete_user', function () {
 });
 
 add_action('admin_enqueue_scripts', function ($hook) {
-    if ($hook !== 'villegas-lms_page_villegaslms-new-users') {
+    if (strpos($hook, 'villegaslms-new-users') === false) {
         return;
     }
 
@@ -190,7 +264,7 @@ add_action('wp_enqueue_scripts', function () {
     );
 
     $recaptcha_site_key = (string) get_option('vcp_recaptcha_site_key', '');
-    $google_client_id   = (string) get_option('vcp_google_client_id', '');
+    $google_client_id = (string) get_option('vcp_google_client_id', '');
 
     if ($recaptcha_site_key) {
         wp_enqueue_script(
@@ -203,18 +277,19 @@ add_action('wp_enqueue_scripts', function () {
     }
 
     wp_localize_script('vcp-auth-js', 'VCP_AUTH', [
-        'ajax'           => admin_url('admin-ajax.php'),
-        'nonce'          => wp_create_nonce('vcp_auth_nonce'),
-        'recaptcha_key'  => $recaptcha_site_key,
-        'google_id'      => $google_client_id,
-        'google_url'     => VCP_GOOGLE_REDIRECT_URI,
-        'isUser'         => is_user_logged_in(),
-        'isLoggedIn'     => is_user_logged_in(),
+        'ajax' => admin_url('admin-ajax.php'),
+        'nonce' => wp_create_nonce('vcp_auth_nonce'),
+        'recaptcha_key' => $recaptcha_site_key,
+        'google_id' => $google_client_id,
+        'google_url' => VCP_GOOGLE_REDIRECT_URI,
+        'isUser' => is_user_logged_in(),
+        'isLoggedIn' => is_user_logged_in(),
         'logoutRedirect' => home_url(),
     ]);
 }, 99);
 
-function vcp_render_learndash_newsreader_typography() {
+function vcp_render_learndash_newsreader_typography()
+{
     if (is_admin()) {
         return;
     }
@@ -222,40 +297,68 @@ function vcp_render_learndash_newsreader_typography() {
     ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,200..800;1,6..72,200..800&display=swap"
+        rel="stylesheet">
     <style>
-      /* Scope: ALL LearnDash tab panels (no post-specific IDs) */
-      .ld-tabs-content [role="tabpanel"] {
-        /* Local variables for this container only */
-        --p-size: 22px;
-        --h1-scale: 2.6;
-        --h2-scale: 2.0;
-        --h3-scale: 1.6;
-        --h4-scale: 1.35;
-      }
+        /* Scope: ALL LearnDash tab panels (no post-specific IDs) */
+        .ld-tabs-content [role="tabpanel"] {
+            /* Local variables for this container only */
+            --p-size: 22px;
+            --h1-scale: 2.6;
+            --h2-scale: 2.0;
+            --h3-scale: 1.6;
+            --h4-scale: 1.35;
+        }
 
-      /* Apply Newsreader only inside panels */
-      .ld-tabs-content [role="tabpanel"] h1,
-      .ld-tabs-content [role="tabpanel"] h2,
-      .ld-tabs-content [role="tabpanel"] h3,
-      .ld-tabs-content [role="tabpanel"] h4,
-      .ld-tabs-content [role="tabpanel"] p {
-        font-family: "Newsreader", serif;
-        font-optical-sizing: auto;
-        font-style: normal;
-        margin: 0 0 .65em 0;
-      }
+        /* Apply Newsreader only inside panels */
+        .ld-tabs-content [role="tabpanel"] h1,
+        .ld-tabs-content [role="tabpanel"] h2,
+        .ld-tabs-content [role="tabpanel"] h3,
+        .ld-tabs-content [role="tabpanel"] h4,
+        .ld-tabs-content [role="tabpanel"] p {
+            font-family: "Newsreader", serif;
+            font-optical-sizing: auto;
+            font-style: normal;
+            margin: 0 0 .65em 0;
+        }
 
-      .ld-tabs-content [role="tabpanel"] h1,
-      .ld-tabs-content [role="tabpanel"] h2,
-      .ld-tabs-content [role="tabpanel"] h3,
-      .ld-tabs-content [role="tabpanel"] h4 { text-align: left !important; }
+        .ld-tabs-content [role="tabpanel"] h1,
+        .ld-tabs-content [role="tabpanel"] h2,
+        .ld-tabs-content [role="tabpanel"] h3,
+        .ld-tabs-content [role="tabpanel"] h4 {
+            text-align: left !important;
+        }
 
-      .ld-tabs-content [role="tabpanel"] h1 { font-weight: 800; font-size: calc(var(--p-size) * var(--h1-scale)); line-height: 1.1; }
-      .ld-tabs-content [role="tabpanel"] h2 { font-weight: 700; font-size: calc(var(--p-size) * var(--h2-scale)); line-height: 1.2; }
-      .ld-tabs-content [role="tabpanel"] h3 { font-weight: 600; font-size: calc(var(--p-size) * var(--h3-scale)); line-height: 1.25; }
-      .ld-tabs-content [role="tabpanel"] h4 { font-weight: 500; font-size: calc(var(--p-size) * var(--h4-scale)); line-height: 1.3; }
-      .ld-tabs-content [role="tabpanel"] p  { font-weight: 400; font-size: 22px !important; line-height: 1.5 !important; }
+        .ld-tabs-content [role="tabpanel"] h1 {
+            font-weight: 800;
+            font-size: calc(var(--p-size) * var(--h1-scale));
+            line-height: 1.1;
+        }
+
+        .ld-tabs-content [role="tabpanel"] h2 {
+            font-weight: 700;
+            font-size: calc(var(--p-size) * var(--h2-scale));
+            line-height: 1.2;
+        }
+
+        .ld-tabs-content [role="tabpanel"] h3 {
+            font-weight: 600;
+            font-size: calc(var(--p-size) * var(--h3-scale));
+            line-height: 1.25;
+        }
+
+        .ld-tabs-content [role="tabpanel"] h4 {
+            font-weight: 500;
+            font-size: calc(var(--p-size) * var(--h4-scale));
+            line-height: 1.3;
+        }
+
+        .ld-tabs-content [role="tabpanel"] p {
+            font-weight: 400;
+            font-size: 22px !important;
+            line-height: 1.5 !important;
+        }
     </style>
     <?php
 }
@@ -269,7 +372,8 @@ add_action('init', function () {
 });
 
 if (!function_exists('vcp_auth_handle_google')) {
-    function vcp_auth_handle_google() {
+    function vcp_auth_handle_google()
+    {
         if (empty(VCP_GOOGLE_CLIENT_ID) || empty(VCP_GOOGLE_CLIENT_SECRET) || empty(VCP_GOOGLE_REDIRECT_URI)) {
             wp_die(__('Google OAuth is not configured.', 'villegas-course-plugin'));
         }
@@ -279,11 +383,11 @@ if (!function_exists('vcp_auth_handle_google')) {
 
             $token_response = wp_remote_post('https://oauth2.googleapis.com/token', [
                 'body' => [
-                    'code'          => $code,
-                    'client_id'     => VCP_GOOGLE_CLIENT_ID,
+                    'code' => $code,
+                    'client_id' => VCP_GOOGLE_CLIENT_ID,
                     'client_secret' => VCP_GOOGLE_CLIENT_SECRET,
-                    'redirect_uri'  => VCP_GOOGLE_REDIRECT_URI,
-                    'grant_type'    => 'authorization_code',
+                    'redirect_uri' => VCP_GOOGLE_REDIRECT_URI,
+                    'grant_type' => 'authorization_code',
                 ],
             ]);
 
@@ -327,14 +431,14 @@ if (!function_exists('vcp_auth_handle_google')) {
                 }
 
                 $base_login = $login;
-                $i          = 1;
+                $i = 1;
                 while (username_exists($login)) {
                     $login = $base_login . $i;
                     $i++;
                 }
 
                 $password = wp_generate_password(20);
-                $user_id  = wp_create_user($login, $password, $email);
+                $user_id = wp_create_user($login, $password, $email);
 
                 if (is_wp_error($user_id)) {
                     wp_die(__('Failed to create user.', 'villegas-course-plugin'));
@@ -342,7 +446,7 @@ if (!function_exists('vcp_auth_handle_google')) {
 
                 if (!empty($info['name'])) {
                     wp_update_user([
-                        'ID'           => $user_id,
+                        'ID' => $user_id,
                         'display_name' => sanitize_text_field($info['name']),
                     ]);
                 }
@@ -372,12 +476,12 @@ if (!function_exists('vcp_auth_handle_google')) {
         }
 
         $params = [
-            'client_id'     => VCP_GOOGLE_CLIENT_ID,
-            'redirect_uri'  => VCP_GOOGLE_REDIRECT_URI,
+            'client_id' => VCP_GOOGLE_CLIENT_ID,
+            'redirect_uri' => VCP_GOOGLE_REDIRECT_URI,
             'response_type' => 'code',
-            'scope'         => 'openid email profile',
-            'access_type'   => 'online',
-            'prompt'        => 'select_account',
+            'scope' => 'openid email profile',
+            'access_type' => 'online',
+            'prompt' => 'select_account',
         ];
 
         wp_redirect('https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query($params));
@@ -387,7 +491,8 @@ if (!function_exists('vcp_auth_handle_google')) {
 
 add_action('wp_print_footer_scripts', 'vcp_render_auth_modal', 99);
 
-function vcp_render_auth_modal() {
+function vcp_render_auth_modal()
+{
     if (is_user_logged_in()) {
         return;
     }
@@ -401,14 +506,7 @@ function vcp_render_auth_modal() {
     $nonce = wp_create_nonce('vcp_auth_nonce');
     ?>
     <div id="vcp-auth-overlay" class="vcp-auth-overlay" hidden></div>
-    <div
-        id="vcp-auth-modal"
-        class="vcp-auth-modal"
-        hidden
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="vcp-auth-title"
-    >
+    <div id="vcp-auth-modal" class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
         <button class="vcp-auth-close" aria-label="<?php echo esc_attr__('Cerrar', 'villegas-course-plugin'); ?>">×</button>
 
         <div class="vcp-auth-tabs">
@@ -486,7 +584,8 @@ function vcp_render_auth_modal() {
 }
 
 if (!function_exists('vcp_add_google_login_submenu')) {
-    function vcp_add_google_login_submenu() {
+    function vcp_add_google_login_submenu()
+    {
         add_submenu_page(
             'villegas-lms',
             __('Google Login Settings', 'villegas-course-plugin'),
@@ -501,7 +600,8 @@ if (!function_exists('vcp_add_google_login_submenu')) {
 add_action('admin_menu', 'vcp_add_google_login_submenu', 20);
 
 if (!function_exists('vcp_google_login_settings_page')) {
-function vcp_google_login_settings_page() {
+    function vcp_google_login_settings_page()
+    {
         if (!current_user_can('manage_options')) {
             return;
         }
@@ -517,39 +617,53 @@ function vcp_google_login_settings_page() {
             echo '<div class="updated"><p>' . esc_html__('Settings saved.', 'villegas-course-plugin') . '</p></div>';
         }
 
-        $site_key      = get_option('vcp_recaptcha_site_key', '');
-        $secret_key    = get_option('vcp_recaptcha_secret_key', '');
-        $client_id     = get_option('vcp_google_client_id', '');
+        $site_key = get_option('vcp_recaptcha_site_key', '');
+        $secret_key = get_option('vcp_recaptcha_secret_key', '');
+        $client_id = get_option('vcp_google_client_id', '');
         $client_secret = get_option('vcp_google_client_secret', '');
         ?>
         <div class="wrap">
             <h1><?php esc_html_e('Google Login & reCAPTCHA Settings', 'villegas-course-plugin'); ?></h1>
-            <p><?php esc_html_e('Enter the keys obtained from your Google Cloud Console. These are used for reCAPTCHA and OAuth login.', 'villegas-course-plugin'); ?></p>
+            <p><?php esc_html_e('Enter the keys obtained from your Google Cloud Console. These are used for reCAPTCHA and OAuth login.', 'villegas-course-plugin'); ?>
+            </p>
 
             <form method="post">
                 <?php wp_nonce_field('vcp_google_settings_save'); ?>
 
                 <table class="form-table" role="presentation">
                     <tr>
-                        <th scope="row"><label for="vcp_recaptcha_site_key"><?php esc_html_e('reCAPTCHA Site Key', 'villegas-course-plugin'); ?></label></th>
-                        <td><input name="vcp_recaptcha_site_key" id="vcp_recaptcha_site_key" type="text" value="<?php echo esc_attr($site_key); ?>" class="regular-text" /></td>
+                        <th scope="row"><label
+                                for="vcp_recaptcha_site_key"><?php esc_html_e('reCAPTCHA Site Key', 'villegas-course-plugin'); ?></label>
+                        </th>
+                        <td><input name="vcp_recaptcha_site_key" id="vcp_recaptcha_site_key" type="text"
+                                value="<?php echo esc_attr($site_key); ?>" class="regular-text" /></td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="vcp_recaptcha_secret_key"><?php esc_html_e('reCAPTCHA Secret Key', 'villegas-course-plugin'); ?></label></th>
-                        <td><input name="vcp_recaptcha_secret_key" id="vcp_recaptcha_secret_key" type="text" value="<?php echo esc_attr($secret_key); ?>" class="regular-text" /></td>
+                        <th scope="row"><label
+                                for="vcp_recaptcha_secret_key"><?php esc_html_e('reCAPTCHA Secret Key', 'villegas-course-plugin'); ?></label>
+                        </th>
+                        <td><input name="vcp_recaptcha_secret_key" id="vcp_recaptcha_secret_key" type="text"
+                                value="<?php echo esc_attr($secret_key); ?>" class="regular-text" /></td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="vcp_google_client_id"><?php esc_html_e('Google Client ID', 'villegas-course-plugin'); ?></label></th>
-                        <td><input name="vcp_google_client_id" id="vcp_google_client_id" type="text" value="<?php echo esc_attr($client_id); ?>" class="regular-text" /></td>
+                        <th scope="row"><label
+                                for="vcp_google_client_id"><?php esc_html_e('Google Client ID', 'villegas-course-plugin'); ?></label>
+                        </th>
+                        <td><input name="vcp_google_client_id" id="vcp_google_client_id" type="text"
+                                value="<?php echo esc_attr($client_id); ?>" class="regular-text" /></td>
                     </tr>
                     <tr>
-                        <th scope="row"><label for="vcp_google_client_secret"><?php esc_html_e('Google Client Secret', 'villegas-course-plugin'); ?></label></th>
-                        <td><input name="vcp_google_client_secret" id="vcp_google_client_secret" type="text" value="<?php echo esc_attr($client_secret); ?>" class="regular-text" /></td>
+                        <th scope="row"><label
+                                for="vcp_google_client_secret"><?php esc_html_e('Google Client Secret', 'villegas-course-plugin'); ?></label>
+                        </th>
+                        <td><input name="vcp_google_client_secret" id="vcp_google_client_secret" type="text"
+                                value="<?php echo esc_attr($client_secret); ?>" class="regular-text" /></td>
                     </tr>
                 </table>
 
                 <p class="submit">
-                    <button type="submit" name="vcp_save_google_settings" class="button-primary"><?php esc_html_e('Save Settings', 'villegas-course-plugin'); ?></button>
+                    <button type="submit" name="vcp_save_google_settings"
+                        class="button-primary"><?php esc_html_e('Save Settings', 'villegas-course-plugin'); ?></button>
                 </p>
             </form>
         </div>
@@ -559,7 +673,8 @@ function vcp_google_login_settings_page() {
 
 // Add Spanish rewrite for author pages
 add_action('init', 'villegas_add_autor_rewrite');
-function villegas_add_autor_rewrite() {
+function villegas_add_autor_rewrite()
+{
     add_rewrite_rule(
         '^autor/([^/]+)/?$',
         'index.php?author_name=$matches[1]',
@@ -569,12 +684,14 @@ function villegas_add_autor_rewrite() {
 
 // Make WordPress generate /autor/ instead of /author/
 add_filter('author_link', 'villegas_spanish_author_link', 10, 3);
-function villegas_spanish_author_link($link, $author_id, $author_nicename) {
+function villegas_spanish_author_link($link, $author_id, $author_nicename)
+{
     return home_url(user_trailingslashit('autor/' . $author_nicename));
 }
 
 add_action('wp_enqueue_scripts', 'villegas_enqueue_author_cropper');
-function villegas_enqueue_author_cropper() {
+function villegas_enqueue_author_cropper()
+{
     if (!is_author()) {
         return;
     }
@@ -604,12 +721,13 @@ function villegas_enqueue_author_cropper() {
 
     wp_localize_script('villegas-author-avatar', 'villegasAvatar', [
         'ajaxurl' => admin_url('admin-ajax.php'),
-        'nonce'   => wp_create_nonce('villegas_avatar_nonce'),
+        'nonce' => wp_create_nonce('villegas_avatar_nonce'),
     ]);
 }
 
 add_action('wp_ajax_villegas_save_profile_picture', 'villegas_save_profile_picture_handler');
-function villegas_save_profile_picture_handler() {
+function villegas_save_profile_picture_handler()
+{
     if (!is_user_logged_in()) {
         wp_send_json_error(['message' => 'Not logged in.']);
     }
@@ -627,7 +745,7 @@ function villegas_save_profile_picture_handler() {
 
     if (preg_match('/^data:image\/(png|jpe?g|webp);base64,/', $img_data, $matches)) {
         $extension = $matches[1] === 'jpeg' ? 'jpg' : $matches[1];
-        $img_data  = substr($img_data, strpos($img_data, ',') + 1);
+        $img_data = substr($img_data, strpos($img_data, ',') + 1);
     }
 
     $img_data = base64_decode($img_data);
@@ -636,12 +754,12 @@ function villegas_save_profile_picture_handler() {
         wp_send_json_error(['message' => 'Invalid image data.']);
     }
 
-    $user_id   = get_current_user_id();
+    $user_id = get_current_user_id();
     $author_id = $user_id;
     $user_data = get_userdata($user_id);
-    $username  = sanitize_title($user_data->user_login);
-    $date      = current_time('Ymd');
-    $filename  = "{$username}-{$date}-profile-photo.{$extension}";
+    $username = sanitize_title($user_data->user_login);
+    $date = current_time('Ymd');
+    $filename = "{$username}-{$date}-profile-photo.{$extension}";
 
     // Security: prevent uploading to another user's profile
     if ($user_id !== get_current_user_id()) {
@@ -660,9 +778,9 @@ function villegas_save_profile_picture_handler() {
 
     $attachment = [
         'post_mime_type' => $filetype['type'],
-        'post_title'     => sanitize_file_name($filename),
-        'post_content'   => '',
-        'post_status'    => 'inherit',
+        'post_title' => sanitize_file_name($filename),
+        'post_content' => '',
+        'post_status' => 'inherit',
     ];
 
     $attach_id = wp_insert_attachment($attachment, $upload['file']);
@@ -681,8 +799,8 @@ function villegas_save_profile_picture_handler() {
     update_user_meta($user_id, 'profile_picture', esc_url_raw($upload['url']));
 
     wp_send_json_success([
-        'message'       => 'Profile picture saved.',
-        'url'           => esc_url_raw($upload['url']),
+        'message' => 'Profile picture saved.',
+        'url' => esc_url_raw($upload['url']),
         'attachment_id' => $attach_id,
     ]);
 }
