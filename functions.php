@@ -97,16 +97,13 @@ function custom_redirect_to_checkout()
                                 if (response.success && response.data.is_curso) {
                                     // Only redirect to checkout if it's a Curso
                                     window.location.href = '<?php echo esc_url(wc_get_checkout_url()); ?>';
-                                } else {
-                                    // For non-Cursos products, use default behavior (cart page)
-                                    window.location.href = '<?php echo esc_url(wc_get_cart_url()); ?>';
                                 }
+                                // For non-Cursos products, do nothing - stay on current page
+                                // WooCommerce will show the default "added to cart" notice
                             }
                         });
-                    } else {
-                        // Fallback: redirect to cart if no product ID found
-                        window.location.href = '<?php echo esc_url(wc_get_cart_url()); ?>';
                     }
+                    // If no product ID, stay on page (no redirect)
                 });
             });
         </script>
