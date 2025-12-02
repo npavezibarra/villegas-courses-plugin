@@ -655,3 +655,7 @@ li.lesson-item,
 li.lesson-item * {
     font-family: 'Lexend';
 }
+
+li.lesson-item>a {
+    font-family: 'Lexend';
+}
