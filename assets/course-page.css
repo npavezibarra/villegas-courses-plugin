@@ -294,6 +294,59 @@ div#buy-button-stats {
     font-family: 'Lexend';
 }
 
+/* Apply Lexend font to all text within progress widget */
+.progress-widget,
+.progress-widget * {
+    font-family: 'Lexend';
+}
+
+/* Specific widget elements */
+.progress-widget button {
+    font-family: 'Lexend';
+}
+
+.progress-widget .buy-button button {
+    font-family: 'Lexend';
+}
+
+.progress-widget .exam-inicial-btn {
+    font-family: 'Lexend';
+}
+
+.progress-widget .examen-inicial {
+    font-family: 'Lexend';
+}
+
+.progress-widget .examen-inicial strong,
+.progress-widget .examen-inicial p {
+    font-family: 'Lexend';
+}
+
+.progress-widget #primer-test-legend {
+    font-family: 'Lexend';
+}
+
+.progress-widget .quiz-result {
+    font-family: 'Lexend';
+}
+
+.progress-widget .quiz-result strong,
+.progress-widget .quiz-result p {
+    font-family: 'Lexend';
+}
+
+.progress-widget #final-evaluation-button {
+    font-family: 'Lexend';
+}
+
+.progress-widget .vcp-final-quiz-button {
+    font-family: 'Lexend';
+}
+
+.progress-widget .tooltiptext {
+    font-family: 'Lexend';
+}
+
 /* Action Buttons */
 .action-buttons {
     display: flex;
