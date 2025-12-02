@@ -5,10 +5,13 @@ main#main-course-grid {
 
 .courses-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); /* Adjusts to screen size */
-    gap: 20px; /* Adds spacing between items */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* Adjusts to screen size */
+    gap: 20px;
+    /* Adds spacing between items */
     max-width: 1200px;
-    margin: 0 auto; /* Centers the grid */
+    margin: 0 auto;
+    /* Centers the grid */
     padding: 20px;
 }
 
@@ -23,7 +26,8 @@ main#main-course-grid {
 .course-thumbnail {
     display: block;
     width: 100%;
-    aspect-ratio: 16 / 9; /* Enforces exact 16:9 ratio */
+    aspect-ratio: 16 / 9;
+    /* Enforces exact 16:9 ratio */
     overflow: hidden;
     border-radius: 5px 5px 0px 0px;
     background-color: #ddd;
@@ -124,13 +128,45 @@ footer.entry-footer {
     .progress-bar {
         width: 100%;
     }
-    #progress-first, #progress-final {
+
+    #progress-first,
+    #progress-final {
         margin-bottom: 0px !important;
     }
 }
 
-h2.entry-title>a {
-    font-family: 'Cardo', serif !important;
+/* Bottom Course Card Typography */
+#bottom-course-card {
+    font-family: 'Lexend', sans-serif;
+}
+
+#bottom-course-card h2.entry-title {
+    font-family: 'Fraunces', serif !important;
+    font-weight: 800 !important;
+}
+
+#bottom-course-card h2.entry-title a {
+    font-family: 'Fraunces', serif !important;
+    font-weight: 700 !important;
+    font-size: 32px;
+}
+
+#bottom-course-card .entry-content {
+    font-family: 'Lexend', sans-serif !important;
+}
+
+#bottom-course-card .entry-content * {
+    font-family: 'Lexend', sans-serif !important;
+}
+
+.evaluation-row,
+.evaluation-row * {
+    font-family: 'Lexend', sans-serif !important;
+}
+
+.entry-footer,
+.entry-footer * {
+    font-family: 'Lexend', sans-serif !important;
 }
 
 .courses-container--shortcode h2.entry-title {

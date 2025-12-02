@@ -1,10 +1,4 @@
 /* General Styles */
-a {
-    font-family: "Inter", sans-serif;
-    font-weight: 500;
-    color: black;
-    text-decoration: none;
-}
 
 /* Main Menu */
 div#main-menu {
@@ -31,12 +25,12 @@ div#main-menu {
     padding-top: 3px;
 }
 
-#menu-replica > nav > ul > li {
+#menu-replica>nav>ul>li {
     padding-top: 3px !important;
 }
 
 /* Logo */
-#logo-website > h1 {
+#logo-website>h1 {
     margin: 0px;
     font-family: "Inter", sans-serif;
     font-size: 1.2em;
@@ -77,7 +71,7 @@ div#main-menu {
     display: none;
 }
 
-.single-sfwd-courses > header {
+.single-sfwd-courses>header {
     border-bottom: 1px solid black;
 }
 
@@ -85,7 +79,7 @@ div#main-menu {
     margin-top: 0 !important;
 }
 
-#page > hr {
+#page>hr {
     display: none;
 }
 
@@ -161,13 +155,13 @@ div#course-content {
     }
 }
 
-#course-content > h4 {
+#course-content>h4 {
     color: black;
     margin-bottom: 10px;
     margin-top: 0px;
 }
 
-#course-content > hr {
+#course-content>hr {
     margin-bottom: 40px;
 }
 
@@ -176,7 +170,7 @@ div#course-content {
     flex-direction: column !important;
 }
 
-#course-content ul > li > a {
+#course-content ul>li>a {
     font-family: "Inter", sans-serif;
     font-weight: 500;
     color: black;
@@ -184,7 +178,7 @@ div#course-content {
     font-size: 0.9em;
 }
 
-#course-content ul > li > h4 {
+#course-content ul>li>h4 {
     color: black;
 }
 
@@ -194,7 +188,7 @@ div#course-content {
         border-bottom: 0px !important;
     }
 
-    .course-outline > ul {
+    .course-outline>ul {
         margin-bottom: 0;
         border-bottom: none;
         margin-top: 0px;
@@ -211,7 +205,7 @@ div#description-course {
     height: auto;
 }
 
-div#description-course > h4 {
+div#description-course>h4 {
     color: black;
     margin-top: 0px;
     margin-bottom: 0px;
@@ -274,14 +268,14 @@ div#buy-button-stats {
         margin-bottom: 40px !important;
     }
 
-    div#description-course > h4 {
+    div#description-course>h4 {
         color: black;
         margin-top: 0px;
         margin-bottom: 0px;
         font-size: 28px;
     }
 
-    #course-content > h4 {
+    #course-content>h4 {
         color: black;
         margin-bottom: 10px;
         margin-top: 0px;
@@ -326,6 +320,7 @@ button.button.buy-button {
 }
 
 @media (max-width: 850px) {
+
     button.button.exam-inicial-btn,
     button.button.buy-button {
         width: 100%;
@@ -383,7 +378,7 @@ span.tooltiptext {
     font-size: 12px;
 }
 
-#final-test-button > p {
+#final-test-button>p {
     margin: 0px !important;
     font-size: 10px;
 }
@@ -399,7 +394,7 @@ div#primer-test-score {
     border-radius: 6px;
 }
 
-div#primer-test-score > a {
+div#primer-test-score>a {
     flex-direction: column;
     border-radius: 6px;
 }
@@ -427,7 +422,7 @@ div#primer-test-score > a {
 }
 
 /* Lessons Template */
-.sfwd-lessons-template-default > div > main > div {
+.sfwd-lessons-template-default>div>main>div {
     padding-top: 30px !important;
 }
 
@@ -587,6 +582,6 @@ div#primer-test-score > a {
 
 
 #datos-generales-curso>div>img {
-    border-radius:15px;
+    border-radius: 15px;
 
 }
