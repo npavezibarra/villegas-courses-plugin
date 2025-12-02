@@ -159,6 +159,7 @@ div#course-content {
     color: black;
     margin-bottom: 10px;
     margin-top: 0px;
+    font-family: 'Fraunces', serif !important;
 }
 
 #course-content>hr {
@@ -203,12 +204,14 @@ div#description-course {
     max-width: 60%;
     padding-top: 30px;
     height: auto;
+    margin-bottom: 80px;
 }
 
 div#description-course>h4 {
     color: black;
     margin-top: 0px;
     margin-bottom: 0px;
+    font-family: 'Fraunces', serif !important;
 }
 
 @media (max-width: 768px) {
@@ -285,6 +288,10 @@ div#buy-button-stats {
     div#body-content {
         margin-bottom: 0px !important;
     }
+}
+
+.progress-bar-stats {
+    font-family: 'Lexend';
 }
 
 /* Action Buttons */
@@ -372,6 +379,7 @@ button.button.buy-button {
 
 button#final-evaluation-button {
     padding: 13px 20px !important;
+    font-family: 'Lexend';
 }
 
 span.tooltiptext {
@@ -397,12 +405,14 @@ div#primer-test-score {
 div#primer-test-score>a {
     flex-direction: column;
     border-radius: 6px;
+    font-family: 'Lexend';
 }
 
 /* Mensaje Logeado */
 #mensaje-logeado {
     margin: 20px auto;
     max-width: 1000px;
+    font-family: 'Lexend';
 }
 
 @media (max-width: 850px) {
@@ -419,6 +429,7 @@ div#primer-test-score>a {
     padding: 3px 6px;
     border-radius: 3px;
     vertical-align: 3px;
+    font-family: 'Lexend';
 }
 
 /* Lessons Template */
