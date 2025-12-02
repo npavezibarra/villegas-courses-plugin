@@ -100,12 +100,12 @@ div#main-menu {
 #datos-generales-curso,
 #datos-generales-curso * {
     pointer-events: auto !important;
+    font-family: 'Fraunces', serif !important;
 }
 
 #datos-generales-curso a {
     color: inherit;
     text-decoration: none;
-    font-family: 'Cardo', serif;
 }
 
 #datos-generales-curso h1,
@@ -648,4 +648,10 @@ div#primer-test-score>a {
 #datos-generales-curso>div>img {
     border-radius: 15px;
 
+}
+
+/* Lesson Items */
+li.lesson-item,
+li.lesson-item * {
+    font-family: 'Lexend';
 }
