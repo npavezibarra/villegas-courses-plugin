@@ -10,6 +10,25 @@
   let lastFocus = null;
   const loginValidationTimers = new WeakMap();
 
+  /**
+   * Closes the mobile navigation panel if screen width is less than 600px
+   */
+  function closeMobileNavigation() {
+    // Only close navigation on mobile view (< 600px)
+    if (window.innerWidth >= 600) {
+      return;
+    }
+
+    const navContainer = document.querySelector('.wp-block-navigation__responsive-container');
+    if (!navContainer) {
+      return;
+    }
+
+    // Remove the open class and set aria-hidden
+    navContainer.classList.remove('is-menu-open');
+    navContainer.setAttribute('aria-hidden', 'true');
+  }
+
   function showSuccessOverlay(message, callback, duration = 3000) {
     const overlay = document.querySelector('.vcp-success-overlay');
     if (!overlay) {
@@ -167,11 +186,13 @@
       }
 
       if (typeof showModal === 'function') {
+        closeMobileNavigation(); // Close mobile nav before showing modal
         showModal();
       } else {
         const { modal: modalEl, overlay: overlayEl } = getModalElements();
 
         if (modalEl && overlayEl) {
+          closeMobileNavigation(); // Close mobile nav before showing modal
           modalEl.hidden = false;
           overlayEl.hidden = false;
           modalEl.classList.add('is-visible');
@@ -221,6 +242,7 @@
       }
 
       if (modal && overlay) {
+        closeMobileNavigation(); // Close mobile nav before showing modal
         showModal();
       } else {
         console.warn('Auth modal not found in DOM.');
