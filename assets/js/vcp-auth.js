@@ -39,6 +39,7 @@
     const messageEl = overlay.querySelector('.vcp-success-message');
     if (messageEl) {
       messageEl.textContent = message;
+      messageEl.style.fontFamily = "'Lexend', sans-serif";
     }
 
     let timer = null;

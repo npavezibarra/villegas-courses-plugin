@@ -371,6 +371,11 @@
   transform: translateY(20px);
   transition: transform 0.3s ease;
   position: relative;
+  font-family: 'Lexend', sans-serif !important;
+}
+
+.vcp-success-content * {
+  font-family: 'Lexend', sans-serif !important;
 }
 
 .vcp-success-close {
@@ -424,4 +429,10 @@
   color: #333;
   line-height: 1.5;
   font-weight: 500;
+  font-family: 'Lexend', sans-serif !important;
+}
+
+.vcp-success-overlay .vcp-success-message,
+div.vcp-success-content div.vcp-success-message {
+  font-family: 'Lexend', sans-serif !important;
 }

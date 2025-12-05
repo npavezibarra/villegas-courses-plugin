@@ -373,7 +373,7 @@ add_action('wp_enqueue_scripts', function () {
 
     wp_enqueue_style(
         'vcp-auth-fonts',
-        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap',
+        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Lexend:wght@300;400;500;600;700&display=swap',
         [],
         null
     );
