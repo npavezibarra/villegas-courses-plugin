@@ -1,0 +1,224 @@
+<?php
+if (!defined('ABSPATH')) {
+    exit;
+}
+
+wp_enqueue_script('vcp-author-tailwind', 'https://cdn.tailwindcss.com', [], null, false);
+wp_enqueue_style('vcp-author-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap', [], null);
+
+get_header();
+
+$author_id = get_queried_object_id();
+
+// WP core fields
+$author_name = get_the_author_meta('display_name', $author_id);
+$author_bio  = get_the_author_meta('description', $author_id);
+
+// ACF custom fields (optional, recommended)
+$author_position = get_field('author_position', 'user_' . $author_id);
+$author_photo    = get_field('author_photo', 'user_' . $author_id);
+
+// Check if logged-in user is the same author → upload button visible
+$is_author = (get_current_user_id() == $author_id);
+?>
+
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f7f7f9;
+    }
+    .section-title {
+        position: relative;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.5rem;
+    }
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 50px;
+        height: 3px;
+        background-color: #3b82f6;
+        border-radius: 9999px;
+    }
+    .book-item:hover .book-cover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+                    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+</style>
+
+<main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+
+    <!-- ============================
+         TOP PROFILE SECTION
+    ============================= -->
+    <section class="mb-10 bg-white p-6 rounded-xl shadow-lg">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+
+            <!-- LEFT COLUMN: AUTHOR PROFILE -->
+            <div class="md:col-span-1 flex flex-col items-center text-center">
+
+                <div class="relative group w-36 h-36 mb-4">
+
+                    <!-- PROFILE IMAGE -->
+                    <img class="w-full h-full object-cover rounded-full border-4 border-white shadow-md"
+                         src="<?php
+                            if ($author_photo) {
+                                echo esc_url($author_photo['url']);
+                            } else {
+                                echo esc_url(get_avatar_url($author_id, ['size' => 256]));
+                            }
+                         ?>"
+                         alt="<?php echo esc_attr($author_name); ?>">
+
+                    <!-- Upload button (only if logged-in user = this author) -->
+                    <?php if ($is_author): ?>
+                        <button onclick="document.getElementById('upload-photo-input').click()"
+                            class="absolute inset-0 bg-black bg-opacity-50 text-white
+                                   flex items-center justify-center rounded-full opacity-0
+                                   group-hover:opacity-100 transition duration-300
+                                   text-sm font-semibold cursor-pointer">
+                            Upload Photo
+                        </button>
+
+                        <input id="upload-photo-input" type="file" accept="image/*"
+                               class="hidden" />
+                    <?php endif; ?>
+
+                </div>
+
+                <!-- AUTHOR NAME -->
+                <h1 class="text-2xl font-extrabold text-gray-900">
+                    <?php echo esc_html($author_name); ?>
+                </h1>
+
+                <!-- AUTHOR POSITION (ACF) -->
+                <?php if ($author_position): ?>
+                    <p class="text-md text-blue-600 font-medium">
+                        <?php echo esc_html($author_position); ?>
+                    </p>
+                <?php endif; ?>
+
+            </div>
+
+            <!-- RIGHT COLUMN: ABOUT AUTHOR -->
+            <div class="md:col-span-2">
+                <h2 class="section-title">Sobre <?php echo esc_html($author_name); ?></h2>
+
+                <div class="text-gray-700 leading-relaxed space-y-4 text-justify">
+
+                    <!-- WP BIO OR ACF BIO -->
+                    <p>
+                        <?php
+                            echo nl2br(
+                                esc_html(
+                                    $author_bio ?: 'Este autor aún no ha agregado una biografía.'
+                                )
+                            );
+                        ?>
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ============================
+         DUMMY COURSES SECTION
+    ============================= -->
+    <section id="vcp-author-courses" class="bg-white p-6 rounded-xl shadow-lg mb-10">
+        <h2 class="section-title">Cursos</h2>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+            <!-- Dummy Course 1 -->
+            <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg transition duration-200 hover:shadow-md">
+                <div class="w-16 h-16 rounded-lg bg-gray-200"></div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Dummy Course 01</h3>
+                    <p class="text-sm text-gray-500">Category Placeholder</p>
+                </div>
+            </div>
+
+            <!-- Dummy Course 2 -->
+            <div class="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg transition duration-200 hover:shadow-md">
+                <div class="w-16 h-16 rounded-lg bg-gray-200"></div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-800">Dummy Course 02</h3>
+                    <p class="text-sm text-gray-500">Category Placeholder</p>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="#" class="inline-block px-6 py-2 bg-blue-600 text-white font-medium rounded-full">
+               VER TODOS
+            </a>
+        </div>
+    </section>
+
+    <!-- ============================
+         DUMMY COLUMNS SECTION
+    ============================= -->
+    <section id="vcp-author-columns" class="bg-white p-6 rounded-xl shadow-lg mb-10">
+        <h2 class="section-title">Columnas</h2>
+
+        <div class="space-y-4">
+
+            <!-- Dummy Column 1 -->
+            <div class="flex items-center space-x-4 p-2 border-b border-gray-100">
+                <div class="w-12 h-12 bg-gray-200 rounded-md"></div>
+                <span class="text-base text-gray-800 font-medium">
+                    Dummy Column Article 01
+                </span>
+            </div>
+
+            <!-- Dummy Column 2 -->
+            <div class="flex items-center space-x-4 p-2 border-b border-gray-100">
+                <div class="w-12 h-12 bg-gray-200 rounded-md"></div>
+                <span class="text-base text-gray-800 font-medium">
+                    Dummy Column Article 02
+                </span>
+            </div>
+
+        </div>
+
+        <div class="mt-6 text-center">
+            <a href="#" class="inline-block text-blue-600 font-medium hover:text-blue-700 transition duration-150 text-sm">
+                VER TODOS
+            </a>
+        </div>
+    </section>
+
+    <!-- ============================
+         BOOKS SECTION
+    ============================= -->
+    <section id="vcp-author-books" class="bg-white p-6 rounded-xl shadow-lg">
+        <h2 class="section-title">Libros del Autor</h2>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+
+            <div class="book-item text-center p-2 rounded-lg">
+                <div class="book-cover h-48 w-full bg-gray-200 rounded-lg mb-2"></div>
+                <p class="font-semibold text-gray-800">Book Title</p>
+                <p class="text-sm text-red-600 font-bold">Price</p>
+            </div>
+
+            <div class="book-item text-center p-2 rounded-lg">
+                <div class="book-cover h-48 w-full bg-gray-200 rounded-lg mb-2"></div>
+                <p class="font-semibold text-gray-800">Book Title</p>
+                <p class="text-sm text-red-600 font-bold">Price</p>
+            </div>
+
+        </div>
+    </section>
+
+</main>
+
+<?php get_footer(); ?>
