@@ -656,7 +656,6 @@ function vcp_render_auth_modal()
                     <label>Contraseña</label>
                     <input type="password" name="pwd" required>
                 </div>
-                <div class="vcp-captcha" data-type="login"></div>
                 <div class="vcp-actions">
                     <button type="submit">Entrar</button>
                 </div>
@@ -682,7 +681,6 @@ function vcp_render_auth_modal()
                     <label>Contraseña</label>
                     <input type="password" name="user_pass" minlength="6" required>
                 </div>
-                <div class="vcp-captcha" data-type="register"></div>
                 <div class="vcp-actions">
                     <button type="submit">Crear cuenta</button>
                 </div>
