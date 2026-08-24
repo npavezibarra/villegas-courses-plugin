@@ -317,14 +317,10 @@
           loginPanel.classList.remove('is-active');
           resetPanel.classList.add('is-active');
         }
-        const tabs = modalRoot.querySelectorAll('.vcp-auth-tab');
-        tabs.forEach((tab, index) => {
-          if (index === 0) {
-            tab.classList.add('is-active');
-          } else {
-            tab.classList.remove('is-active');
-          }
-        });
+        const tabsContainer = modalRoot.querySelector('.vcp-auth-tabs');
+        if (tabsContainer) {
+          tabsContainer.style.display = 'none';
+        }
       }
       return;
     }
@@ -339,6 +335,10 @@
         if (loginPanel && resetPanel) {
           resetPanel.classList.remove('is-active');
           loginPanel.classList.add('is-active');
+        }
+        const tabsContainer = modalRoot.querySelector('.vcp-auth-tabs');
+        if (tabsContainer) {
+          tabsContainer.style.display = '';
         }
         const tabs = modalRoot.querySelectorAll('.vcp-auth-tab');
         tabs.forEach((tab, index) => {

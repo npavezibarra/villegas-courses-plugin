@@ -389,7 +389,7 @@ add_action('wp_enqueue_scripts', function () {
         'vcp-auth-js',
         plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js',
         ['jquery'],
-        '1.6',
+        '1.4',
         true
     );
 
