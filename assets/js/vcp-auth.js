@@ -317,10 +317,7 @@
           loginPanel.classList.remove('is-active');
           resetPanel.classList.add('is-active');
         }
-        const tabsContainer = modalRoot.querySelector('.vcp-auth-tabs');
-        if (tabsContainer) {
-          tabsContainer.style.display = 'none';
-        }
+        modalRoot.classList.add('is-reset');
       }
       return;
     }
@@ -336,10 +333,7 @@
           resetPanel.classList.remove('is-active');
           loginPanel.classList.add('is-active');
         }
-        const tabsContainer = modalRoot.querySelector('.vcp-auth-tabs');
-        if (tabsContainer) {
-          tabsContainer.style.display = '';
-        }
+        modalRoot.classList.remove('is-reset');
         const tabs = modalRoot.querySelectorAll('.vcp-auth-tab');
         tabs.forEach((tab, index) => {
           if (index === 0) {

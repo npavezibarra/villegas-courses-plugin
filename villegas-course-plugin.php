@@ -382,14 +382,14 @@ add_action('wp_enqueue_scripts', function () {
         'vcp-auth-css',
         plugin_dir_url(__FILE__) . 'assets/css/vcp-auth.css',
         [],
-        '1.4'
+        '1.5'
     );
 
     wp_enqueue_script(
         'vcp-auth-js',
         plugin_dir_url(__FILE__) . 'assets/js/vcp-auth.js',
         ['jquery'],
-        '1.4',
+        '1.5',
         true
     );
 

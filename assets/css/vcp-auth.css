@@ -99,6 +99,9 @@
 }
 
 /* Tabs */
+.vcp-auth-modal.is-reset .vcp-auth-tabs {
+  display: none !important;
+}
 .vcp-auth-tabs {
   display: flex;
   justify-content: center;
