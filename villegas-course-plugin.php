@@ -382,7 +382,7 @@ add_action('wp_enqueue_scripts', function () {
         'vcp-auth-css',
         plugin_dir_url(__FILE__) . 'assets/css/vcp-auth.css',
         [],
-        '1.3'
+        '1.4'
     );
 
     wp_enqueue_script(
@@ -636,7 +636,7 @@ function vcp_render_auth_modal()
     $nonce = wp_create_nonce('vcp_auth_nonce');
     ?>
     <div id="vcp-auth-overlay" class="vcp-auth-overlay" hidden></div>
-    <div id="vcp-auth-modal" class="vcp-auth-modal" hidden role="dialog" aria-modal="true" aria-labelledby="vcp-auth-title">
+    <div id="vcp-auth-modal" class="vcp-auth-modal" hidden role="dialog" aria-modal="true">
         <button class="vcp-auth-close" aria-label="<?php echo esc_attr__('Cerrar', 'villegas-course-plugin'); ?>">×</button>
 
         <div class="vcp-auth-tabs">
@@ -646,7 +646,6 @@ function vcp_render_auth_modal()
 
         <div class="vcp-auth-panels">
             <form id="vcp-login" class="vcp-auth-panel is-active" novalidate>
-                <h3 id="vcp-auth-title">Iniciar sesión</h3>
                 <div class="vcp-field">
                     <label>Correo electrónico o nombre de usuario</label>
                     <input type="text" name="log" id="vcp-login-user" required>
@@ -668,7 +667,6 @@ function vcp_render_auth_modal()
             </form>
 
             <form id="vcp-register" class="vcp-auth-panel" novalidate>
-                <h3>Crear cuenta</h3>
                 <div class="vcp-field">
                     <label>Correo electrónico</label>
                     <input type="email" name="user_email" required>
